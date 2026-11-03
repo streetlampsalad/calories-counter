@@ -53,6 +53,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"user_settings": {
+                  Row: {
+                    "daily_goal_calories": number | null,"updated_at": string,"user_id": string,"week_starts_on": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "daily_goal_calories"?: number | null,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
+                  }
+                  Update: {
+                    "daily_goal_calories"?: number | null,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
