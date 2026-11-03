@@ -6,16 +6,22 @@ import { entryKeys, summaryKeys } from "@/lib/query-keys";
 
 const insert = vi.fn();
 const deleteEq = vi.fn();
+const updateSelect = vi.fn();
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: () => ({
       insert: (row: unknown) => insert(row),
       delete: () => ({ eq: (_c: string, id: string) => deleteEq(id) }),
+      update: (patch: unknown) => ({
+        eq: (_c: string, id: string) => ({
+          select: () => updateSelect(patch, id),
+        }),
+      }),
     }),
   }),
 }));
 
-import { useAddEntry, useRemoveEntry } from "./queries";
+import { useAddEntry, useRemoveEntry, useUpdateEntryQuantity } from "./queries";
 import type { Entry } from "./types";
 
 const DAY = "2026-11-03";
@@ -166,5 +172,67 @@ describe("useRemoveEntry", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(cached(queryClient)).toEqual([toast, rice]);
+  });
+});
+
+describe("useUpdateEntryQuantity", () => {
+  beforeEach(() => updateSelect.mockReset());
+
+  it("changes the Quantity straight away, keeping the Entry where it is", async () => {
+    let finish: (value: unknown) => void = () => {};
+    updateSelect.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const { queryClient, wrapper } = setup([toast, rice]);
+    const { result } = renderHook(() => useUpdateEntryQuantity(), { wrapper });
+
+    act(() => result.current.mutate({ entry: toast, quantity: 3 }));
+
+    await waitFor(() => expect(cached(queryClient)?.[0].quantity).toBe(3));
+    expect(cached(queryClient)?.map((e) => e.id)).toEqual(["e1", "e2"]);
+    finish({ data: [{ id: "e1" }], error: null });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(updateSelect).toHaveBeenCalledWith({ quantity: 3 }, "e1");
+  });
+
+  it("puts the old Quantity back when saving fails", async () => {
+    updateSelect.mockResolvedValue({
+      data: null,
+      error: { code: "08006", message: "down" },
+    });
+    const { queryClient, wrapper } = setup([toast, rice]);
+    const { result } = renderHook(() => useUpdateEntryQuantity(), { wrapper });
+
+    act(() => result.current.mutate({ entry: toast, quantity: 3 }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(cached(queryClient)).toEqual([toast, rice]);
+  });
+
+  it("treats an update that touched no row as a failure", async () => {
+    updateSelect.mockResolvedValue({ data: [], error: null });
+    const { queryClient, wrapper } = setup([toast, rice]);
+    const { result } = renderHook(() => useUpdateEntryQuantity(), { wrapper });
+
+    act(() => result.current.mutate({ entry: toast, quantity: 3 }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(cached(queryClient)).toEqual([toast, rice]);
+  });
+
+  it("refreshes totals once saved", async () => {
+    updateSelect.mockResolvedValue({ data: [{ id: "e1" }], error: null });
+    const { queryClient, wrapper } = setup([toast, rice]);
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => useUpdateEntryQuantity(), { wrapper });
+
+    act(() => result.current.mutate({ entry: toast, quantity: 3 }));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const keys = invalidate.mock.calls.map(([filters]) => filters?.queryKey);
+    expect(keys).toContainEqual(entryKeys.day(DAY));
+    expect(keys).toContainEqual(summaryKeys.all);
   });
 });

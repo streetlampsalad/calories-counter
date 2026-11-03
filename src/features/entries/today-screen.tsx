@@ -8,9 +8,15 @@ import { Button } from "@/components/ui/button";
 import type { Food } from "@/features/foods/types";
 import { dayLabel, parseDay } from "./days";
 import { formatQuantity } from "./domain";
+import { EditEntrySheet } from "./edit-entry-sheet";
 import { DailyTotal, EntryList } from "./entry-list";
 import { FoodPickerSheet } from "./picker-sheet";
-import { useAddEntry, useDayEntries, useRemoveEntry } from "./queries";
+import {
+  useAddEntry,
+  useDayEntries,
+  useRemoveEntry,
+  useUpdateEntryQuantity,
+} from "./queries";
 import type { Entry } from "./types";
 import { useToday } from "./use-today";
 
@@ -28,7 +34,41 @@ function DayView({ day, today }: { day: string; today: string }) {
   const { data: entries, isPending, isError, refetch } = useDayEntries(day);
   const addEntry = useAddEntry();
   const removeEntry = useRemoveEntry();
+  const updateQuantity = useUpdateEntryQuantity();
   const [picking, setPicking] = useState(false);
+  const [editing, setEditing] = useState<Entry | null>(null);
+
+  function changeQuantity(entry: Entry, quantity: number) {
+    updateQuantity.mutate(
+      { entry, quantity },
+      {
+        onError: (error) =>
+          toast.error(error.message, {
+            action: {
+              label: "Retry",
+              onClick: () => updateQuantity.mutate({ entry, quantity }),
+            },
+          }),
+      },
+    );
+  }
+
+  // Undo puts the very same Entry back, in its original place in the list.
+  function remove(entry: Entry) {
+    removeEntry.mutate(entry, {
+      onError: (error) => toast.error(error.message),
+    });
+    toast(`Removed ${formatQuantity(entry.quantity)} × ${entry.food.name}`, {
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () =>
+          addEntry.mutate(entry, {
+            onError: (error) => toast.error(error.message),
+          }),
+      },
+    });
+  }
 
   // The Entry shows up at once; the toast offers Undo, and a failed save takes it back off.
   function log(food: Food, quantity: number) {
@@ -86,7 +126,7 @@ function DayView({ day, today }: { day: string; today: string }) {
       {entries ? (
         <>
           <DailyTotal entries={entries} />
-          <EntryList entries={entries} />
+          <EntryList entries={entries} onSelect={setEditing} />
         </>
       ) : null}
 
@@ -99,6 +139,13 @@ function DayView({ day, today }: { day: string; today: string }) {
           <Plus aria-hidden="true" /> Add
         </Button>
       </div>
+
+      <EditEntrySheet
+        entry={editing}
+        onChange={changeQuantity}
+        onRemove={remove}
+        onClose={() => setEditing(null)}
+      />
 
       <FoodPickerSheet
         open={picking}

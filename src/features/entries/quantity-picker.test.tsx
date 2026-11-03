@@ -70,3 +70,27 @@ describe("QuantityPicker", () => {
     expect(screen.getByRole("button", { name: "More" })).toBeDisabled();
   });
 });
+
+describe("QuantityPicker: changing an existing amount", () => {
+  it("words its buttons as setting the amount, not adding", async () => {
+    const onChoose = vi.fn();
+    render(<QuantityPicker verb="Set to" initial={2.5} onChoose={onChoose} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Set to 2" }));
+    expect(onChoose).toHaveBeenCalledWith(2);
+    expect(
+      screen.queryByRole("button", { name: /^Add / }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("starts the stepper from the current amount", async () => {
+    const onChoose = vi.fn();
+    render(<QuantityPicker verb="Set to" initial={2.5} onChoose={onChoose} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("2½");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Set to 2½ portions" }),
+    );
+    expect(onChoose).toHaveBeenCalledWith(2.5);
+  });
+});

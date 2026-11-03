@@ -123,3 +123,34 @@ export function useRemoveEntry() {
       refreshAfterChange(queryClient, entry.day),
   });
 }
+
+export function useUpdateEntryQuantity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      entry,
+      quantity,
+    }: {
+      entry: Entry;
+      quantity: number;
+    }) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("entries")
+        .update({ quantity })
+        .eq("id", entry.id)
+        .select("id");
+      // Row-level security hides other Users' Entries by matching no row, not by erroring.
+      if (error || !data?.length) throw new Error(SAVE_FAILED);
+    },
+    onMutate: ({ entry, quantity }) =>
+      patchDay(queryClient, entry.day, (current) =>
+        current.map((e) => (e.id === entry.id ? { ...e, quantity } : e)),
+      ),
+    onError: (_error, { entry }, context) =>
+      queryClient.setQueryData(entryKeys.day(entry.day), context?.previous),
+    onSettled: (_data, _error, { entry }) =>
+      refreshAfterChange(queryClient, entry.day),
+  });
+}

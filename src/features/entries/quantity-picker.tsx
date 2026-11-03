@@ -16,10 +16,12 @@ type Props = {
   onChoose: (quantity: number) => void;
   /** Where the stepper starts; also what an existing Entry is edited from. */
   initial?: number;
+  /** "Add" when logging a Food; "Set to" when changing an Entry's amount. */
+  verb?: "Add" | "Set to";
 };
 
 // One tap for the usual amounts; the stepper covers everything else in half-portion steps.
-export function QuantityPicker({ onChoose, initial = 1 }: Props) {
+export function QuantityPicker({ onChoose, initial = 1, verb = "Add" }: Props) {
   const [custom, setCustom] = useState(initial);
 
   return (
@@ -30,7 +32,7 @@ export function QuantityPicker({ onChoose, initial = 1 }: Props) {
             key={quantity}
             type="button"
             variant="outline"
-            aria-label={`Add ${formatQuantity(quantity)}`}
+            aria-label={`${verb} ${formatQuantity(quantity)}`}
             className="h-12 text-lg"
             onClick={() => onChoose(quantity)}
           >
@@ -70,7 +72,8 @@ export function QuantityPicker({ onChoose, initial = 1 }: Props) {
           className="h-12 flex-1 text-base"
           onClick={() => onChoose(custom)}
         >
-          Add {formatQuantity(custom)} {custom === 1 ? "portion" : "portions"}
+          {verb} {formatQuantity(custom)}{" "}
+          {custom === 1 ? "portion" : "portions"}
         </Button>
       </div>
     </div>
