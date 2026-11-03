@@ -40,6 +40,37 @@ export function findDuplicate(
   );
 }
 
+// Lower-case words with accents removed, so "Café" and "cafe" meet in the middle.
+const words = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[’‘]/g, "'")
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}']+/u)
+    .filter(Boolean);
+
+// Every typed word must start some word in the name or Portion.
+export function matchesFoodQuery(
+  food: Pick<Food, "name" | "portion">,
+  query: string,
+): boolean {
+  const wanted = words(query);
+  if (wanted.length === 0) return true;
+  const available = words(`${food.name} ${food.portion}`);
+  return wanted.every((word) =>
+    available.some((candidate) => candidate.startsWith(word)),
+  );
+}
+
+export function filterFoods(
+  foods: readonly Food[],
+  query: string,
+): readonly Food[] {
+  if (words(query).length === 0) return foods;
+  return foods.filter((food) => matchesFoodQuery(food, query));
+}
+
 export const formatCalories = (calories: number) =>
   `${calories.toLocaleString("en-AU")} kcal`;
 

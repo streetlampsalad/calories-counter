@@ -110,3 +110,68 @@ test("the Foods screen fits a phone without sideways scrolling", async ({
   );
   expect(overflows).toBe(false);
 });
+
+test.describe("searching the Food List", () => {
+  test("filters on every keystroke without asking the server", async ({
+    page,
+  }) => {
+    const suffix = Math.random().toString(36).slice(2, 8);
+    const cafe = `Café latte ${suffix}`;
+    const toast = `Sourdough toast ${suffix}`;
+    // Loading the list, and each background refresh that follows adding a Food, must land
+    // before the typing starts; otherwise a late response would be mistaken for a search request.
+    const listResponse = () =>
+      page.waitForResponse(
+        (response) =>
+          response.request().method() === "GET" &&
+          response.url().includes("/rest/v1/foods?select="),
+      );
+    const loaded = listResponse();
+    await page.goto("/foods");
+    await loaded;
+
+    for (const [name, portion, calories] of [
+      [cafe, "250 ml", "120"],
+      [toast, "1 slice", "110"],
+    ]) {
+      const refreshed = listResponse();
+      await addFood(page, name, portion, calories);
+      await refreshed;
+    }
+    await expect(list(page).getByText(cafe)).toBeVisible();
+    await expect(list(page).getByText(toast)).toBeVisible();
+
+    const requests: string[] = [];
+    page.on("request", (request) => {
+      if (request.url().includes(":54321")) requests.push(request.url());
+    });
+
+    const search = page.getByRole("searchbox", { name: "Search foods" });
+    await search.fill(`cafe ${suffix}`);
+    await expect(list(page).getByText(cafe)).toBeVisible();
+    await expect(list(page).getByText(toast)).toHaveCount(0);
+
+    await search.fill(`TOA ${suffix}`);
+    await expect(list(page).getByText(toast)).toBeVisible();
+    await expect(list(page).getByText(cafe)).toHaveCount(0);
+
+    expect(requests).toEqual([]);
+  });
+
+  test("says when nothing matches, and clearing brings the list back", async ({
+    page,
+  }) => {
+    const name = unique("Rice");
+    await page.goto("/foods");
+    await addFood(page, name, "100 g", "130");
+    await expect(list(page).getByText(name)).toBeVisible();
+
+    const search = page.getByRole("searchbox", { name: "Search foods" });
+    await search.fill("zzzzqqqq");
+    await expect(page.getByText("No foods match")).toBeVisible();
+
+    await page.getByRole("button", { name: "Clear search" }).first().click();
+    await expect(search).toHaveValue("");
+    await expect(list(page).getByText(name)).toBeVisible();
+  });
+});

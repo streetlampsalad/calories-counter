@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  filterFoods,
   findDuplicate,
   formatCalories,
   formatFoodDetail,
+  matchesFoodQuery,
   sortFoods,
 } from "./domain";
 import type { Food } from "./types";
@@ -99,5 +101,72 @@ describe("formatting", () => {
         food({ name: "Sourdough toast", portion: "1 slice", calories: 110 }),
       ),
     ).toBe("1 slice · 110 kcal");
+  });
+});
+
+describe("matchesFoodQuery", () => {
+  const toast = food({ name: "Sourdough toast", portion: "1 slice" });
+  const latte = food({ name: "Café latte", portion: "250 ml" });
+
+  it("matches everything when the query is empty", () => {
+    expect(matchesFoodQuery(toast, "")).toBe(true);
+    expect(matchesFoodQuery(toast, "   ")).toBe(true);
+  });
+
+  it("matches the start of any word in the name", () => {
+    expect(matchesFoodQuery(toast, "toa")).toBe(true);
+    expect(matchesFoodQuery(toast, "sour")).toBe(true);
+  });
+
+  it("does not match the middle of a word", () => {
+    expect(matchesFoodQuery(toast, "oast")).toBe(false);
+    expect(matchesFoodQuery(toast, "dough")).toBe(false);
+  });
+
+  it("ignores case and accents in both directions", () => {
+    expect(matchesFoodQuery(latte, "cafe")).toBe(true);
+    expect(matchesFoodQuery(latte, "CAFÉ")).toBe(true);
+    expect(matchesFoodQuery(food({ name: "Cafe au lait" }), "café")).toBe(true);
+  });
+
+  it("needs every typed word to match some word", () => {
+    expect(matchesFoodQuery(toast, "sour toa")).toBe(true);
+    expect(matchesFoodQuery(toast, "toa sour")).toBe(true);
+    expect(matchesFoodQuery(toast, "sour latte")).toBe(false);
+  });
+
+  it("also searches the Portion", () => {
+    expect(matchesFoodQuery(toast, "slice")).toBe(true);
+    expect(matchesFoodQuery(latte, "250")).toBe(true);
+  });
+
+  it("is not thrown by punctuation or extra spaces", () => {
+    expect(
+      matchesFoodQuery(food({ name: "Mac & cheese" }), "  mac   chee "),
+    ).toBe(true);
+    expect(
+      matchesFoodQuery(food({ name: "Arnott's Tim Tam" }), "arnott's"),
+    ).toBe(true);
+  });
+});
+
+describe("filterFoods", () => {
+  it("keeps the list order and returns only matches", () => {
+    const foods = [
+      food({ name: "Apple" }),
+      food({ name: "Banana" }),
+      food({ name: "Apple pie" }),
+    ];
+
+    expect(filterFoods(foods, "app").map((f) => f.name)).toEqual([
+      "Apple",
+      "Apple pie",
+    ]);
+  });
+
+  it("returns the same list for an empty query", () => {
+    const foods = [food({ name: "Apple" })];
+
+    expect(filterFoods(foods, "")).toBe(foods);
   });
 });

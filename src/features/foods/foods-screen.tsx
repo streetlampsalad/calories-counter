@@ -11,8 +11,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { findDuplicate, formatFoodDetail } from "./domain";
+import { filterFoods, findDuplicate, formatFoodDetail } from "./domain";
 import { FoodForm } from "./food-form";
+import { FoodSearchBox } from "./food-search-box";
 import { useAddFood, useFoods } from "./queries";
 import type { Food, FoodInput } from "./types";
 
@@ -57,6 +58,9 @@ export function FoodsScreen() {
   const { data: foods, isPending, isError, refetch } = useFoods();
   const addFood = useAddFood();
   const [adding, setAdding] = useState(false);
+  const [query, setQuery] = useState("");
+  // Filtered in memory on every keystroke: no request, however long the list gets.
+  const visible = foods ? filterFoods(foods, query) : undefined;
 
   function save(input: FoodInput) {
     const food: Food = { id: crypto.randomUUID(), archivedAt: null, ...input };
@@ -92,11 +96,26 @@ export function FoodsScreen() {
       ) : null}
 
       {foods && foods.length > 0 ? (
+        <FoodSearchBox value={query} onChange={setQuery} />
+      ) : null}
+
+      {visible && visible.length > 0 ? (
         <ul aria-label="Your foods">
-          {foods.map((food) => (
+          {visible.map((food) => (
             <FoodRow key={food.id} food={food} />
           ))}
         </ul>
+      ) : null}
+
+      {foods && foods.length > 0 && visible?.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <p>
+            No foods match <span className="font-medium">“{query.trim()}”</span>
+          </p>
+          <Button variant="outline" onClick={() => setQuery("")}>
+            Clear search
+          </Button>
+        </div>
       ) : null}
 
       {foods && foods.length > 0 ? (
