@@ -365,3 +365,31 @@ test.describe("the picker learns what you eat", () => {
     ).toHaveCount(0);
   });
 });
+
+test("confirmation toasts sit above the Add button and never cover the header controls", async ({
+  page,
+}) => {
+  const day = "2001-04-10";
+  const { food } = await arrange(day, 100);
+  await page.goto(`/?day=${day}`);
+
+  await openPickerFor(page, food.name);
+  await picker(page)
+    .getByRole("button", { name: "Add 1", exact: true })
+    .click();
+
+  const toast = page.locator("[data-sonner-toast]").first();
+  await expect(toast).toBeVisible();
+  // A toast slides in, so wait for it to settle before measuring.
+  await expect(async () => {
+    const [toastBox, addBox, previousBox] = await Promise.all([
+      toast.boundingBox(),
+      page.getByRole("button", { name: "Add", exact: true }).boundingBox(),
+      page.getByRole("button", { name: "Previous day" }).boundingBox(),
+    ]);
+    if (!toastBox || !addBox || !previousBox)
+      throw new Error("element not measured yet");
+    expect(toastBox.y + toastBox.height).toBeLessThanOrEqual(addBox.y);
+    expect(toastBox.y).toBeGreaterThan(previousBox.y + previousBox.height);
+  }).toPass();
+});
