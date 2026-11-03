@@ -45,6 +45,15 @@ export function isUnavailable(error: unknown): boolean {
   return e?.cause ? isUnavailable(e.cause) : false;
 }
 
+// A line for the server log saying why a request failed: the kind of error, its status and Google's
+// reason (cut short). The API key and what was sent are never part of an SDK error message.
+export function describeFailure(error: unknown): string {
+  if (!(error instanceof Error)) return "unknown error";
+  const status = (error as { status?: unknown }).status;
+  const where = typeof status === "number" ? ` (${status})` : "";
+  return `${error.name}${where}: ${error.message.slice(0, 300)}`;
+}
+
 // The real thing: the Gemini API's Interactions endpoint, asked for JSON and told not to keep it.
 export function geminiTransport(apiKey: string): GeminiTransport {
   const client = new GoogleGenAI({
@@ -70,6 +79,7 @@ export function geminiTransport(apiKey: string): GeminiTransport {
       if (!text) throw new Error("Gemini returned no text");
       return text;
     } catch (error) {
+      console.error(`Gemini request failed: ${describeFailure(error)}`);
       if (isUnavailable(error)) {
         throw new AiUnavailable(
           error instanceof Error ? error.name : "unknown error",
