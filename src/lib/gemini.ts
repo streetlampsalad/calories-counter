@@ -4,6 +4,9 @@ import { AiUnavailable } from "./ai";
 
 // One model for everything, so changing it is a one-line edit.
 export const GEMINI_MODEL = "gemini-3.8-flash";
+// For simple jobs that need speed over skill, like estimating a food's Calories. It was chosen after
+// gemini-3.8-flash answered 503 "high demand" and then timed out in production.
+export const GEMINI_LIGHT_MODEL = "gemini-3.5-flash-lite";
 // The least thinking this model allows: it accepts low, medium and high, and rejects "minimal" with a
 // 400 (found in production). Check the model's supported levels before changing either constant.
 export const GEMINI_THINKING_LEVEL = "low";
@@ -57,27 +60,55 @@ export function describeFailure(error: unknown): string {
   return `${error.name}${where}: ${error.message.slice(0, 300)}`;
 }
 
+// Google answering "high demand" (503) is a spike that usually passes in a moment, so it is worth one
+// more try. Quota (429), timeouts and our own mistakes are not.
+function isOverloaded(error: unknown): boolean {
+  const e = error as { status?: unknown; statusCode?: unknown } | null;
+  return Number(e?.status ?? e?.statusCode) === 503;
+}
+
+type TransportOptions = {
+  model?: string;
+  /** How long to wait before the one retry after a 503. */
+  retryDelayMs?: number;
+};
+
 // The real thing: the Gemini API's Interactions endpoint, asked for JSON and told not to keep it.
-export function geminiTransport(apiKey: string): GeminiTransport {
+export function geminiTransport(
+  apiKey: string,
+  { model = GEMINI_MODEL, retryDelayMs = 1000 }: TransportOptions = {},
+): GeminiTransport {
   const client = new GoogleGenAI({
     apiKey,
     httpOptions: { timeout: TIMEOUT_MS },
   });
-  return async ({ system, input, schema }) => {
+  const send = ({ system, input, schema }: GeminiRequest) =>
+    client.interactions.create({
+      model,
+      // Google does not keep what was sent (free-tier data use is covered in Settings → About).
+      store: false,
+      system_instruction: system,
+      input: [...input],
+      response_format: {
+        type: "text",
+        mime_type: "application/json",
+        schema,
+      },
+      generation_config: { thinking_level: GEMINI_THINKING_LEVEL },
+    });
+  return async (request) => {
     try {
-      const interaction = await client.interactions.create({
-        model: GEMINI_MODEL,
-        // Google does not keep what was sent (free-tier data use is covered in Settings → About).
-        store: false,
-        system_instruction: system,
-        input: [...input],
-        response_format: {
-          type: "text",
-          mime_type: "application/json",
-          schema,
-        },
-        generation_config: { thinking_level: GEMINI_THINKING_LEVEL },
-      });
+      let interaction: Awaited<ReturnType<typeof send>>;
+      try {
+        interaction = await send(request);
+      } catch (error) {
+        if (!isOverloaded(error)) throw error;
+        console.error(
+          `Gemini request failed, trying again: ${describeFailure(error)}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+        interaction = await send(request);
+      }
       const text = interaction.output_text;
       if (!text) throw new Error("Gemini returned no text");
       return text;

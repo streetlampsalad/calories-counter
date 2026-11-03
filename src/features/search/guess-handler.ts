@@ -4,7 +4,7 @@ import {
   MAX_PORTION,
 } from "@/features/foods/validation";
 import { AiUnavailable } from "@/lib/ai";
-import { geminiTransport } from "@/lib/gemini";
+import { GEMINI_LIGHT_MODEL, geminiTransport } from "@/lib/gemini";
 import { GeminiCalorieGuesser } from "./gemini-guesser";
 import { MIN_QUERY } from "./limits";
 
@@ -52,7 +52,9 @@ export function getCalorieGuesser(
 ): CalorieGuesser {
   if (env.CALORIE_GUESSER === "fake") return new FakeCalorieGuesser();
   if (env.GEMINI_API_KEY) {
-    return new GeminiCalorieGuesser(geminiTransport(env.GEMINI_API_KEY));
+    return new GeminiCalorieGuesser(
+      geminiTransport(env.GEMINI_API_KEY, { model: GEMINI_LIGHT_MODEL }),
+    );
   }
   if (env.NODE_ENV !== "production") return new FakeCalorieGuesser();
   return new UnavailableGuesser();

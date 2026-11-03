@@ -1,11 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiUnavailable } from "./ai";
 import {
   describeFailure,
+  GEMINI_LIGHT_MODEL,
   GEMINI_MODEL,
   GEMINI_THINKING_LEVEL,
+  geminiTransport,
   isUnavailable,
 } from "./gemini";
+
+const create = vi.fn();
+vi.mock("@google/genai", () => ({
+  GoogleGenAI: class {
+    interactions = { create };
+  },
+}));
 
 class Failure extends Error {
   constructor(
@@ -89,5 +98,65 @@ describe("the model's thinking level", () => {
   it("is one gemini-3.8-flash supports: low, medium or high, never minimal", () => {
     expect(GEMINI_MODEL).toBe("gemini-3.8-flash");
     expect(["low", "medium", "high"]).toContain(GEMINI_THINKING_LEVEL);
+  });
+});
+
+describe("geminiTransport", () => {
+  const request = {
+    system: "s",
+    input: [{ type: "text" as const, text: "t" }],
+    schema: {},
+  };
+  const overloaded = new Failure("503 high demand", 503);
+
+  beforeEach(() => {
+    create.mockReset();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  it("uses the main model unless asked for another", async () => {
+    create.mockResolvedValue({ output_text: "{}" });
+
+    await geminiTransport("k")(request);
+    await geminiTransport("k", { model: GEMINI_LIGHT_MODEL })(request);
+
+    expect(create.mock.calls[0][0].model).toBe(GEMINI_MODEL);
+    expect(create.mock.calls[1][0].model).toBe("gemini-3.5-flash-lite");
+  });
+
+  it("tries once more when Google is overloaded, and returns the second answer", async () => {
+    create
+      .mockRejectedValueOnce(overloaded)
+      .mockResolvedValueOnce({ output_text: '{"ok":true}' });
+
+    const text = await geminiTransport("k", { retryDelayMs: 0 })(request);
+
+    expect(text).toBe('{"ok":true}');
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up as unavailable if the second try is overloaded too", async () => {
+    create.mockRejectedValue(overloaded);
+
+    await expect(
+      geminiTransport("k", { retryDelayMs: 0 })(request),
+    ).rejects.toBeInstanceOf(AiUnavailable);
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry quota, timeouts or our own mistakes", async () => {
+    for (const failure of [
+      new Failure("quota", 429),
+      new Failure("Request timed out", undefined, "TimeoutError"),
+      new Failure("bad request", 400),
+    ]) {
+      create.mockReset();
+      create.mockRejectedValue(failure);
+
+      await expect(
+        geminiTransport("k", { retryDelayMs: 0 })(request),
+      ).rejects.toBeDefined();
+      expect(create).toHaveBeenCalledTimes(1);
+    }
   });
 });

@@ -9,6 +9,13 @@ import {
   handleGuess,
 } from "./guess-handler";
 
+const create = vi.fn();
+vi.mock("@google/genai", () => ({
+  GoogleGenAI: class {
+    interactions = { create };
+  },
+}));
+
 const guess = vi.fn<CalorieGuesser["guess"]>();
 const guesser: CalorieGuesser = { guess };
 const allowUse = vi.fn<(kind: string) => Promise<boolean>>();
@@ -170,6 +177,21 @@ describe("FakeCalorieGuesser and getCalorieGuesser", () => {
     expect(
       getCalorieGuesser({ GEMINI_API_KEY: "k", CALORIE_GUESSER: "fake" }),
     ).toBeInstanceOf(FakeCalorieGuesser);
+  });
+
+  it("asks the light model, which is quicker and less often overloaded", async () => {
+    create.mockResolvedValue({
+      output_text: JSON.stringify({
+        name: "Lamington",
+        portion: "1 piece",
+        calories: 190,
+        basis: "Sponge cake",
+      }),
+    });
+
+    await getCalorieGuesser({ GEMINI_API_KEY: "k" }).guess("lamington");
+
+    expect(create.mock.calls[0][0].model).toBe("gemini-3.5-flash-lite");
   });
 
   it("makes a plausible guess from the query", async () => {
