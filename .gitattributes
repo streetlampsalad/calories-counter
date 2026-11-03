@@ -1,3 +1,6 @@
 * text=auto eol=lf
 *.ico binary
 *.png binary
+
+# Import fixtures hold exact bytes (a BOM, CRLF line endings), so git must not touch them.
+src/features/import/fixtures/* -text
