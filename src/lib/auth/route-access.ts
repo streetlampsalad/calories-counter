@@ -1,6 +1,10 @@
 const PUBLIC_PATHS = ["/sign-in", "/auth/callback", "/api/health"];
 
-export type Access = { action: "next" } | { action: "redirect"; to: string };
+export type Access =
+  | { action: "next" }
+  | { action: "redirect"; to: string }
+  // An API call has no page to send the caller to, so it is simply refused.
+  | { action: "unauthorized" };
 
 export function decideAccess(input: {
   pathname: string;
@@ -15,6 +19,7 @@ export function decideAccess(input: {
       : { action: "next" };
   }
   if (PUBLIC_PATHS.includes(pathname)) return { action: "next" };
+  if (pathname.startsWith("/api/")) return { action: "unauthorized" };
 
   return {
     action: "redirect",

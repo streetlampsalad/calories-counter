@@ -35,6 +35,9 @@ export async function proxy(request: NextRequest) {
     signedIn: Boolean(data?.claims),
   });
   if (access.action === "next") return response;
+  if (access.action === "unauthorized") {
+    return NextResponse.json({ code: "unauthorized" }, { status: 401 });
+  }
 
   const redirect = NextResponse.redirect(new URL(access.to, request.url));
   // Carry any refreshed session cookies onto the redirect.

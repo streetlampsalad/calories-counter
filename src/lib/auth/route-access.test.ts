@@ -30,6 +30,26 @@ describe("decideAccess", () => {
     });
   });
 
+  it("refuses a signed-out call to an API route instead of redirecting it", () => {
+    expect(
+      decideAccess({
+        pathname: "/api/import/photo",
+        search: "",
+        signedIn: false,
+      }),
+    ).toEqual({ action: "unauthorized" });
+  });
+
+  it("lets a signed-in User call an API route", () => {
+    expect(
+      decideAccess({
+        pathname: "/api/import/photo",
+        search: "",
+        signedIn: true,
+      }),
+    ).toEqual({ action: "next" });
+  });
+
   it("sends a signed-in User away from sign-in", () => {
     expect(
       decideAccess({ pathname: "/sign-in", search: "", signedIn: true }),

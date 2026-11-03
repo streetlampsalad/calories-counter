@@ -28,6 +28,8 @@ export default defineConfig({
     command: `pnpm start --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
+    // Photo import reads notes with a stand-in, so tests never call Google.
+    env: { NOTES_READER: "fake" },
     timeout: 60_000,
   },
 });
