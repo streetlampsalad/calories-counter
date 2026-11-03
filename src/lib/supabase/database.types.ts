@@ -73,7 +73,12 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "food_entry_counts":
+            "daily_totals":
+{ Args: { "range_from": string,"range_to": string }; Returns: {
+              "calories": number,"day": string,"entry_count": number
+            }[]
+                           },
+"food_entry_counts":
 { Args: Record<PropertyKey, never>; Returns: {
               "entry_count": number,"food_id": string
             }[]
