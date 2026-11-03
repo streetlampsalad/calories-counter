@@ -4,4 +4,8 @@ export const entryKeys = {
   all: ["entries"] as const,
   day: (day: string) => ["entries", "day", day] as const,
 };
-export const summaryKeys = { all: ["summary"] as const };
+export const summaryKeys = {
+  all: ["summary"] as const,
+  period: (from: string, to: string) =>
+    ["summary", "period", from, to] as const,
+};

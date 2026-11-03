@@ -17,6 +17,7 @@ describe("BottomNav", () => {
     expect(links.map((link) => link.textContent)).toEqual([
       "Today",
       "Foods",
+      "Summary",
       "Settings",
     ]);
   });

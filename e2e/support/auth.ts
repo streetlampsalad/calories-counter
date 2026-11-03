@@ -22,6 +22,12 @@ export const TEST_USERS = {
     id: "55555555-5555-5555-5555-555555555555",
     email: "eve@example.test",
   },
+  // For tests of summaries, whose numbers depend on a whole window of history: they run in
+  // series and reset fay's data first.
+  fay: {
+    id: "66666666-6666-6666-6666-666666666666",
+    email: "fay@example.test",
+  },
   // Always empty: tests must never leave data behind for cleo.
   cleo: {
     id: "33333333-3333-3333-3333-333333333333",

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Settings, Utensils } from "lucide-react";
+import { CalendarDays, ChartColumn, Settings, Utensils } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { href: "/", label: "Today", icon: CalendarDays },
   { href: "/foods", label: "Foods", icon: Utensils },
+  { href: "/summary", label: "Summary", icon: ChartColumn },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

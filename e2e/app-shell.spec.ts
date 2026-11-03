@@ -15,7 +15,7 @@ test("bottom navigation is fixed to the bottom with phone-sized tap targets", as
     viewport?.height,
   );
 
-  for (const name of ["Today", "Foods", "Settings"]) {
+  for (const name of ["Today", "Foods", "Summary", "Settings"]) {
     const link = await nav.getByRole("link", { name }).boundingBox();
     expect(link?.height, `${name} tab height`).toBeGreaterThanOrEqual(56);
   }

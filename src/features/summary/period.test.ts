@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PERIODS, parsePeriod, periodRange } from "./period";
+import { formatRange, PERIODS, parsePeriod, periodRange } from "./period";
 
 const MON = 1;
 const SUN = 0;
@@ -165,5 +165,31 @@ describe("PERIODS and parsePeriod", () => {
     expect(parsePeriod("")).toBe("this-week");
     expect(parsePeriod("nonsense")).toBe("this-week");
     expect(parsePeriod(["last-week", "this-month"])).toBe("last-week");
+  });
+});
+
+describe("formatRange", () => {
+  it("shows a range within one year as day and month", () => {
+    expect(
+      formatRange({ from: "2026-10-26", to: "2026-11-01", days: [] }),
+    ).toBe("26 Oct – 1 Nov");
+  });
+
+  it("shows a single day on its own", () => {
+    expect(
+      formatRange({ from: "2026-11-03", to: "2026-11-03", days: [] }),
+    ).toBe("3 Nov");
+  });
+
+  it("adds the years when a range crosses the new year", () => {
+    expect(
+      formatRange({ from: "2025-12-29", to: "2026-01-01", days: [] }),
+    ).toBe("29 Dec 2025 – 1 Jan 2026");
+  });
+
+  it("shows a range within one month compactly", () => {
+    expect(
+      formatRange({ from: "2026-11-01", to: "2026-11-03", days: [] }),
+    ).toBe("1 – 3 Nov");
   });
 });
