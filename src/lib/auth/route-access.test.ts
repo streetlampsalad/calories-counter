@@ -24,6 +24,9 @@ describe("decideAccess", () => {
     "/sign-in",
     "/auth/callback",
     "/api/health",
+    "/manifest.webmanifest",
+    "/sw.js",
+    "/offline",
   ])("lets a signed-out User reach %s", (pathname) => {
     expect(decideAccess({ pathname, search: "", signedIn: false })).toEqual({
       action: "next",

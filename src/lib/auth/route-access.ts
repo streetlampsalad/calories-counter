@@ -1,4 +1,13 @@
-const PUBLIC_PATHS = ["/sign-in", "/auth/callback", "/api/health"];
+// The manifest, service worker and offline page are fetched by the browser itself, without the
+// User's session, so they must be reachable by anyone for the app to install and work offline.
+const PUBLIC_PATHS = [
+  "/sign-in",
+  "/auth/callback",
+  "/api/health",
+  "/manifest.webmanifest",
+  "/sw.js",
+  "/offline",
+];
 
 export type Access =
   | { action: "next" }
