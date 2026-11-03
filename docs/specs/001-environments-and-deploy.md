@@ -1,6 +1,6 @@
 # 001: Environments and deploy pipeline
 
-- **Status**: In progress
+- **Status**: Done
 - **Depends on**: — (the repository scaffold is already in place)
 - **Tracking issue**: [#1](https://github.com/streetlampsalad/calories-counter/issues/1)
 - **ADRs**: 0003

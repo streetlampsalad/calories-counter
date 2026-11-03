@@ -18,7 +18,7 @@ Create one issue per row in the spec's **Issue breakdown** using the *Spec slice
 
 | # | Spec | Depends on | Status | Tracking issue |
 |---|---|---|---|---|
-| 001 | [Environments and deploy pipeline](001-environments-and-deploy.md) | — | In progress | [#1](https://github.com/streetlampsalad/calories-counter/issues/1) |
+| 001 | [Environments and deploy pipeline](001-environments-and-deploy.md) | — | Done | [#1](https://github.com/streetlampsalad/calories-counter/issues/1) |
 | 002 | [Sign in with Google and the app shell](002-sign-in-and-app-shell.md) | 001 | Ready | [#5](https://github.com/streetlampsalad/calories-counter/issues/5) |
 | 003 | [Food List](003-food-list.md) | 002 | Ready | [#11](https://github.com/streetlampsalad/calories-counter/issues/11) |
 | 004 | [Add Food: manual entry](004-add-food-manual.md) | 003 | Ready | [#16](https://github.com/streetlampsalad/calories-counter/issues/16) |
