@@ -27,7 +27,7 @@ Create one issue per row in the spec's **Issue breakdown** using the *Spec slice
 | 007 | [Add Food: search and best guess](007-add-food-search.md) | 004 | Ready | [#31](https://github.com/streetlampsalad/calories-counter/issues/31) |
 | 008 | [Daily logging](008-daily-logging.md) | 003 | Done | [#38](https://github.com/streetlampsalad/calories-counter/issues/38) |
 | 009 | [Settings and Goal](009-settings-and-goal.md) | 002 | Done | [#45](https://github.com/streetlampsalad/calories-counter/issues/45) |
-| 010 | [Summaries](010-summaries.md) | 008, 009 | Ready | [#50](https://github.com/streetlampsalad/calories-counter/issues/50) |
+| 010 | [Summaries](010-summaries.md) | 008, 009 | Done | [#50](https://github.com/streetlampsalad/calories-counter/issues/50) |
 | 011 | [Insights](011-insights.md) | 010 | Ready | [#55](https://github.com/streetlampsalad/calories-counter/issues/55) |
 | 012 | [Installable app](012-installable-app.md) | 002 | Ready | [#62](https://github.com/streetlampsalad/calories-counter/issues/62) |
 

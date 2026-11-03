@@ -1,6 +1,6 @@
 # 010: Summaries
 
-- **Status**: Ready
+- **Status**: Done
 - **Depends on**: 008, 009
 - **Tracking issue**: [#50](https://github.com/streetlampsalad/calories-counter/issues/50)
 - **ADRs**: 0001
