@@ -13,7 +13,12 @@ const location = (response: Response) =>
   new URL(response.headers.get("location") ?? "");
 
 describe("GET /auth/callback", () => {
-  beforeEach(() => exchangeCodeForSession.mockReset());
+  const log = vi.spyOn(console, "error");
+  beforeEach(() => {
+    exchangeCodeForSession.mockReset();
+    log.mockReset();
+    log.mockImplementation(() => undefined);
+  });
 
   it("exchanges the code and sends the User to where they were going", async () => {
     exchangeCodeForSession.mockResolvedValue({ error: null });
@@ -69,5 +74,37 @@ describe("GET /auth/callback", () => {
 
     expect(location(response).searchParams.get("error")).toBe("auth_failed");
     expect(location(response).search).not.toContain("script");
+  });
+
+  it("logs why a code could not be exchanged, without the code itself", async () => {
+    exchangeCodeForSession.mockResolvedValue({
+      error: Object.assign(new Error("PKCE code verifier not found"), {
+        name: "AuthPKCECodeVerifierMissingError",
+        status: 400,
+      }),
+    });
+
+    await call("?code=secret-code");
+
+    const line = String(log.mock.calls[0][0]);
+    expect(line).toContain("AuthPKCECodeVerifierMissingError (400)");
+    expect(line).toContain("PKCE code verifier not found");
+    expect(line).not.toContain("secret-code");
+  });
+
+  it("logs the provider's error code when sign-in comes back with an error", async () => {
+    await call(
+      "?error=server_error&error_code=unexpected_failure&error_description=Database+error+saving+new+user",
+    );
+
+    const line = String(log.mock.calls[0][0]);
+    expect(line).toContain("unexpected_failure");
+    expect(line).toContain("Database error saving new user");
+  });
+
+  it("logs when sign-in comes back with no code", async () => {
+    await call("");
+
+    expect(String(log.mock.calls[0][0])).toContain("no code");
   });
 });
