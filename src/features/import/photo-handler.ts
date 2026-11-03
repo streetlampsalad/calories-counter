@@ -1,12 +1,16 @@
 import { type NotesReader, ReaderUnavailable } from "./notes-reader";
 
 export const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+// Comfortably inside the free tier's daily allowance, for the whole group together.
+export const PHOTO_DAILY_LIMIT = 30;
 const PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 type Deps = {
   /** The signed-in User's id, or null. */
   userId: () => Promise<string | null>;
   reader: NotesReader;
+  /** Counts this photo against the User's day and says whether they may still read one. */
+  allowUse: () => Promise<boolean>;
 };
 
 const reply = (status: number, body: unknown) =>
@@ -17,7 +21,7 @@ const reply = (status: number, body: unknown) =>
 // derived from them is logged.
 export async function handlePhoto(
   request: Request,
-  { userId, reader }: Deps,
+  { userId, reader, allowUse }: Deps,
 ): Promise<Response> {
   if ((await userId()) === null) return reply(401, { code: "unauthorized" });
 
@@ -39,6 +43,14 @@ export async function handlePhoto(
   if (bytes.length > MAX_PHOTO_BYTES) return reply(413, { code: "too_large" });
   if (bytes.length === 0) {
     return reply(400, { code: "empty", message: "The photo was empty." });
+  }
+
+  // Counted only for a photo that will really be read, and before it is, so the limit holds.
+  try {
+    if (!(await allowUse())) return reply(429, { code: "limit_reached" });
+  } catch {
+    console.error("Photo usage check failed");
+    return reply(500, { code: "usage_failed" });
   }
 
   try {

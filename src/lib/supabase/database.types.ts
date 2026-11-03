@@ -5,7 +5,21 @@ export type Database = {
   
   "public": {
           Tables: {
-            "allowed_emails": {
+            "ai_usage": {
+                  Row: {
+                    "count": number,"day": string,"kind": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "count"?: number,"day": string,"kind": string,"user_id"?: string
+                  }
+                  Update: {
+                    "count"?: number,"day"?: string,"kind"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"allowed_emails": {
                   Row: {
                     "created_at": string,"email": string,"note": string | null
                   }
@@ -100,6 +114,9 @@ isOneToOne: false
 { Args: { "rows": Json }; Returns: {
               "added": number,"updated": number
             }[]
+                           },
+"increment_ai_usage":
+{ Args: { "max_per_day": number,"usage_kind": string }; Returns: boolean
                            }
           }
           Enums: {

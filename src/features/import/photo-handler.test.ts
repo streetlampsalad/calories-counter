@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type NotesReader, ReaderUnavailable } from "./notes-reader";
 import type { ImportRow } from "./parse";
-import { handlePhoto, MAX_PHOTO_BYTES } from "./photo-handler";
+import {
+  handlePhoto,
+  MAX_PHOTO_BYTES,
+  PHOTO_DAILY_LIMIT,
+} from "./photo-handler";
 
 const rows: ImportRow[] = [
   { name: "Toast", portion: "1 slice", calories: "110", kilojoules: "" },
 ];
 const readNotes = vi.fn<NotesReader["readNotes"]>();
+const allowUse = vi.fn<() => Promise<boolean>>();
 const reader: NotesReader = { readNotes };
 
 function photo(
@@ -26,10 +31,16 @@ describe("handlePhoto", () => {
   beforeEach(() => {
     readNotes.mockReset();
     readNotes.mockResolvedValue(rows);
+    allowUse.mockReset();
+    allowUse.mockResolvedValue(true);
   });
 
   it("turns away someone who is signed out, without reading the photo", async () => {
-    const response = await handlePhoto(photo(), { userId: signedOut, reader });
+    const response = await handlePhoto(photo(), {
+      userId: signedOut,
+      reader,
+      allowUse,
+    });
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ code: "unauthorized" });
@@ -37,7 +48,11 @@ describe("handlePhoto", () => {
   });
 
   it("returns the rows the reader found, in the shape Import Review takes", async () => {
-    const response = await handlePhoto(photo(), { userId: signedIn, reader });
+    const response = await handlePhoto(photo(), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ rows });
@@ -47,6 +62,7 @@ describe("handlePhoto", () => {
     await handlePhoto(photo(new Uint8Array([9, 8, 7])), {
       userId: signedIn,
       reader,
+      allowUse,
     });
 
     expect(readNotes).toHaveBeenCalledWith(
@@ -58,7 +74,11 @@ describe("handlePhoto", () => {
   it("says nothing was found when the photo has no foods (AC-5)", async () => {
     readNotes.mockResolvedValue([]);
 
-    const response = await handlePhoto(photo(), { userId: signedIn, reader });
+    const response = await handlePhoto(photo(), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ rows: [] });
@@ -67,7 +87,11 @@ describe("handlePhoto", () => {
   it("answers 503 reader_unavailable when the service is out of quota or down (AC-6)", async () => {
     readNotes.mockRejectedValue(new ReaderUnavailable("quota"));
 
-    const response = await handlePhoto(photo(), { userId: signedIn, reader });
+    const response = await handlePhoto(photo(), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ code: "reader_unavailable" });
@@ -77,7 +101,11 @@ describe("handlePhoto", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     readNotes.mockRejectedValue(new Error("model returned nonsense"));
 
-    const response = await handlePhoto(photo(), { userId: signedIn, reader });
+    const response = await handlePhoto(photo(), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ code: "reader_failed" });
@@ -91,6 +119,7 @@ describe("handlePhoto", () => {
     await handlePhoto(photo(new TextEncoder().encode(secret)), {
       userId: signedIn,
       reader,
+      allowUse,
     });
 
     expect(JSON.stringify(log.mock.calls)).not.toContain(secret);
@@ -104,6 +133,7 @@ describe("handlePhoto", () => {
         {
           userId: signedIn,
           reader,
+          allowUse,
         },
       );
       expect(response.status).toBe(200);
@@ -111,7 +141,7 @@ describe("handlePhoto", () => {
     for (const type of ["text/plain", "application/pdf", "image/gif", ""]) {
       const response = await handlePhoto(
         photo(undefined, type ? { "content-type": type } : {}),
-        { userId: signedIn, reader },
+        { userId: signedIn, reader, allowUse },
       );
       expect(response.status).toBe(400);
       expect(await response.json()).toMatchObject({ code: "unsupported_type" });
@@ -122,6 +152,7 @@ describe("handlePhoto", () => {
     const response = await handlePhoto(photo(new Uint8Array([])), {
       userId: signedIn,
       reader,
+      allowUse,
     });
 
     expect(response.status).toBe(400);
@@ -135,11 +166,11 @@ describe("handlePhoto", () => {
         "content-type": "image/jpeg",
         "content-length": String(MAX_PHOTO_BYTES + 1),
       }),
-      { userId: signedIn, reader },
+      { userId: signedIn, reader, allowUse },
     );
     const actual = await handlePhoto(
       photo(new Uint8Array(MAX_PHOTO_BYTES + 1)),
-      { userId: signedIn, reader },
+      { userId: signedIn, reader, allowUse },
     );
 
     expect(declared.status).toBe(413);
@@ -147,8 +178,67 @@ describe("handlePhoto", () => {
     expect(readNotes).not.toHaveBeenCalled();
   });
 
+  it("refuses with 429 once the User has used their photos for the day, without reading (AC-8)", async () => {
+    allowUse.mockResolvedValue(false);
+
+    const response = await handlePhoto(photo(), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
+
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ code: "limit_reached" });
+    expect(readNotes).not.toHaveBeenCalled();
+  });
+
+  it("allows 30 photos a day", () => {
+    expect(PHOTO_DAILY_LIMIT).toBe(30);
+  });
+
+  it("does not count a request that is turned away before the reader, or one signed out", async () => {
+    await handlePhoto(photo(undefined, { "content-type": "text/plain" }), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
+    await handlePhoto(photo(new Uint8Array([])), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
+    await handlePhoto(photo(), { userId: signedOut, reader, allowUse });
+
+    expect(allowUse).not.toHaveBeenCalled();
+  });
+
+  it("counts a photo that is read, once", async () => {
+    await handlePhoto(photo(), { userId: signedIn, reader, allowUse });
+
+    expect(allowUse).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails safe, without reading, if the usage check itself fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    allowUse.mockRejectedValue(new Error("db down"));
+
+    const response = await handlePhoto(photo(), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ code: "usage_failed" });
+    expect(readNotes).not.toHaveBeenCalled();
+  });
+
   it("is never cached", async () => {
-    const response = await handlePhoto(photo(), { userId: signedIn, reader });
+    const response = await handlePhoto(photo(), {
+      userId: signedIn,
+      reader,
+      allowUse,
+    });
 
     expect(response.headers.get("cache-control")).toBe("no-store");
   });

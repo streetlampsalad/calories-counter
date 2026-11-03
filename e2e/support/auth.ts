@@ -34,6 +34,11 @@ export const TEST_USERS = {
     id: "77777777-7777-7777-7777-777777777777",
     email: "gus@example.test",
   },
+  // For the test that uses up a day's photo reads, so no other test is ever refused.
+  ivy: {
+    id: "88888888-8888-8888-8888-888888888888",
+    email: "ivy@example.test",
+  },
   // Always empty: tests must never leave data behind for cleo.
   cleo: {
     id: "33333333-3333-3333-3333-333333333333",
