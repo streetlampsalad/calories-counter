@@ -50,3 +50,12 @@ export async function resetUser(client: Client) {
   if (foods.error)
     throw new Error(`Could not reset foods: ${foods.error.message}`);
 }
+
+// Back to the defaults: no Goal, weeks start on Monday. Only for a User no other test touches (eve).
+export async function resetSettings(client: Client) {
+  const { error } = await client
+    .from("user_settings")
+    .delete()
+    .not("user_id", "is", null);
+  if (error) throw new Error(`Could not reset settings: ${error.message}`);
+}

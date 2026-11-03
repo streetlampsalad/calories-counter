@@ -16,6 +16,12 @@ export const TEST_USERS = {
     id: "44444444-4444-4444-4444-444444444444",
     email: "dan@example.test",
   },
+  // For tests that change settings (Goal, week start), which every screen reads: they run in
+  // series and reset eve's settings first.
+  eve: {
+    id: "55555555-5555-5555-5555-555555555555",
+    email: "eve@example.test",
+  },
   // Always empty: tests must never leave data behind for cleo.
   cleo: {
     id: "33333333-3333-3333-3333-333333333333",

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { GoalSection } from "@/features/settings/goal-section";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 
@@ -35,6 +36,7 @@ export default function SettingsPage() {
   return (
     <main className="flex flex-1 flex-col gap-6">
       <h1 className="font-semibold text-2xl tracking-tight">Settings</h1>
+      <GoalSection />
       <Suspense fallback={<div className="h-32" />}>
         <Account />
       </Suspense>

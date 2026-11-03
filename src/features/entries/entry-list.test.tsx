@@ -97,3 +97,60 @@ describe("DailyTotal", () => {
     ).toHaveTextContent("1,500");
   });
 });
+
+describe("DailyTotal with a Goal", () => {
+  const feast = (calories: number) => [entry("Feast", 1, calories)];
+  const region = () => screen.getByRole("region", { name: "Daily total" });
+
+  it("shows the total against the Goal, with how much is left", () => {
+    render(<DailyTotal entries={feast(1840)} goal={2200} />);
+
+    expect(region()).toHaveTextContent("1,840 / 2,200");
+    expect(region()).toHaveTextContent("360 left");
+  });
+
+  it("describes progress to assistive technology", () => {
+    render(<DailyTotal entries={feast(1100)} goal={2200} />);
+
+    const bar = screen.getByRole("progressbar", {
+      name: "Progress towards your daily goal",
+    });
+    expect(bar).toHaveAttribute("aria-valuenow", "1100");
+    expect(bar).toHaveAttribute("aria-valuemax", "2200");
+    expect(bar).toHaveAttribute("aria-valuemin", "0");
+  });
+
+  it("is full, but not over, exactly on the Goal", () => {
+    render(<DailyTotal entries={feast(2200)} goal={2200} />);
+
+    expect(region()).toHaveTextContent("0 left");
+    expect(region()).not.toHaveTextContent("over");
+    expect(region().querySelector("[data-over]")).toBeNull();
+  });
+
+  it("flags a Day over the Goal, by how much, and keeps the bar full", () => {
+    render(<DailyTotal entries={feast(2500)} goal={2200} />);
+
+    expect(region()).toHaveTextContent("2,500 / 2,200");
+    expect(region()).toHaveTextContent("300 over");
+    expect(region().querySelector("[data-over]")).not.toBeNull();
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "2200",
+    );
+  });
+
+  it("shows only the total when there is no Goal", () => {
+    render(<DailyTotal entries={feast(1840)} goal={null} />);
+
+    expect(region()).toHaveTextContent("1,840");
+    expect(region()).not.toHaveTextContent("/");
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
+  it("is unchanged when no Goal is passed at all", () => {
+    render(<DailyTotal entries={feast(1840)} />);
+
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+});

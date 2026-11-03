@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Food } from "@/features/foods/types";
+import { useSettings } from "@/features/settings/queries";
 import { DayHeader } from "./day-header";
 import { parseDay } from "./days";
 import { formatQuantity } from "./domain";
@@ -38,6 +39,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
   const [day, setDay] = useState(urlDay);
   useEffect(() => setDay(urlDay), [urlDay]);
   const { data: entries, isPending, isError, refetch } = useDayEntries(day);
+  const { data: settings } = useSettings();
 
   // Each Day is a history entry, so the back button returns to the Day before. Today is just "/".
   const goToDay = (next: string) => {
@@ -135,7 +137,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
 
       {entries ? (
         <>
-          <DailyTotal entries={entries} />
+          <DailyTotal entries={entries} goal={settings?.dailyGoal ?? null} />
           <EntryList entries={entries} onSelect={setEditing} />
         </>
       ) : null}
