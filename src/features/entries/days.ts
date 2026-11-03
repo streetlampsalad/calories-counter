@@ -73,3 +73,7 @@ export function listDays(from: string, to: string): string[] {
 }
 
 export const monthStart = (day: string) => `${day.slice(0, 7)}-01`;
+
+// Where a Day lives: today is the plain home page; any other Day is /?day=YYYY-MM-DD.
+export const dayHref = (day: string, today: string) =>
+  day === today ? "/" : `/?day=${day}`;

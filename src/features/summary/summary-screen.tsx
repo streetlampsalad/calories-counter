@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToday } from "@/features/entries/use-today";
 import { DEFAULT_SETTINGS } from "@/features/settings/domain";
 import { useSettings } from "@/features/settings/queries";
+import { DailyChart } from "./daily-chart";
 import {
   formatRange,
   PERIODS,
@@ -58,7 +59,20 @@ function PeriodContent({
       ) : null}
 
       {totals ? (
-        <SummaryHeadline summary={summarise(totals, range, goal)} goal={goal} />
+        <>
+          <SummaryHeadline
+            summary={summarise(totals, range, goal)}
+            goal={goal}
+          />
+          {totals.some((total) => total.entryCount > 0) ? (
+            <DailyChart
+              totals={totals}
+              range={range}
+              goal={goal}
+              today={today}
+            />
+          ) : null}
+        </>
       ) : null}
     </>
   );

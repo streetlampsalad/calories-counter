@@ -274,3 +274,134 @@ test("Period chips are easy to tap, and the screen does not scroll sideways", as
   );
   expect(overflows).toBe(false);
 });
+
+const bars = (page: Page) =>
+  page.getByRole("list", { name: "Daily calories" }).getByRole("listitem");
+
+test("the chart has a slot for every Day, with bars only for the Days that were logged", async ({
+  page,
+}) => {
+  await arrange();
+
+  await page.goto("/summary?period=last-week");
+
+  await expect(bars(page)).toHaveCount(7);
+  await expect(page.getByTestId("bar")).toHaveCount(3);
+  await expect(page.getByTestId("axis")).toHaveText("MTWTFSS");
+  // The empty slot is still there to tap, and says nothing was logged.
+  await expect(
+    page.getByRole("link", { name: "Wed 28 Oct: nothing logged" }),
+  ).toBeVisible();
+});
+
+test("tapping a bar opens that Day", async ({ page }) => {
+  await arrange();
+  await page.goto("/summary?period=last-week");
+
+  await page.getByRole("link", { name: "Tue 27 Oct: 1,800 kcal" }).click();
+
+  await expect(page).toHaveURL("/?day=2026-10-27");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Tue 27 Oct",
+  );
+  await expect(page.getByRole("region", { name: "Daily total" })).toContainText(
+    "1,800",
+  );
+});
+
+test("tapping today's bar opens Today", async ({ page }) => {
+  await arrange();
+  await page.goto("/summary");
+
+  await page.getByRole("link", { name: "Today: 1,000 kcal" }).click();
+
+  await expect(page).toHaveURL("/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Today");
+});
+
+test("with a Goal the chart draws the Goal line and marks the Days over it", async ({
+  page,
+}) => {
+  await arrange({ goal: 2000 });
+
+  await page.goto("/summary?period=last-week");
+
+  await expect(page.getByTestId("goal-line")).toContainText("Goal 2,000");
+  // Only 29 Oct (2,200) is past the Goal; 26 Oct is exactly on it.
+  await expect(page.locator("[data-testid=bar][data-over]")).toHaveCount(1);
+  await expect(
+    page.getByRole("link", { name: "Thu 29 Oct: 2,200 kcal, 200 over goal" }),
+  ).toBeVisible();
+  await expect(page.getByRole("list", { name: "Key" })).toContainText(
+    "Over goal",
+  );
+});
+
+test("without a Goal there is no Goal line", async ({ page }) => {
+  await arrange();
+
+  await page.goto("/summary?period=last-week");
+
+  await expect(page.getByTestId("bar")).toHaveCount(3);
+  await expect(page.getByTestId("goal-line")).toHaveCount(0);
+  await expect(page.locator("[data-testid=bar][data-over]")).toHaveCount(0);
+});
+
+test("pointing at a bar says which Day and how much, as text", async ({
+  page,
+}) => {
+  await arrange();
+  await page.goto("/summary?period=last-week");
+  await expect(page.getByTestId("detail")).toHaveText("Tap a day to open it");
+
+  await page.getByRole("link", { name: "Mon 26 Oct: 2,000 kcal" }).hover();
+
+  await expect(page.getByTestId("detail")).toHaveText("Mon 26 Oct: 2,000 kcal");
+});
+
+test("the same numbers are available as a table", async ({ page }) => {
+  await arrange({ goal: 2000 });
+  await page.goto("/summary?period=last-week");
+
+  await page.getByText("View as a table").click();
+
+  const table = page.getByRole("table", { name: "Daily calories" });
+  await expect(table.getByRole("row")).toHaveCount(8);
+  await expect(table.getByRole("row", { name: /Thu 29 Oct/ })).toContainText(
+    "200 over",
+  );
+  await expect(table.getByRole("row", { name: /Wed 28 Oct/ })).toContainText(
+    "Not logged",
+  );
+  await expect(table.getByRole("row", { name: /Mon 26 Oct/ })).toContainText(
+    "On goal",
+  );
+});
+
+test("an empty Period shows no chart", async ({ page }) => {
+  const { fay } = await arrange();
+  await fay.from("entries").delete().not("id", "is", null);
+
+  await page.goto("/summary");
+
+  await expect(page.getByText("Nothing logged in this period")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Daily calories" })).toHaveCount(
+    0,
+  );
+});
+
+test("a long Period scrolls inside the chart, never the page, and each Day stays tappable", async ({
+  page,
+}) => {
+  await arrange();
+  await page.goto("/summary?period=last-30-days");
+  await expect(bars(page)).toHaveCount(30);
+
+  const overflows = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth,
+  );
+  expect(overflows).toBe(false);
+  const box = await bars(page).nth(0).boundingBox();
+  expect(box?.width).toBeGreaterThanOrEqual(16);
+  expect(box?.height).toBeGreaterThanOrEqual(100);
+});

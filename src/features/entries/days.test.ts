@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dayHref,
   dayLabel,
   dayOfWeek,
   listDays,
@@ -159,5 +160,12 @@ describe("calendar helpers", () => {
   it("finds the first day of a month", () => {
     expect(monthStart("2026-11-17")).toBe("2026-11-01");
     expect(monthStart("2024-02-29")).toBe("2024-02-01");
+  });
+});
+
+describe("dayHref", () => {
+  it("links today to the plain home page, and other Days to their own address", () => {
+    expect(dayHref("2026-11-03", "2026-11-03")).toBe("/");
+    expect(dayHref("2026-10-31", "2026-11-03")).toBe("/?day=2026-10-31");
   });
 });
