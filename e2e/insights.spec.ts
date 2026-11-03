@@ -96,8 +96,8 @@ test("the Summary tab stays highlighted, and Summary leads back", async ({
   ).toHaveAttribute("aria-current", "page");
 
   await page
+    .getByRole("main")
     .getByRole("link", { name: "Summary", exact: true })
-    .first()
     .click();
   await expect(page).toHaveURL("/summary?period=last-month");
 });
@@ -109,8 +109,8 @@ test("a long range leads back to This week, since the Summary has no such Period
   await page.goto("/summary/insights?range=12-months");
 
   await page
+    .getByRole("main")
     .getByRole("link", { name: "Summary", exact: true })
-    .first()
     .click();
 
   await expect(page).toHaveURL("/summary?period=this-week");
