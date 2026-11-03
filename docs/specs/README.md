@@ -24,7 +24,7 @@ Create one issue per row in the spec's **Issue breakdown** using the *Spec slice
 | 004 | [Add Food: manual entry](004-add-food-manual.md) | 003 | Done | [#16](https://github.com/streetlampsalad/calories-counter/issues/16) |
 | 005 | [Add Food: file import and Import Review](005-add-food-file-import.md) | 004 | Done | [#20](https://github.com/streetlampsalad/calories-counter/issues/20) |
 | 006 | [Add Food: photo of handwritten notes](006-add-food-photo-import.md) | 005 | In progress | [#26](https://github.com/streetlampsalad/calories-counter/issues/26) |
-| 007 | [Add Food: search and best guess](007-add-food-search.md) | 004 | In progress | [#31](https://github.com/streetlampsalad/calories-counter/issues/31) |
+| 007 | [Add Food: search and best guess](007-add-food-search.md) | 004 | Done | [#31](https://github.com/streetlampsalad/calories-counter/issues/31) |
 | 008 | [Daily logging](008-daily-logging.md) | 003 | Done | [#38](https://github.com/streetlampsalad/calories-counter/issues/38) |
 | 009 | [Settings and Goal](009-settings-and-goal.md) | 002 | Done | [#45](https://github.com/streetlampsalad/calories-counter/issues/45) |
 | 010 | [Summaries](010-summaries.md) | 008, 009 | Done | [#50](https://github.com/streetlampsalad/calories-counter/issues/50) |
