@@ -31,3 +31,8 @@ select
   'email', now(), now(), now()
 from auth.users u
 where u.email in ('ada@example.test', 'bea@example.test');
+
+insert into public.allowed_emails (email, note)
+values
+  ('ada@example.test', 'local test user'),
+  ('bea@example.test', 'local test user');
