@@ -1,6 +1,6 @@
 # 011: Insights
 
-- **Status**: Ready
+- **Status**: Done
 - **Depends on**: 010
 - **Tracking issue**: [#55](https://github.com/streetlampsalad/calories-counter/issues/55)
 
@@ -37,6 +37,8 @@ From the Summary, a User can dig deeper: long-term trends, which Foods drive the
   - Reuse `daily_totals(from, to)` from spec 010 for the Trend, Day of week, Goal and streak cards.
   - Add `food_totals(from, to)`, which returns `food_id, calories, entry_count` for Top foods.
   - For streaks: `logged_days(until date)`, which returns distinct Days, or calculate them on the client from `daily_totals` over the last 400 Days. Choose by measuring AC-8.
+  - **Decided**: streaks are calculated on the client from `daily_totals` over the last 400 Days (one query, well under the 1,000-row cap), so "longest run" means the longest in those 400 Days. Measured against AC-8 below.
+  - Day of week needs 14 Logged Days in the range, below which a weekday has too few samples to mean anything. A Day exactly on the Goal counts as under it.
 - **Pure functions** in `src/features/insights/`: `rollingAverage(dailyTotals, window, range)`, `dayOfWeekAverages(dailyTotals, weekStartsOn)`, `streaks(loggedDays, today)`, `goalSplit(dailyTotals, goal)`, and `trendHeadline(...)`. These are where the risk is, so they get exhaustive tests.
 - **Charts**: the shadcn/ui chart component. Load the `dataviz` skill before building any card.
 - Cards stack in a single column on a phone. On wider screens they wrap into two columns.
