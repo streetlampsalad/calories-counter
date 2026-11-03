@@ -364,6 +364,55 @@ test.describe("the picker learns what you eat", () => {
       picker(page).getByRole("group", { name: "Recent" }),
     ).toHaveCount(0);
   });
+
+  test("with 35 Foods the picker keeps its header, search and Recent on screen, and the list scrolls", async ({
+    page,
+  }) => {
+    const dan = await startFresh();
+    const foods = [];
+    for (let n = 1; n <= 35; n++) {
+      foods.push(
+        await seedFood(dan, {
+          name: `Food ${pad(n)}`,
+          portion: "1 serve",
+          calories: 100 + n,
+        }),
+      );
+    }
+    for (const food of foods.slice(0, 3)) {
+      await seedEntry(dan, { foodId: food.id, day: daysAgo(2), quantity: 1 });
+    }
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(picker(page)).toBeVisible();
+
+    // The sheet is a fixed height, so a long list scrolls inside it instead of pushing its top off the screen.
+    await expect(
+      picker(page).getByRole("heading", { name: "Add to your day" }),
+    ).toBeInViewport();
+    await expect(
+      picker(page).getByRole("searchbox", { name: "Search foods" }),
+    ).toBeInViewport();
+    await expect(
+      picker(page).getByRole("group", { name: "Recent" }),
+    ).toBeInViewport();
+
+    // Without searching, the last Food is reachable by scrolling, and can be logged.
+    const last = picker(page).getByRole("button", { name: /Food 35/ });
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
+    await last.click();
+    const saved = savedEntry(page, "POST");
+    await picker(page)
+      .getByRole("button", { name: "Add 1", exact: true })
+      .click();
+
+    await expect(entries(page).filter({ hasText: "Food 35" })).toContainText(
+      "1 × 1 serve · 135 kcal",
+    );
+    await saved;
+  });
 });
 
 test("confirmation toasts sit above the Add button and never cover the header controls", async ({

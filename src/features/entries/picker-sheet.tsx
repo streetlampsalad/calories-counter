@@ -69,7 +69,8 @@ export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
-      <SheetContent side="bottom" className="h-[85dvh]">
+      {/* Same variant as the sheet's own `h-auto`, so cn replaces it: a plain h-[85dvh] loses to it. */}
+      <SheetContent side="bottom" className="data-[side=bottom]:h-[85dvh]">
         <SheetHeader>
           <SheetTitle>Add to your day</SheetTitle>
           <SheetDescription>
