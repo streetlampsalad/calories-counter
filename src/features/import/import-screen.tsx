@@ -3,7 +3,7 @@
 import { ArrowLeft, Copy } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFoods } from "@/features/foods/queries";
@@ -11,11 +11,14 @@ import { cn } from "@/lib/utils";
 import { AI_PROMPT } from "./ai-prompt";
 import { DiscardSheet } from "./discard-sheet";
 import { ImportSource } from "./import-source";
+import { takePendingPhoto } from "./photo-handoff";
 import { useImportFoods } from "./queries";
 import { importPayload, importToast, reviewRows } from "./review";
 import { ReviewList } from "./review-list";
+import { ScanSection } from "./scan-section";
 import { useImportReview } from "./use-import-review";
 import { useLeaveGuard } from "./use-leave-guard";
+import { usePhotoScan } from "./use-photo-scan";
 
 const STEPS = [
   {
@@ -89,6 +92,27 @@ export function ImportScreen() {
   const hasRows = state.rows.length > 0;
   const { pending, stay } = useLeaveGuard(hasRows);
   const [startingOver, setStartingOver] = useState(false);
+  // Opened by "Use an AI app instead", to show the prompt even when there are rows already.
+  const [aiOpen, setAiOpen] = useState(false);
+  const scan = usePhotoScan((rows) =>
+    dispatch({ type: "add", rows: reviewRows(rows) }),
+  );
+
+  // A photo chosen in the Add food sheet arrives here to be read.
+  const scanRef = useRef(scan.scan);
+  scanRef.current = scan.scan;
+  useEffect(() => {
+    const photo = takePendingPhoto();
+    if (photo) void scanRef.current(photo);
+  }, []);
+
+  function openAiApp() {
+    scan.dismiss();
+    setAiOpen(true);
+    requestAnimationFrame(() =>
+      document.getElementById("prompt-heading")?.scrollIntoView(),
+    );
+  }
 
   const payload = importPayload(state, foods ?? []);
 
@@ -128,18 +152,60 @@ export function ImportScreen() {
       </h1>
 
       {hasRows ? (
+        <ReviewList
+          state={state}
+          foods={foods ?? []}
+          onEdit={(id, field, value) =>
+            dispatch({ type: "edit", id, field, value })
+          }
+          onToggle={(id) => dispatch({ type: "toggle", id })}
+          onDuplicate={(id, action) =>
+            dispatch({ type: "duplicate", id, action })
+          }
+        />
+      ) : null}
+
+      <ScanSection
+        status={scan.status}
+        hasRows={hasRows}
+        onPhoto={(file) => void scan.scan(file)}
+        onUseAiApp={openAiApp}
+      />
+
+      {!hasRows || aiOpen ? (
         <>
-          <ReviewList
-            state={state}
-            foods={foods ?? []}
-            onEdit={(id, field, value) =>
-              dispatch({ type: "edit", id, field, value })
-            }
-            onToggle={(id) => dispatch({ type: "toggle", id })}
-            onDuplicate={(id, action) =>
-              dispatch({ type: "duplicate", id, action })
-            }
+          {hasRows ? null : (
+            <p className="text-muted-foreground text-sm">
+              Or ask any AI app to read your notes:
+            </p>
+          )}
+          <ol className="flex flex-col gap-3">
+            {STEPS.map((step, index) => (
+              <li key={step.title} className="flex gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm"
+                >
+                  {index + 1}
+                </span>
+                <span className="flex flex-col">
+                  <span className="font-medium">{step.title}</span>
+                  <span className="text-muted-foreground text-sm">
+                    {step.detail}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <PromptSection />
+          <ImportSource
+            onRows={(rows) => dispatch({ type: "add", rows: reviewRows(rows) })}
           />
+        </>
+      ) : null}
+
+      {hasRows ? (
+        <>
           {save.isError ? (
             <p role="alert" className="text-destructive text-sm">
               {save.error.message}
@@ -167,34 +233,7 @@ export function ImportScreen() {
             </Button>
           </div>
         </>
-      ) : (
-        <>
-          <ol className="flex flex-col gap-3">
-            {STEPS.map((step, index) => (
-              <li key={step.title} className="flex gap-3">
-                <span
-                  aria-hidden="true"
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm"
-                >
-                  {index + 1}
-                </span>
-                <span className="flex flex-col">
-                  <span className="font-medium">{step.title}</span>
-                  <span className="text-muted-foreground text-sm">
-                    {step.detail}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ol>
-          <PromptSection />
-          <ImportSource
-            onRows={(rows) =>
-              dispatch({ type: "load", rows: reviewRows(rows) })
-            }
-          />
-        </>
-      )}
+      ) : null}
 
       <DiscardSheet
         open={pending !== null || startingOver}

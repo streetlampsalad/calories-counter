@@ -1,6 +1,25 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+
+const push = vi.hoisted(() => vi.fn());
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("next/link", () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+import { takePendingPhoto } from "@/features/import/photo-handoff";
 import { AddFoodSheet } from "./add-food-sheet";
 import type { Food } from "./types";
 
@@ -30,6 +49,26 @@ describe("AddFoodSheet", () => {
       screen.getByRole("button", { name: /enter manually/i }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
+  });
+
+  it("offers Scan notes, which opens the rear camera or a gallery photo (AC-1)", () => {
+    open();
+
+    const input = screen.getByLabelText(/scan notes/i);
+    expect(input).toHaveAttribute("type", "file");
+    expect(input).toHaveAttribute("accept", "image/*");
+    expect(input).toHaveAttribute("capture", "environment");
+  });
+
+  it("hands a chosen photo to the import screen and goes there", async () => {
+    const { onClose } = open();
+    const photo = new File(["x"], "notes.jpg", { type: "image/jpeg" });
+
+    await userEvent.upload(screen.getByLabelText(/scan notes/i), photo);
+
+    expect(takePendingPhoto()).toBe(photo);
+    expect(push).toHaveBeenCalledWith("/foods/import");
+    expect(onClose).toHaveBeenCalled();
   });
 
   it("offers Import from notes, which opens the import screen", () => {

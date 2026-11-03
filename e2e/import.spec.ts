@@ -342,3 +342,152 @@ test("when saving fails nothing is saved and every edit is kept for a retry", as
   const saved = await bea.from("foods").select("calories").eq("name", name);
   expect(saved.data).toEqual([{ calories: 120 }]);
 });
+
+// A real picture, bigger than the 1,600 px the app shrinks photos to.
+async function bigPhoto(page: Page, width = 3200, height = 2400) {
+  const base64 = await page.evaluate(
+    ([w, h]) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("no canvas");
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, w, h);
+      context.fillStyle = "#000";
+      context.font = "200px sans-serif";
+      context.fillText("Toast 110", 200, 600);
+      return canvas.toDataURL("image/png").split(",")[1];
+    },
+    [width, height],
+  );
+  return {
+    name: "notes.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(base64, "base64"),
+  };
+}
+
+// Width and height from a JPEG's start-of-frame marker.
+function jpegSize(bytes: Buffer) {
+  for (let i = 2; i < bytes.length - 9; i += 1) {
+    if (bytes[i] === 0xff && [0xc0, 0xc1, 0xc2].includes(bytes[i + 1])) {
+      return {
+        height: bytes.readUInt16BE(i + 5),
+        width: bytes.readUInt16BE(i + 7),
+      };
+    }
+  }
+  throw new Error("not a JPEG");
+}
+
+test("a scanned photo is shrunk on the device, then read into Import Review", async ({
+  page,
+}) => {
+  await page.goto("/foods/import");
+  const photo = await bigPhoto(page);
+  await page.route("**/api/import/photo", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.continue();
+  });
+  const upload = page.waitForRequest("**/api/import/photo");
+
+  await page.getByLabel("Photo from camera").setInputFiles(photo);
+
+  await expect(page.getByText("Reading your notes…")).toBeVisible();
+  const request = await upload;
+  const sent = request.postDataBuffer();
+  expect(request.headers()["content-type"]).toBe("image/jpeg");
+  if (!sent) throw new Error("no body");
+  expect([sent[0], sent[1]]).toEqual([0xff, 0xd8]);
+  const size = jpegSize(sent);
+  expect(Math.max(size.width, size.height)).toBeLessThanOrEqual(1600);
+  expect(size.width / size.height).toBeCloseTo(3200 / 2400, 1);
+
+  await expect(reviewRows(page)).toHaveCount(3);
+  await expect(reviewRows(page).nth(0).getByLabel("Name")).toHaveValue(
+    "Vegemite toast",
+  );
+  await expect(reviewRows(page).nth(2)).toContainText("(from 1,000 kJ)");
+});
+
+test("another photo adds its rows to the same import", async ({ page }) => {
+  await page.goto("/foods/import");
+  const photo = await bigPhoto(page, 800, 600);
+  await page.getByLabel("Photo from camera").setInputFiles(photo);
+  await expect(reviewRows(page)).toHaveCount(3);
+  await page.route("**/api/import/photo", (route) =>
+    route.fulfill({
+      json: {
+        rows: [
+          {
+            name: "Second page rice",
+            portion: "100 g",
+            calories: "130",
+            kilojoules: "",
+          },
+        ],
+      },
+    }),
+  );
+
+  await page.getByLabel("Photo from gallery").setInputFiles(photo);
+
+  await expect(reviewRows(page)).toHaveCount(4);
+  await expect(reviewRows(page).nth(3).getByLabel("Name")).toHaveValue(
+    "Second page rice",
+  );
+  await expect(
+    page.getByRole("button", { name: "Save 4 foods" }),
+  ).toBeEnabled();
+});
+
+test("a photo with no foods says so and can be retaken", async ({ page }) => {
+  await page.goto("/foods/import");
+  const photo = await bigPhoto(page, 800, 600);
+  await page.route("**/api/import/photo", (route) =>
+    route.fulfill({ json: { rows: [] } }),
+  );
+
+  await page.getByLabel("Photo from camera").setInputFiles(photo);
+
+  await expect(
+    page.getByRole("region", { name: "Scan your notes" }).getByRole("alert"),
+  ).toContainText("Couldn't find any foods in that photo");
+  await expect(
+    page.getByRole("button", { name: "Take a photo" }),
+  ).toBeEnabled();
+});
+
+test("when the photo reader is unavailable the User is offered an AI app instead", async ({
+  page,
+}) => {
+  await page.goto("/foods/import");
+  const photo = await bigPhoto(page, 800, 600);
+  await page.route("**/api/import/photo", (route) =>
+    route.fulfill({ status: 503, json: { code: "reader_unavailable" } }),
+  );
+
+  await page.getByLabel("Photo from camera").setInputFiles(photo);
+  const alert = page
+    .getByRole("region", { name: "Scan your notes" })
+    .getByRole("alert");
+  await expect(alert).toContainText("isn't available right now");
+  await alert.getByRole("button", { name: "Use an AI app instead" }).click();
+
+  await expect(alert).toHaveCount(0);
+  await expect(page.getByTestId("prompt")).toBeInViewport();
+});
+
+test("Scan notes in the Add food sheet reads the photo on the import screen", async ({
+  page,
+}) => {
+  await page.goto("/foods");
+  const photo = await bigPhoto(page, 800, 600);
+
+  await page.getByRole("button", { name: "Add food" }).first().click();
+  await page.getByLabel(/Scan notes/).setInputFiles(photo);
+
+  await expect(page).toHaveURL("/foods/import");
+  await expect(reviewRows(page)).toHaveCount(3);
+});

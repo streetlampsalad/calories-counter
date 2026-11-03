@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronRight, FileText, PencilLine } from "lucide-react";
+import { Camera, ChevronRight, FileText, PencilLine } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Sheet,
@@ -10,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { setPendingPhoto } from "@/features/import/photo-handoff";
 import { findDuplicate } from "./domain";
 import { FoodForm } from "./food-form";
 import type { Food, FoodInput } from "./types";
@@ -35,7 +37,7 @@ type Option = {
   label: string;
   hint: string;
   icon: typeof PencilLine;
-} & ({ mode: "manual" } | { href: string });
+} & ({ mode: "manual" } | { href: string } | { scan: true });
 
 const OPTIONS: Option[] = [
   {
@@ -43,6 +45,12 @@ const OPTIONS: Option[] = [
     label: "Enter manually",
     hint: "Type a name, portion and calories",
     icon: PencilLine,
+  },
+  {
+    scan: true,
+    label: "Scan notes",
+    hint: "Take a photo of your handwritten notes",
+    icon: Camera,
   },
   {
     href: "/foods/import",
@@ -60,6 +68,17 @@ export function AddFoodSheet({
   onClose,
 }: Props) {
   const [mode, setMode] = useState<Mode>("choose");
+  const router = useRouter();
+
+  // The photo is read on the import screen, so it travels there with the User.
+  function scanned(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setPendingPhoto(file);
+    onClose();
+    router.push("/foods/import");
+  }
 
   // Always start from the choices when the sheet is opened again.
   useEffect(() => {
@@ -100,7 +119,18 @@ export function AddFoodSheet({
                 );
                 return (
                   <li key={option.label}>
-                    {"href" in option ? (
+                    {"scan" in option ? (
+                      <label className={ROW_CLASS}>
+                        {content}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="sr-only"
+                          onChange={scanned}
+                        />
+                      </label>
+                    ) : "href" in option ? (
                       <Link href={option.href} className={ROW_CLASS}>
                         {content}
                       </Link>

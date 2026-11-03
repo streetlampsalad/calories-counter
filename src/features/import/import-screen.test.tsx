@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -14,6 +14,11 @@ const importHook = vi.hoisted(() => ({
 vi.mock("./queries", () => ({
   useImportFoods: () => importHook,
 }));
+const photo = vi.hoisted(() => ({
+  resizePhoto: vi.fn(),
+  readPhoto: vi.fn(),
+}));
+vi.mock("./photo", () => photo);
 const foodsData = vi.hoisted(() => ({ foods: [] as unknown[] }));
 vi.mock("@/features/foods/queries", () => ({
   useFoods: () => ({ data: foodsData.foods }),
@@ -36,6 +41,7 @@ vi.mock("next/link", () => ({
 
 import { AI_PROMPT } from "./ai-prompt";
 import { ImportScreen } from "./import-screen";
+import { setPendingPhoto } from "./photo-handoff";
 
 function stubClipboard(writeText: ((text: string) => Promise<void>) | null) {
   Object.defineProperty(navigator, "clipboard", {
@@ -43,6 +49,9 @@ function stubClipboard(writeText: ((text: string) => Promise<void>) | null) {
     configurable: true,
   });
 }
+
+// jsdom has no layout, so it has no scrollIntoView either.
+Element.prototype.scrollIntoView = vi.fn();
 
 describe("ImportScreen", () => {
   beforeEach(() => {
@@ -526,5 +535,147 @@ describe("ImportScreen: Save (AC-8, AC-9)", () => {
     await userEvent.type(within(rowCards()[1]).getByLabelText("Calories"), "1");
 
     expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled();
+  });
+});
+
+describe("ImportScreen: scanning notes (AC-1 to AC-6)", () => {
+  const rows = [
+    { name: "Toast", portion: "1 slice", calories: "110", kilojoules: "" },
+    { name: "Mystery", portion: "1 serve", calories: "", kilojoules: "" },
+  ];
+  const jpeg = new File(["x"], "notes.jpg", { type: "image/jpeg" });
+  const takePhoto = () =>
+    userEvent.upload(screen.getByLabelText("Photo from camera"), jpeg);
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    foodsData.foods = [];
+    photo.resizePhoto.mockReset();
+    photo.readPhoto.mockReset();
+    photo.resizePhoto.mockResolvedValue(
+      new Blob(["jpeg"], { type: "image/jpeg" }),
+    );
+    photo.readPhoto.mockResolvedValue({ kind: "rows", rows });
+  });
+
+  it("opens the rear camera, or the gallery, from two buttons", () => {
+    render(<ImportScreen />);
+
+    const camera = screen.getByLabelText("Photo from camera");
+    expect(camera).toHaveAttribute("accept", "image/*");
+    expect(camera).toHaveAttribute("capture", "environment");
+    expect(screen.getByLabelText("Photo from gallery")).not.toHaveAttribute(
+      "capture",
+    );
+  });
+
+  it("shrinks the photo, shows progress while it is read, then lists the foods for review", async () => {
+    let finish: (value: unknown) => void = () => undefined;
+    photo.readPhoto.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    render(<ImportScreen />);
+
+    await takePhoto();
+
+    expect(photo.resizePhoto).toHaveBeenCalledWith(jpeg);
+    expect(await screen.findByText("Reading your notes…")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /take a photo/i }),
+    ).toBeDisabled();
+
+    await act(async () => finish({ kind: "rows", rows }));
+
+    expect(screen.queryByText("Reading your notes…")).not.toBeInTheDocument();
+    expect(rowCards()).toHaveLength(2);
+    expect(rowCards()[1]).toHaveTextContent("Add calories or kilojoules");
+  });
+
+  it("appends another photo's rows to the same import", async () => {
+    render(<ImportScreen />);
+    await takePhoto();
+    await screen.findByRole("list", { name: "Rows to review" });
+    photo.readPhoto.mockResolvedValue({
+      kind: "rows",
+      rows: [
+        { name: "Rice", portion: "100 g", calories: "130", kilojoules: "" },
+      ],
+    });
+
+    await userEvent.upload(screen.getByLabelText("Photo from camera"), jpeg);
+
+    await waitFor(() => expect(rowCards()).toHaveLength(3));
+    expect(within(rowCards()[2]).getByLabelText("Name")).toHaveValue("Rice");
+    expect(
+      screen.getByRole("heading", { name: "Add another photo" }),
+    ).toBeInTheDocument();
+  });
+
+  it("says when no foods were found and lets the User retake the photo", async () => {
+    photo.readPhoto.mockResolvedValue({ kind: "empty" });
+    render(<ImportScreen />);
+
+    await takePhoto();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Couldn't find any foods in that photo",
+    );
+    expect(screen.getByRole("button", { name: /take a photo/i })).toBeEnabled();
+  });
+
+  it("offers a way out to an AI app when the reader is unavailable (AC-6)", async () => {
+    photo.readPhoto.mockResolvedValue({ kind: "unavailable" });
+    render(<ImportScreen />);
+    await takePhoto();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("isn't available right now");
+    await userEvent.click(
+      within(alert).getByRole("button", { name: "Use an AI app instead" }),
+    );
+
+    expect(
+      screen.queryByText(/isn't available right now/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("prompt")).toBeInTheDocument();
+  });
+
+  it("brings the prompt back even when rows are already being reviewed", async () => {
+    render(<ImportScreen />);
+    await takePhoto();
+    await screen.findByRole("list", { name: "Rows to review" });
+    expect(screen.queryByTestId("prompt")).not.toBeInTheDocument();
+    photo.readPhoto.mockResolvedValue({ kind: "unavailable" });
+
+    await userEvent.upload(screen.getByLabelText("Photo from camera"), jpeg);
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Use an AI app instead" }),
+    );
+
+    expect(screen.getByTestId("prompt")).toBeInTheDocument();
+    expect(rowCards()).toHaveLength(2);
+  });
+
+  it("says something went wrong when the photo cannot be read at all", async () => {
+    photo.resizePhoto.mockRejectedValue(new Error("bad"));
+    render(<ImportScreen />);
+
+    await takePhoto();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Something went wrong reading that photo",
+    );
+    expect(photo.readPhoto).not.toHaveBeenCalled();
+  });
+
+  it("starts reading a photo chosen in the Add food sheet", async () => {
+    setPendingPhoto(jpeg);
+
+    render(<ImportScreen />);
+
+    await waitFor(() => expect(photo.resizePhoto).toHaveBeenCalledWith(jpeg));
+    await waitFor(() => expect(rowCards()).toHaveLength(2));
   });
 });
