@@ -1,10 +1,11 @@
+import { Suspense } from "react";
+import { TodayScreen } from "@/features/entries/today-screen";
+
 export default function TodayPage() {
+  // useSearchParams needs a Suspense boundary: the Day is only known on the device.
   return (
-    <main className="flex flex-1 flex-col gap-2">
-      <h1 className="font-semibold text-2xl tracking-tight">Today</h1>
-      <p className="text-muted-foreground">
-        Track what you eat, one tap at a time.
-      </p>
-    </main>
+    <Suspense fallback={<main className="flex flex-1" />}>
+      <TodayScreen />
+    </Suspense>
   );
 }
