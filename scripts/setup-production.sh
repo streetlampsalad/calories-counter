@@ -189,7 +189,9 @@ finish() {
 # Needs: gh (logged in), Node 24 + pnpm. Safe to re-run: public values are remembered,
 # secrets are never written to disk (only to GitHub), so you paste those again.
 
-ENV_FILE=".env.production.local"   # gitignored; holds public identifiers only
+# Gitignored; public identifiers only. Deliberately not a Next.js name: Next loads
+# .env.production.local during `next build`, which would point local builds at production.
+ENV_FILE=".setup-production.env"
 VERCEL_CLI="vercel@65.0.0"         # keep in step with .github/workflows/deploy.yml
 SUPABASE_REF_DEFAULT="xrfbpeiugmacbossropu"   # calories-counter, ap-southeast-2 (Sydney)
 VERCEL_PROJECT_NAME="calories-counter"

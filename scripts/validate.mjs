@@ -2,8 +2,19 @@
 //   pnpm validate         full gate (needs local Supabase running: pnpm db:start)
 //   pnpm validate --fast  static checks and unit tests only
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 
 const fast = process.argv.includes("--fast");
+
+// The full gate must run against the local Supabase stack and never production. Values already
+// in the environment beat every .env file (including a stray .env.production.local that
+// `next build` would otherwise prefer), so load the local stack's values up front.
+if (existsSync(".env.local")) {
+  process.loadEnvFile(".env.local");
+} else if (!fast) {
+  console.error("Missing .env.local. Run: pnpm db:start && pnpm env:local");
+  process.exit(1);
+}
 
 const steps = [
   { name: "lint", cmd: "pnpm biome ci" },
