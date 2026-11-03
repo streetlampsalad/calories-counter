@@ -51,6 +51,15 @@ describe("AddFoodSheet", () => {
     expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
   });
 
+  it("offers Search, which opens the search screen", () => {
+    open();
+
+    expect(screen.getByRole("link", { name: /search/i })).toHaveAttribute(
+      "href",
+      "/foods/search",
+    );
+  });
+
   it("offers Scan notes, which opens the rear camera or a gallery photo (AC-1)", () => {
     open();
 

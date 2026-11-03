@@ -1,6 +1,12 @@
 "use client";
 
-import { Camera, ChevronRight, FileText, PencilLine } from "lucide-react";
+import {
+  Camera,
+  ChevronRight,
+  FileText,
+  PencilLine,
+  Search,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -45,6 +51,12 @@ const OPTIONS: Option[] = [
     label: "Enter manually",
     hint: "Type a name, portion and calories",
     icon: PencilLine,
+  },
+  {
+    href: "/foods/search",
+    label: "Search",
+    hint: "Look up a food by name",
+    icon: Search,
   },
   {
     scan: true,
