@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GeminiNotesReader } from "./gemini-notes-reader";
 import {
   FakeNotesReader,
   getNotesReader,
@@ -27,6 +28,21 @@ describe("getNotesReader", () => {
     });
 
     expect(reader).toBeInstanceOf(FakeNotesReader);
+  });
+
+  it("uses Gemini when there is an API key", () => {
+    expect(
+      getNotesReader({ GEMINI_API_KEY: "k", NODE_ENV: "production" }),
+    ).toBeInstanceOf(GeminiNotesReader);
+    expect(
+      getNotesReader({ GEMINI_API_KEY: "k", NODE_ENV: "development" }),
+    ).toBeInstanceOf(GeminiNotesReader);
+  });
+
+  it("still uses the fake in tests even when a key is set, so validate never calls Google", () => {
+    expect(
+      getNotesReader({ NOTES_READER: "fake", GEMINI_API_KEY: "k" }),
+    ).toBeInstanceOf(FakeNotesReader);
   });
 
   it("uses the fake in development when there is no API key, so validate never calls Google", () => {

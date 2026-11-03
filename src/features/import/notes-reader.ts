@@ -1,4 +1,6 @@
 import { AiUnavailable } from "@/lib/ai";
+import { geminiTransport } from "@/lib/gemini";
+import { GeminiNotesReader } from "./gemini-notes-reader";
 import type { ImportRow } from "./parse";
 
 // Reads a photo of handwritten food notes into rows for Import Review. The rows have the same
@@ -41,6 +43,9 @@ export function getNotesReader(
   env: Record<string, string | undefined> = process.env,
 ): NotesReader {
   if (env.NOTES_READER === "fake") return new FakeNotesReader();
+  if (env.GEMINI_API_KEY) {
+    return new GeminiNotesReader(geminiTransport(env.GEMINI_API_KEY));
+  }
   if (env.NODE_ENV !== "production") return new FakeNotesReader();
   return new UnavailableReader();
 }

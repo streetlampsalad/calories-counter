@@ -33,6 +33,10 @@ const steps = [
         { name: "database types up to date", cmd: "pnpm db:types:check" },
         { name: "database tests", cmd: "pnpm db:test" },
         { name: "build", cmd: "pnpm build" },
+        {
+          name: "no server secrets in the browser bundle",
+          cmd: "node scripts/check-no-secrets-in-client.mjs",
+        },
         { name: "e2e tests", cmd: "pnpm test:e2e" },
       ]),
 ];

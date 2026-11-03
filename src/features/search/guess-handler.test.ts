@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiUnavailable } from "@/lib/ai";
+import { GeminiCalorieGuesser } from "./gemini-guesser";
 import {
   type CalorieGuesser,
   FakeCalorieGuesser,
@@ -162,6 +163,15 @@ describe("handleGuess", () => {
 });
 
 describe("FakeCalorieGuesser and getCalorieGuesser", () => {
+  it("uses Gemini when there is an API key, unless told to fake", () => {
+    expect(
+      getCalorieGuesser({ GEMINI_API_KEY: "k", NODE_ENV: "production" }),
+    ).toBeInstanceOf(GeminiCalorieGuesser);
+    expect(
+      getCalorieGuesser({ GEMINI_API_KEY: "k", CALORIE_GUESSER: "fake" }),
+    ).toBeInstanceOf(FakeCalorieGuesser);
+  });
+
   it("makes a plausible guess from the query", async () => {
     const result = await new FakeCalorieGuesser().guess("lamington");
 

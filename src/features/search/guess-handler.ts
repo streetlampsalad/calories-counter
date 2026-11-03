@@ -4,6 +4,8 @@ import {
   MAX_PORTION,
 } from "@/features/foods/validation";
 import { AiUnavailable } from "@/lib/ai";
+import { geminiTransport } from "@/lib/gemini";
+import { GeminiCalorieGuesser } from "./gemini-guesser";
 import { MIN_QUERY } from "./limits";
 
 // Same free-tier allowance as photo reading, counted separately.
@@ -49,6 +51,9 @@ export function getCalorieGuesser(
   env: Record<string, string | undefined> = process.env,
 ): CalorieGuesser {
   if (env.CALORIE_GUESSER === "fake") return new FakeCalorieGuesser();
+  if (env.GEMINI_API_KEY) {
+    return new GeminiCalorieGuesser(geminiTransport(env.GEMINI_API_KEY));
+  }
   if (env.NODE_ENV !== "production") return new FakeCalorieGuesser();
   return new UnavailableGuesser();
 }
