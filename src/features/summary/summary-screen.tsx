@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useToday } from "@/features/entries/use-today";
@@ -94,6 +96,12 @@ export function SummaryScreen() {
       <h1 className="font-semibold text-2xl tracking-tight">Summary</h1>
       <PeriodChips selected={period} />
       <h2 className="sr-only">{label}</h2>
+      <Link
+        href={`/summary/insights?range=${period}`}
+        className="flex min-h-11 w-fit items-center gap-1 font-medium text-sm"
+      >
+        See insights <ChevronRight aria-hidden="true" className="size-4" />
+      </Link>
 
       {ready ? (
         <PeriodContent

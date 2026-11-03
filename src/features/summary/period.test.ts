@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { formatRange, PERIODS, parsePeriod, periodRange } from "./period";
+import {
+  formatRange,
+  INSIGHT_RANGES,
+  insightsRange,
+  PERIODS,
+  parseInsightsRange,
+  parsePeriod,
+  periodRange,
+} from "./period";
 
 const MON = 1;
 const SUN = 0;
@@ -191,5 +199,48 @@ describe("formatRange", () => {
     expect(
       formatRange({ from: "2026-11-01", to: "2026-11-03", days: [] }),
     ).toBe("1 – 3 Nov");
+  });
+});
+
+describe("insights ranges", () => {
+  it("offers the five Periods, then 3, 6 and 12 months", () => {
+    expect(INSIGHT_RANGES.map((r) => r.label)).toEqual([
+      "This week",
+      "Last week",
+      "This month",
+      "Last month",
+      "Last 30 days",
+      "3 months",
+      "6 months",
+      "12 months",
+    ]);
+  });
+
+  it("the Periods mean the same as in the Summary", () => {
+    for (const { id } of PERIODS) {
+      expect(insightsRange(id, "2026-11-03", 1)).toEqual(
+        periodRange(id, "2026-11-03", 1),
+      );
+    }
+  });
+
+  it.each([
+    ["3-months", 90, "2026-08-06"],
+    ["6-months", 180, "2026-05-08"],
+    ["12-months", 365, "2025-11-04"],
+  ] as const)("%s is today and the %i Days before it", (id, count, from) => {
+    const range = insightsRange(id, "2026-11-03", 1);
+
+    expect(range.to).toBe("2026-11-03");
+    expect(range.from).toBe(from);
+    expect(range.days).toHaveLength(count);
+  });
+
+  it("reads a range from the URL, defaulting to 3 months, where trends are most useful", () => {
+    expect(parseInsightsRange("12-months")).toBe("12-months");
+    expect(parseInsightsRange("last-week")).toBe("last-week");
+    expect(parseInsightsRange(undefined)).toBe("3-months");
+    expect(parseInsightsRange("nonsense")).toBe("3-months");
+    expect(parseInsightsRange(["6-months", "last-week"])).toBe("6-months");
   });
 });

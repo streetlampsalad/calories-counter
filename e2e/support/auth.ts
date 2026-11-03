@@ -28,6 +28,12 @@ export const TEST_USERS = {
     id: "66666666-6666-6666-6666-666666666666",
     email: "fay@example.test",
   },
+  // For tests of insights, which depend on a whole window of history: they run in series and
+  // reset gus's data first.
+  gus: {
+    id: "77777777-7777-7777-7777-777777777777",
+    email: "gus@example.test",
+  },
   // Always empty: tests must never leave data behind for cleo.
   cleo: {
     id: "33333333-3333-3333-3333-333333333333",

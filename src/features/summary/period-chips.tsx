@@ -1,18 +1,32 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { PERIODS, type PeriodId } from "./period";
+import { PERIODS } from "./period";
 
-// The Period is kept in the URL, so a Period can be linked to and the back button works.
-export function PeriodChips({ selected }: { selected: PeriodId }) {
+type Option = { id: string; label: string };
+
+type Props = {
+  selected: string;
+  /** The choices; the five Summary Periods unless given. */
+  options?: ReadonlyArray<Option>;
+  /** Where each choice goes; the Summary's own address unless given. */
+  hrefFor?: (id: string) => string;
+};
+
+// The chosen range is kept in the URL, so it can be linked to and the back button works.
+export function PeriodChips({
+  selected,
+  options = PERIODS,
+  hrefFor = (id) => `/summary?period=${id}`,
+}: Props) {
   return (
     <nav aria-label="Period">
       <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        {PERIODS.map(({ id, label }) => {
+        {options.map(({ id, label }) => {
           const current = id === selected;
           return (
             <li key={id} className="shrink-0">
               <Link
-                href={`/summary?period=${id}`}
+                href={hrefFor(id)}
                 replace
                 scroll={false}
                 aria-current={current ? "true" : undefined}

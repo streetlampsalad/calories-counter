@@ -100,3 +100,42 @@ export function formatRange({ from, to }: PeriodRange): string {
     return `${start.date} – ${end.date} ${end.month}`;
   return `${start.date} ${start.month} – ${end.date} ${end.month}`;
 }
+
+// Insights look further back than the Summary does. "3 months" and the like are the last N Days
+// ending today, which keeps them the same length however long the months in between were.
+export const LONG_RANGES = [
+  { id: "3-months", label: "3 months", days: 90 },
+  { id: "6-months", label: "6 months", days: 180 },
+  { id: "12-months", label: "12 months", days: 365 },
+] as const;
+
+export type LongRangeId = (typeof LONG_RANGES)[number]["id"];
+export type InsightsRangeId = PeriodId | LongRangeId;
+
+export const INSIGHT_RANGES: ReadonlyArray<{
+  id: InsightsRangeId;
+  label: string;
+}> = [...PERIODS, ...LONG_RANGES];
+
+export const DEFAULT_INSIGHTS_RANGE: InsightsRangeId = "3-months";
+
+export function parseInsightsRange(
+  param: string | string[] | undefined,
+): InsightsRangeId {
+  const value = Array.isArray(param) ? param[0] : param;
+  return (
+    INSIGHT_RANGES.find((range) => range.id === value)?.id ??
+    DEFAULT_INSIGHTS_RANGE
+  );
+}
+
+export function insightsRange(
+  id: InsightsRangeId,
+  today: string,
+  weekStartsOn: WeekStart,
+): PeriodRange {
+  const long = LONG_RANGES.find((r) => r.id === id);
+  return long
+    ? range(shiftDay(today, -(long.days - 1)), today)
+    : periodRange(id as PeriodId, today, weekStartsOn);
+}
