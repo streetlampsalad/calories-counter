@@ -1,6 +1,6 @@
 # 007: Add Food: search and best guess
 
-- **Status**: Ready
+- **Status**: In progress
 - **Depends on**: 004
 - **Tracking issue**: [#31](https://github.com/streetlampsalad/calories-counter/issues/31)
 

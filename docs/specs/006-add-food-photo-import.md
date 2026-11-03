@@ -1,6 +1,6 @@
 # 006: Add Food: photo of handwritten notes
 
-- **Status**: Ready
+- **Status**: In progress
 - **Depends on**: 005
 - **Tracking issue**: [#26](https://github.com/streetlampsalad/calories-counter/issues/26)
 

@@ -1,6 +1,6 @@
 # 012: Installable app
 
-- **Status**: Ready
+- **Status**: In progress
 - **Depends on**: 002
 - **Tracking issue**: [#62](https://github.com/streetlampsalad/calories-counter/issues/62)
 
