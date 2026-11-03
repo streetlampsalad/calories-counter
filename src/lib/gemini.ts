@@ -4,6 +4,9 @@ import { AiUnavailable } from "./ai";
 
 // One model for everything, so changing it is a one-line edit.
 export const GEMINI_MODEL = "gemini-3.8-flash";
+// The least thinking this model allows: it accepts low, medium and high, and rejects "minimal" with a
+// 400 (found in production). Check the model's supported levels before changing either constant.
+export const GEMINI_THINKING_LEVEL = "low";
 const TIMEOUT_MS = 25_000;
 
 export type GeminiInput = ReadonlyArray<
@@ -73,7 +76,7 @@ export function geminiTransport(apiKey: string): GeminiTransport {
           mime_type: "application/json",
           schema,
         },
-        generation_config: { thinking_level: "minimal" },
+        generation_config: { thinking_level: GEMINI_THINKING_LEVEL },
       });
       const text = interaction.output_text;
       if (!text) throw new Error("Gemini returned no text");

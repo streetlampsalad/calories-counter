@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { AiUnavailable } from "./ai";
-import { describeFailure, isUnavailable } from "./gemini";
+import {
+  describeFailure,
+  GEMINI_MODEL,
+  GEMINI_THINKING_LEVEL,
+  isUnavailable,
+} from "./gemini";
 
 class Failure extends Error {
   constructor(
@@ -77,5 +82,12 @@ describe("describeFailure", () => {
     expect(describeFailure(new Failure("x".repeat(1000), 400)).length).toBe(
       "Error (400): ".length + 300,
     );
+  });
+});
+
+describe("the model's thinking level", () => {
+  it("is one gemini-3.8-flash supports: low, medium or high, never minimal", () => {
+    expect(GEMINI_MODEL).toBe("gemini-3.8-flash");
+    expect(["low", "medium", "high"]).toContain(GEMINI_THINKING_LEVEL);
   });
 });
