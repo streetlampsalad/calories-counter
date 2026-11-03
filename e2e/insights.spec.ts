@@ -47,11 +47,10 @@ test("offers the five Periods and 3, 6 and 12 months", async ({ page }) => {
 
   await page.goto("/summary/insights");
 
-  const labels = await page
-    .getByRole("navigation", { name: "Period" })
-    .getByRole("link")
-    .allInnerTexts();
-  expect(labels).toEqual([
+  // Waits for the links to render, so a slow runner cannot read the list while it is still empty.
+  await expect(
+    page.getByRole("navigation", { name: "Period" }).getByRole("link"),
+  ).toHaveText([
     "This week",
     "Last week",
     "This month",
