@@ -95,6 +95,11 @@ isOneToOne: false
                            },
 "hook_before_user_created":
 { Args: { "event": Json }; Returns: Json
+                           },
+"import_foods":
+{ Args: { "rows": Json }; Returns: {
+              "added": number,"updated": number
+            }[]
                            }
           }
           Enums: {

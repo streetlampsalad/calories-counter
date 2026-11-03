@@ -1,6 +1,6 @@
 # 005: Add Food: file import and Import Review
 
-- **Status**: Ready
+- **Status**: Done
 - **Depends on**: 004
 - **Tracking issue**: [#20](https://github.com/streetlampsalad/calories-counter/issues/20)
 
@@ -89,4 +89,5 @@ Rules:
 
 The owner accepted every default below on 2026-11-03; treat them as decisions.
 
+- **Decided while building**: a row that matches an existing Food starts as **Skip**; **Update existing** changes only its calories. Identical rows (same name and Portion, ignoring case and spacing) merge into the first, which notes any different calories the others gave. The Save toast leaves out a zero ("Added 3", not "Added 3, updated 0").
 - **Should Import Review survive a page reload, for example if Android kills the tab while I'm in the AI app?** Default: yes, keep the reducer state in `sessionStorage` until saved or discarded. This matters on phones where switching apps reloads the page.

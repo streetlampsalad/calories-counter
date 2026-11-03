@@ -1,10 +1,19 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const toast = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 const push = vi.hoisted(() => vi.fn());
+const importHook = vi.hoisted(() => ({
+  mutate: vi.fn(),
+  isPending: false,
+  isError: false,
+  error: null as Error | null,
+}));
+vi.mock("./queries", () => ({
+  useImportFoods: () => importHook,
+}));
 const foodsData = vi.hoisted(() => ({ foods: [] as unknown[] }));
 vi.mock("@/features/foods/queries", () => ({
   useFoods: () => ({ data: foodsData.foods }),
@@ -42,6 +51,10 @@ describe("ImportScreen", () => {
     push.mockReset();
     sessionStorage.clear();
     foodsData.foods = [];
+    importHook.mutate.mockReset();
+    importHook.isPending = false;
+    importHook.isError = false;
+    importHook.error = null;
     window.getSelection()?.removeAllRanges();
   });
 
@@ -390,5 +403,128 @@ describe("ImportScreen: duplicates (AC-7)", () => {
     expect(rowCards()).toHaveLength(1);
     expect(within(rowCards()[0]).getByLabelText("Calories")).toHaveValue("105");
     expect(rowCards()[0]).toHaveTextContent("Another row said 110 kcal");
+  });
+});
+
+describe("ImportScreen: Save (AC-8, AC-9)", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    push.mockReset();
+    toast.mockReset();
+    toast.error.mockReset();
+    importHook.mutate.mockReset();
+    importHook.isPending = false;
+    importHook.isError = false;
+    importHook.error = null;
+    foodsData.foods = [];
+  });
+
+  it("offers to save the number of foods that will be saved", async () => {
+    render(<ImportScreen />);
+
+    await paste(CSV);
+
+    expect(screen.getByRole("button", { name: "Save 1 food" })).toBeEnabled();
+    await userEvent.type(
+      within(rowCards()[1]).getByLabelText("Calories"),
+      "180",
+    );
+    expect(screen.getByRole("button", { name: "Save 2 foods" })).toBeEnabled();
+  });
+
+  it("is off when nothing would be saved", async () => {
+    render(<ImportScreen />);
+    await paste("name,portion,calories\nMystery,1 serve,");
+
+    expect(screen.getByRole("button", { name: "Save 0 foods" })).toBeDisabled();
+  });
+
+  it("sends the rows to be added and updated, not the ones left out", async () => {
+    foodsData.foods = [
+      {
+        id: "food-1",
+        name: "Rice",
+        portion: "100 g",
+        calories: 120,
+        archivedAt: null,
+      },
+    ];
+    render(<ImportScreen />);
+    await paste(
+      "name,portion,calories\nBanana,1 medium,105\nRice,100 g,130\nMystery,1 serve,",
+    );
+    await userEvent.click(
+      within(rowCards()[1]).getByRole("radio", { name: "Update existing" }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Save 2 foods" }));
+
+    expect(importHook.mutate).toHaveBeenCalledWith(
+      [
+        { name: "Banana", portion: "1 medium", calories: 105 },
+        { id: "food-1", name: "Rice", portion: "100 g", calories: 130 },
+      ],
+      expect.any(Object),
+    );
+  });
+
+  it("on success clears the review, says what happened and returns to the Food List", async () => {
+    render(<ImportScreen />);
+    await paste(CSV);
+    await userEvent.click(screen.getByRole("button", { name: "Save 1 food" }));
+    const { onSuccess } = importHook.mutate.mock.calls[0][1];
+
+    act(() => onSuccess({ added: 1, updated: 0 }));
+
+    expect(toast).toHaveBeenCalledWith("Added 1");
+    expect(push).toHaveBeenCalledWith("/foods");
+    expect(sessionStorage.getItem("import-review")).toBeNull();
+  });
+
+  it("on failure keeps every row and edit so the User can retry", async () => {
+    render(<ImportScreen />);
+    await paste(CSV);
+    await userEvent.type(
+      within(rowCards()[1]).getByLabelText("Calories"),
+      "180",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Save 2 foods" }));
+    const { onError } = importHook.mutate.mock.calls[0][1];
+
+    act(() => onError(new Error("Nothing was saved; try again")));
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "Nothing was saved; try again",
+      expect.objectContaining({
+        action: expect.objectContaining({ label: "Retry" }),
+      }),
+    );
+    expect(push).not.toHaveBeenCalled();
+    expect(rowCards()).toHaveLength(3);
+    expect(within(rowCards()[1]).getByLabelText("Calories")).toHaveValue("180");
+  });
+
+  it("shows the failure beside the rows, and Retry saves again", async () => {
+    importHook.isError = true;
+    importHook.error = new Error("Nothing was saved; check the rows");
+    render(<ImportScreen />);
+    await paste(CSV);
+
+    expect(
+      screen.getByText("Nothing was saved; check the rows"),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Save 1 food" }));
+    expect(importHook.mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows Saving while it works, and cannot be pressed twice", async () => {
+    render(<ImportScreen />);
+    await paste(CSV);
+    importHook.isPending = true;
+
+    // Re-render with the pending flag.
+    await userEvent.type(within(rowCards()[1]).getByLabelText("Calories"), "1");
+
+    expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled();
   });
 });

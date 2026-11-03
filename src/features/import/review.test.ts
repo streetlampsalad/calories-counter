@@ -3,6 +3,8 @@ import type { Food } from "@/features/foods/types";
 import type { ImportRow } from "./parse";
 import {
   checkRow,
+  importPayload,
+  importToast,
   initialReview,
   keptCount,
   planCounts,
@@ -433,5 +435,61 @@ describe("planCounts", () => {
       off: 0,
       flagged: 1,
     });
+  });
+});
+
+describe("importPayload", () => {
+  it("lists new rows to add and chosen duplicates to update, by the existing Food's id", () => {
+    let state = load([
+      row({ name: "New", portion: "1 piece", calories: "50" }),
+      row({ calories: "105" }),
+      row({ name: "Rice", portion: "100 g", calories: "130" }),
+      row({ name: "Bad", calories: "" }),
+    ]);
+    state = reviewReducer(state, {
+      type: "duplicate",
+      id: state.rows[1].id,
+      action: "update",
+    });
+    state = reviewReducer(state, { type: "toggle", id: state.rows[2].id });
+
+    expect(importPayload(state, [food()])).toEqual([
+      { name: "New", portion: "1 piece", calories: 50 },
+      { id: "food-1", name: "Banana", portion: "1 medium", calories: 105 },
+    ]);
+  });
+
+  it("leaves out skipped duplicates", () => {
+    const state = load([row()]);
+
+    expect(importPayload(state, [food()])).toEqual([]);
+  });
+
+  it("sends the converted Calories for a kilojoules row", () => {
+    const state = load([
+      row({ name: "Choc", calories: "", kilojoules: "1000" }),
+    ]);
+
+    expect(importPayload(state, [])).toEqual([
+      { name: "Choc", portion: "1 medium", calories: 239 },
+    ]);
+  });
+
+  it("tidies spacing in the name and portion", () => {
+    const state = load([row({ name: " Big   toast ", portion: "2  slices" })]);
+
+    expect(importPayload(state, [])[0]).toMatchObject({
+      name: "Big toast",
+      portion: "2 slices",
+    });
+  });
+});
+
+describe("importToast", () => {
+  it("says what was added and updated, leaving out a zero", () => {
+    expect(importToast({ added: 3, updated: 1 })).toBe("Added 3, updated 1");
+    expect(importToast({ added: 3, updated: 0 })).toBe("Added 3");
+    expect(importToast({ added: 0, updated: 2 })).toBe("Updated 2");
+    expect(importToast({ added: 0, updated: 0 })).toBe("Nothing to save");
   });
 });

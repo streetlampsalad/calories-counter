@@ -264,3 +264,81 @@ test("identical rows in one import are merged into one", async ({ page }) => {
     "Another row said 120 kcal",
   );
 });
+
+test("saving adds the new foods, updates the chosen duplicate and returns to the Food List", async ({
+  page,
+}) => {
+  const bea = await userClient("bea");
+  const dup = unique("Dup rice");
+  const fresh = unique("Fresh pie");
+  const fixme = unique("Fixme soup");
+  await seedFood(bea, { name: dup, portion: "100 g", calories: 90 });
+  await page.goto("/foods/import");
+  await pasteResult(
+    page,
+    `name,portion,calories\n${fresh},1 slice,300\n${fixme},1 bowl,\n${dup},100 g,130`,
+  );
+  await reviewRows(page).nth(1).getByLabel("Calories").fill("70");
+  await reviewRows(page).nth(2).getByText("Update existing").click();
+  await expect(
+    page.getByRole("button", { name: "Save 3 foods" }),
+  ).toBeEnabled();
+
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes("/rpc/import_foods") && response.status() < 300,
+  );
+  await page.getByRole("button", { name: "Save 3 foods" }).click();
+  await saved;
+
+  await expect(page).toHaveURL("/foods");
+  await expect(page.getByText("Added 2, updated 1")).toBeVisible();
+  const row = (name: string) =>
+    page.getByRole("button", { name: new RegExp(`^Edit ${name},`) });
+  await expect(row(fresh)).toContainText("1 slice · 300 kcal");
+  await expect(row(fixme)).toContainText("1 bowl · 70 kcal");
+  await expect(row(dup)).toContainText("100 g · 130 kcal");
+  const { data } = await bea.from("foods").select("calories").eq("name", dup);
+  expect(data).toEqual([{ calories: 130 }]);
+
+  // The review is gone: coming back starts clean.
+  await page.goto("/foods/import");
+  await expect(page.getByLabel("Paste the result")).toBeVisible();
+});
+
+test("when saving fails nothing is saved and every edit is kept for a retry", async ({
+  page,
+}) => {
+  const bea = await userClient("bea");
+  const name = unique("Retry toast");
+  await page.goto("/foods/import");
+  await pasteResult(page, `name,portion,calories\n${name},1 slice,`);
+  await reviewRows(page).first().getByLabel("Calories").fill("120");
+  await page.route("**/rpc/import_foods", (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ code: "XX000", message: "boom" }),
+    }),
+  );
+
+  await page.getByRole("button", { name: "Save 1 food" }).click();
+
+  await expect(
+    page.getByText("Couldn't save: boom. Nothing was saved.").first(),
+  ).toBeVisible();
+  await expect(page).toHaveURL("/foods/import");
+  await expect(reviewRows(page).first().getByLabel("Calories")).toHaveValue(
+    "120",
+  );
+  const none = await bea.from("foods").select("id").eq("name", name);
+  expect(none.data).toEqual([]);
+
+  await page.unroute("**/rpc/import_foods");
+  await page.getByRole("button", { name: "Save 1 food" }).click();
+
+  await expect(page).toHaveURL("/foods");
+  await expect(page.getByText("Added 1")).toBeVisible();
+  const saved = await bea.from("foods").select("calories").eq("name", name);
+  expect(saved.data).toEqual([{ calories: 120 }]);
+});

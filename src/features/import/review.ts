@@ -191,6 +191,42 @@ export function planCounts(
 }
 
 type SavedRow = ImportRow & { id: string; keep: boolean } & Partial<ReviewRow>;
+export type ImportPayloadRow = {
+  /** Present when updating that existing Food's calories. */
+  id?: string;
+  name: string;
+  portion: string;
+  calories: number;
+};
+
+// What Save sends: the rows to add, and the chosen duplicates to update.
+export function importPayload(
+  state: ReviewState,
+  foods: readonly Food[],
+): ImportPayloadRow[] {
+  return state.rows.flatMap((row) => {
+    const check = checkRow(row);
+    const plan = planFor(row, foods);
+    if (!check.ok) return [];
+    const { name, portion, calories } = check.value;
+    if (plan.kind === "add") return [{ name, portion, calories }];
+    if (plan.kind === "update") {
+      return [{ id: plan.existing.id, name, portion, calories }];
+    }
+    return [];
+  });
+}
+
+export function importToast(result: { added: number; updated: number }) {
+  const parts = [
+    result.added > 0 ? `Added ${result.added}` : null,
+    result.updated > 0
+      ? `${result.added > 0 ? "updated" : "Updated"} ${result.updated}`
+      : null,
+  ].filter((part): part is string => part !== null);
+  return parts.length > 0 ? parts.join(", ") : "Nothing to save";
+}
+
 const isReviewRow = (value: unknown): value is SavedRow => {
   if (!value || typeof value !== "object") return false;
   const row = value as Record<string, unknown>;

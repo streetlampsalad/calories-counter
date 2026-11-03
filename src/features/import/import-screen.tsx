@@ -7,10 +7,12 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFoods } from "@/features/foods/queries";
+import { cn } from "@/lib/utils";
 import { AI_PROMPT } from "./ai-prompt";
 import { DiscardSheet } from "./discard-sheet";
 import { ImportSource } from "./import-source";
-import { reviewRows } from "./review";
+import { useImportFoods } from "./queries";
+import { importPayload, importToast, reviewRows } from "./review";
 import { ReviewList } from "./review-list";
 import { useImportReview } from "./use-import-review";
 import { useLeaveGuard } from "./use-leave-guard";
@@ -83,9 +85,27 @@ export function ImportScreen() {
   const router = useRouter();
   const { state, dispatch } = useImportReview();
   const { data: foods } = useFoods();
+  const save = useImportFoods();
   const hasRows = state.rows.length > 0;
   const { pending, stay } = useLeaveGuard(hasRows);
   const [startingOver, setStartingOver] = useState(false);
+
+  const payload = importPayload(state, foods ?? []);
+
+  function saveAll() {
+    save.mutate(payload, {
+      onSuccess: (result) => {
+        dispatch({ type: "reset" });
+        toast(importToast(result));
+        router.push("/foods");
+      },
+      // The rows stay exactly as they are, so the User can retry.
+      onError: (error) =>
+        toast.error(error.message, {
+          action: { label: "Retry", onClick: saveAll },
+        }),
+    });
+  }
 
   function discard() {
     const destination = pending;
@@ -96,7 +116,7 @@ export function ImportScreen() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4">
+    <main className={cn("flex flex-1 flex-col gap-4", hasRows && "pb-24")}>
       <Link
         href="/foods"
         className="flex min-h-11 w-fit items-center gap-1.5 text-muted-foreground text-sm"
@@ -120,6 +140,11 @@ export function ImportScreen() {
               dispatch({ type: "duplicate", id, action })
             }
           />
+          {save.isError ? (
+            <p role="alert" className="text-destructive text-sm">
+              {save.error.message}
+            </p>
+          ) : null}
           <Button
             variant="outline"
             onClick={() => setStartingOver(true)}
@@ -127,6 +152,20 @@ export function ImportScreen() {
           >
             Start over
           </Button>
+          {/* Within thumb reach, just above the bottom navigation. */}
+          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+0.75rem)] z-30 mx-auto flex max-w-md px-4">
+            <Button
+              onClick={saveAll}
+              disabled={
+                payload.length === 0 || foods === undefined || save.isPending
+              }
+              className="pointer-events-auto h-12 flex-1 text-base shadow-lg"
+            >
+              {save.isPending
+                ? "Saving…"
+                : `Save ${payload.length} ${payload.length === 1 ? "food" : "foods"}`}
+            </Button>
+          </div>
         </>
       ) : (
         <>
