@@ -1,6 +1,6 @@
 # 004: Add Food: manual entry
 
-- **Status**: Ready
+- **Status**: Done
 - **Depends on**: 003
 - **Tracking issue**: [#16](https://github.com/streetlampsalad/calories-counter/issues/16)
 
