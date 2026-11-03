@@ -67,6 +67,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"reference_foods": {
+                  Row: {
+                    "calories_per_100": number,"energy_kj_per_100": number,"id": string,"name": string,"source": string,"source_id": string,"unit": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "calories_per_100": number,"energy_kj_per_100": number,"id"?: string,"name": string,"source": string,"source_id": string,"unit": string
+                  }
+                  Update: {
+                    "calories_per_100"?: number,"energy_kj_per_100"?: number,"id"?: string,"name"?: string,"source"?: string,"source_id"?: string,"unit"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"user_settings": {
                   Row: {
                     "daily_goal_calories": number | null,"updated_at": string,"user_id": string,"week_starts_on": number
@@ -117,6 +131,11 @@ isOneToOne: false
                            },
 "increment_ai_usage":
 { Args: { "max_per_day": number,"usage_kind": string }; Returns: boolean
+                           },
+"search_reference_foods":
+{ Args: { "max_results"?: number,"q": string }; Returns: {
+              "calories_per_100": number,"energy_kj_per_100": number,"id": string,"name": string,"source": string,"source_id": string,"unit": string
+            }[]
                            }
           }
           Enums: {

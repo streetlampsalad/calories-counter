@@ -191,3 +191,16 @@ from auth.users u
 where u.email = 'ivy@example.test';
 
 insert into public.allowed_emails (email, note) values ('ivy@example.test', 'local test user (photo daily limit test)');
+
+-- A handful of reference foods so search can be developed and tested locally. These are rough
+-- fixture values (source FIXTURE), not the real AFCD data, which is loaded by a data migration.
+insert into public.reference_foods (source, source_id, name, energy_kj_per_100, calories_per_100, unit)
+values
+  ('FIXTURE', 'banana', 'Banana, cavendish, raw', 389, 93, 'g'),
+  ('FIXTURE', 'bread', 'Bread, white, commercial', 1050, 251, 'g'),
+  ('FIXTURE', 'egg', 'Egg, chicken, whole, raw', 626, 150, 'g'),
+  ('FIXTURE', 'apple', 'Apple, red, raw', 220, 53, 'g'),
+  ('FIXTURE', 'milk', 'Milk, cow, full fat', 270, 65, 'ml'),
+  ('FIXTURE', 'rice', 'Rice, white, boiled', 585, 140, 'g'),
+  ('FIXTURE', 'chicken', 'Chicken, breast, raw', 460, 110, 'g'),
+  ('FIXTURE', 'vegemite', 'Vegemite', 710, 170, 'g');
