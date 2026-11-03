@@ -16,6 +16,7 @@ import {
 } from "./period";
 import { PeriodChips } from "./period-chips";
 import { useDailyTotals } from "./queries";
+import { TrendCard } from "./trend-card";
 
 function Skeleton() {
   return (
@@ -29,13 +30,15 @@ function InsightsContent({
   rangeId,
   today,
   weekStartsOn,
+  goal,
 }: {
   rangeId: InsightsRangeId;
   today: string;
   weekStartsOn: 0 | 1;
+  goal: number | null;
 }) {
   const range = insightsRange(rangeId, today, weekStartsOn);
-  const { isPending, isError, refetch } = useDailyTotals(range);
+  const { data: totals, isPending, isError, refetch } = useDailyTotals(range);
 
   return (
     <>
@@ -54,6 +57,12 @@ function InsightsContent({
           </Button>
         </div>
       ) : null}
+
+      {totals ? (
+        <div className="flex flex-col gap-4">
+          <TrendCard totals={totals} range={range} goal={goal} today={today} />
+        </div>
+      ) : null}
     </>
   );
 }
@@ -65,7 +74,7 @@ export function InsightsScreen() {
   const rangeId = parseInsightsRange(params.get("range") ?? undefined);
 
   const ready = today !== null && !settingsPending;
-  const { weekStartsOn } = settings ?? DEFAULT_SETTINGS;
+  const { weekStartsOn, dailyGoal } = settings ?? DEFAULT_SETTINGS;
 
   return (
     <main className="flex flex-1 flex-col gap-4">
@@ -87,6 +96,7 @@ export function InsightsScreen() {
           rangeId={rangeId}
           today={today}
           weekStartsOn={weekStartsOn}
+          goal={dailyGoal}
         />
       ) : (
         <Skeleton />

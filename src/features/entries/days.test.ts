@@ -8,6 +8,7 @@ import {
   monthStart,
   parseDay,
   shiftDay,
+  shortDate,
 } from "./days";
 
 describe("localDateString", () => {
@@ -160,6 +161,14 @@ describe("calendar helpers", () => {
   it("finds the first day of a month", () => {
     expect(monthStart("2026-11-17")).toBe("2026-11-01");
     expect(monthStart("2024-02-29")).toBe("2024-02-01");
+  });
+});
+
+describe("shortDate", () => {
+  it("writes a date as day and month", () => {
+    expect(shortDate("2026-10-05")).toBe("5 Oct");
+    expect(shortDate("2026-11-30")).toBe("30 Nov");
+    expect(shortDate("2024-02-29")).toBe("29 Feb");
   });
 });
 

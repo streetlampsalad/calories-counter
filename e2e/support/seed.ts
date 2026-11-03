@@ -59,3 +59,17 @@ export async function resetSettings(client: Client) {
     .not("user_id", "is", null);
   if (error) throw new Error(`Could not reset settings: ${error.message}`);
 }
+
+// Many Entries in one call, for tests that need months of history.
+export async function seedEntries(
+  client: Client,
+  entries: Array<{ foodId: string; day: string; quantity: number }>,
+) {
+  const rows = entries.map((entry) => ({
+    food_id: entry.foodId,
+    day: entry.day,
+    quantity: entry.quantity,
+  }));
+  const { error } = await client.from("entries").insert(rows);
+  if (error) throw new Error(`Could not seed entries: ${error.message}`);
+}
