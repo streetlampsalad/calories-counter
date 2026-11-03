@@ -1,0 +1,45 @@
+{
+  "count": 33,
+  "page": 1,
+  "page_count": 3,
+  "page_size": 3,
+  "skip": 0,
+  "products": [
+    {
+      "code": "9310072000282",
+      "product_name": "Tim Tam",
+      "brands": "Arnott's",
+      "serving_size": "1 biscuit (18.3 g)",
+      "nutriments": {
+        "energy-kcal_100g": 523.722951864505,
+        "energy-kj_100g": 2190,
+        "energy-kcal_serving": 95.8,
+        "energy-kj_serving": 401
+      }
+    },
+    {
+      "code": "9310072034607",
+      "product_name": "Tim Tam",
+      "brands": "Arnott’s",
+      "serving_size": "1 biscuit (18.1 g)",
+      "nutriments": {
+        "energy-kcal_100g": 525,
+        "energy-kj_100g": 2196,
+        "energy-kcal_serving": 95,
+        "energy-kj_serving": 397
+      }
+    },
+    {
+      "code": "9310072013855",
+      "product_name": "Tim Tam Double Coat",
+      "brands": "Arnott's",
+      "serving_size": "1 biscuit (22 g)",
+      "nutriments": {
+        "energy-kcal_100g": 233.269598470363,
+        "energy-kj_100g": 2220.45454545455,
+        "energy-kcal_serving": 51.3,
+        "energy-kj_serving": 489
+      }
+    }
+  ]
+}

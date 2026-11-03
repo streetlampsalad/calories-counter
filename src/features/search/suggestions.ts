@@ -43,3 +43,23 @@ export function referenceSuggestion(row: ReferenceFoodRow): Suggestion {
 // "93 kcal per 100 g"
 export const describePer100 = (per100: NonNullable<Suggestion["per100"]>) =>
   `${per100.calories.toLocaleString("en-AU")} kcal per 100 ${per100.unit}`;
+
+// What to call the Food: "Arnott's Tim Tam", unless the name already says the brand.
+export function foodName(
+  suggestion: Pick<Suggestion, "name" | "brand">,
+): string {
+  const { name, brand } = suggestion;
+  if (!brand || name.toLowerCase().includes(brand.toLowerCase())) return name;
+  return `${brand} ${name}`;
+}
+
+// "524 kcal per 100 g · 96 kcal per serving"
+export function describeEnergy(suggestion: Suggestion): string {
+  const parts = [
+    suggestion.per100 ? describePer100(suggestion.per100) : null,
+    suggestion.serving
+      ? `${suggestion.serving.calories.toLocaleString("en-AU")} kcal per serving`
+      : null,
+  ];
+  return parts.filter((part) => part !== null).join(" · ");
+}

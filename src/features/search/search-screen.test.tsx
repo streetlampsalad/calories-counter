@@ -33,11 +33,18 @@ const reference = vi.hoisted(() => ({
   refetch: vi.fn(),
   seen: [] as string[],
 }));
+const products = vi.hoisted(() => ({
+  state: { data: undefined as unknown, isPending: false, isError: false },
+  seen: [] as string[],
+}));
 vi.mock("./queries", () => ({
-  MIN_QUERY: 2,
   useReferenceSearch: (q: string) => {
     reference.seen.push(q);
     return { ...reference.state, refetch: reference.refetch };
+  },
+  useProductSearch: (q: string) => {
+    products.seen.push(q);
+    return { ...products.state };
   },
 }));
 
@@ -73,6 +80,8 @@ describe("SearchScreen", () => {
     foodsData.foods = [];
     reference.seen = [];
     reference.state = { data: [banana], isPending: false, isError: false };
+    products.seen = [];
+    products.state = { data: [], isPending: false, isError: false };
   });
 
   it("searches only when submitted, never on each keystroke (AC-1)", async () => {
@@ -165,7 +174,11 @@ describe("SearchScreen", () => {
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((h) => h.textContent);
-    expect(headings).toEqual(["Your foods", "Australian foods"]);
+    expect(headings).toEqual([
+      "Your foods",
+      "Australian foods",
+      "Packaged products",
+    ]);
     const link = within(
       screen.getByRole("list", { name: "Your foods" }),
     ).getByRole("link");
@@ -255,5 +268,99 @@ describe("SearchScreen", () => {
       screen.getByRole("button", { name: /Edit Banana, cavendish, raw/ }),
     );
     expect(push).toHaveBeenCalledWith("/foods?food=food-1");
+  });
+});
+
+const timTam = {
+  key: "off:1",
+  name: "Tim Tam",
+  brand: "Arnott's",
+  per100: { calories: 524, unit: "g" as const },
+  serving: { calories: 96, label: "1 biscuit (18.3 g)" },
+  sourceLabel: "From Open Food Facts",
+};
+
+describe("SearchScreen: packaged products (AC-3)", () => {
+  beforeEach(() => {
+    foodsData.foods = [];
+    reference.seen = [];
+    products.seen = [];
+    reference.state = { data: [], isPending: false, isError: false };
+    products.state = { data: [timTam], isPending: false, isError: false };
+  });
+
+  it("lists packaged products with name, brand and energy per 100 g and per serving", async () => {
+    render(<SearchScreen />);
+
+    await search("tim tam");
+
+    const list = screen.getByRole("list", { name: "Packaged products" });
+    expect(within(list).getByText("Tim Tam")).toBeInTheDocument();
+    expect(within(list).getByText("Arnott's")).toBeInTheDocument();
+    expect(
+      within(list).getByText("524 kcal per 100 g · 96 kcal per serving"),
+    ).toBeInTheDocument();
+  });
+
+  it("searches packaged products only when submitted, as it does the others", async () => {
+    render(<SearchScreen />);
+
+    await userEvent.type(screen.getByLabelText("Search for a food"), "tim tam");
+    expect(products.seen.every((q) => q === "")).toBe(true);
+
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(products.seen.at(-1)).toBe("tim tam");
+  });
+
+  it("shows the packaged section after the Australian foods", async () => {
+    render(<SearchScreen />);
+
+    await search("tim tam");
+
+    const headings = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((h) => h.textContent);
+    expect(headings).toEqual(["Australian foods", "Packaged products"]);
+  });
+
+  it("says the section is unavailable when it fails, while Australian foods still show", async () => {
+    reference.state = { data: [banana], isPending: false, isError: false };
+    products.state = { data: undefined, isPending: false, isError: true };
+    render(<SearchScreen />);
+
+    await search("banana");
+
+    expect(
+      screen.getByText("Packaged products unavailable right now"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", { name: "Australian foods" }),
+    ).toBeInTheDocument();
+  });
+
+  it("says when no packaged product matches", async () => {
+    products.state = { data: [], isPending: false, isError: false };
+    render(<SearchScreen />);
+
+    await search("zzzz");
+
+    expect(
+      screen.getByText("No Australian packaged products match “zzzz”."),
+    ).toBeInTheDocument();
+  });
+
+  it("asks per serving or per 100 g, then opens the form with the brand in the name", async () => {
+    render(<SearchScreen />);
+    await search("tim tam");
+
+    await userEvent.click(screen.getByRole("button", { name: /Tim Tam/ }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Per serving/ }),
+    );
+
+    expect(screen.getByLabelText("Name")).toHaveValue("Arnott's Tim Tam");
+    expect(screen.getByLabelText("Portion")).toHaveValue("1 biscuit (18.3 g)");
+    expect(screen.getByLabelText("Calories")).toHaveValue("96");
+    expect(screen.getByText("From Open Food Facts")).toBeInTheDocument();
   });
 });

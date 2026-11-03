@@ -12,7 +12,7 @@ import { findDuplicate } from "@/features/foods/domain";
 import { FoodForm } from "@/features/foods/food-form";
 import type { Food, FoodInput } from "@/features/foods/types";
 import { MAX_PORTION } from "@/features/foods/validation";
-import type { Suggestion } from "./suggestions";
+import { foodName, type Suggestion } from "./suggestions";
 
 type Props = {
   suggestion: Suggestion | null;
@@ -26,9 +26,12 @@ type Basis = "serving" | "per100";
 
 const kcal = (calories: number) => `${calories.toLocaleString("en-AU")} kcal`;
 
-// "1 serving (30 g)", kept within what a Portion may hold.
+// A bare amount like "30 g" becomes "1 serving (30 g)"; a label that says more ("1 biscuit (18 g)") is used as is.
 const servingPortion = (label: string) =>
-  `1 serving (${label})`.slice(0, MAX_PORTION);
+  (/^[0-9.,]+\s*(?:g|ml)$/i.test(label.trim())
+    ? `1 serving (${label.trim()})`
+    : label.trim()
+  ).slice(0, MAX_PORTION);
 
 function BasisChoice({
   suggestion,
@@ -52,7 +55,7 @@ function BasisChoice({
   );
   return (
     <div className="flex flex-col gap-3">
-      <p className="font-medium">{suggestion.name}</p>
+      <p className="font-medium">{foodName(suggestion)}</p>
       <p className="text-muted-foreground text-sm">
         This product gives both. Which do you want to save?
       </p>
@@ -96,18 +99,18 @@ function SuggestionBody({
   const initialValues =
     basis === "serving" && serving
       ? {
-          name: suggestion.name,
+          name: foodName(suggestion),
           portion: servingPortion(serving.label),
           calories: String(serving.calories),
         }
       : per100
         ? {
-            name: suggestion.name,
+            name: foodName(suggestion),
             portion: `100 ${per100.unit}`,
             calories: String(per100.calories),
           }
         : {
-            name: suggestion.name,
+            name: foodName(suggestion),
             portion: suggestion.portion ?? "",
             calories:
               suggestion.calories === undefined

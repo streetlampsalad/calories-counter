@@ -12,9 +12,10 @@ import { formatFoodDetail, matchesFoodQuery } from "@/features/foods/domain";
 import { useAddFood, useFoods } from "@/features/foods/queries";
 import type { Food, FoodInput } from "@/features/foods/types";
 import { normalizeText } from "@/features/foods/validation";
-import { MIN_QUERY, useReferenceSearch } from "./queries";
+import { MIN_QUERY } from "./limits";
+import { useProductSearch, useReferenceSearch } from "./queries";
 import { SuggestionSheet } from "./suggestion-sheet";
-import { describePer100, type Suggestion } from "./suggestions";
+import { describeEnergy, type Suggestion } from "./suggestions";
 
 const YOUR_FOODS_SHOWN = 5;
 
@@ -51,11 +52,14 @@ function SuggestionRow({
         className="flex min-h-14 w-full flex-col items-start justify-center gap-0.5 py-3 text-left"
       >
         <span className="font-medium">{suggestion.name}</span>
-        {suggestion.per100 ? (
+        {suggestion.brand ? (
           <span className="text-muted-foreground text-sm">
-            {describePer100(suggestion.per100)}
+            {suggestion.brand}
           </span>
         ) : null}
+        <span className="text-muted-foreground text-sm">
+          {describeEnergy(suggestion)}
+        </span>
       </button>
     </li>
   );
@@ -73,6 +77,7 @@ export function SearchScreen() {
   const [tooShort, setTooShort] = useState(false);
   const [picked, setPicked] = useState<Suggestion | null>(null);
   const reference = useReferenceSearch(submitted);
+  const products = useProductSearch(submitted);
 
   const yours: Food[] = submitted
     ? (foods ?? [])
@@ -176,6 +181,38 @@ export function SearchScreen() {
           {reference.data && reference.data.length > 0 ? (
             <ul aria-label="Australian foods">
               {reference.data.map((suggestion) => (
+                <SuggestionRow
+                  key={suggestion.key}
+                  suggestion={suggestion}
+                  onPick={() => setPicked(suggestion)}
+                />
+              ))}
+            </ul>
+          ) : null}
+        </Section>
+      ) : null}
+
+      {submitted ? (
+        <Section title="Packaged products">
+          {products.isPending ? (
+            <div
+              aria-hidden="true"
+              className="h-24 animate-pulse rounded-lg bg-muted"
+            />
+          ) : null}
+          {products.isError ? (
+            <p className="text-muted-foreground text-sm">
+              Packaged products unavailable right now
+            </p>
+          ) : null}
+          {products.data && products.data.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No Australian packaged products match “{submitted}”.
+            </p>
+          ) : null}
+          {products.data && products.data.length > 0 ? (
+            <ul aria-label="Packaged products">
+              {products.data.map((suggestion) => (
                 <SuggestionRow
                   key={suggestion.key}
                   suggestion={suggestion}

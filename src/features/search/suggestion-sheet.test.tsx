@@ -143,7 +143,7 @@ describe("SuggestionSheet: per serving or per 100 g (AC-5)", () => {
       await screen.findByRole("button", { name: /Per serving/ }),
     );
 
-    expect(screen.getByLabelText("Name")).toHaveValue("Tim Tam");
+    expect(screen.getByLabelText("Name")).toHaveValue("Arnott's Tim Tam");
     expect(screen.getByLabelText("Portion")).toHaveValue("1 serving (30 g)");
     expect(screen.getByLabelText("Calories")).toHaveValue("150");
   });
@@ -222,6 +222,28 @@ describe("SuggestionSheet: per serving or per 100 g (AC-5)", () => {
     expect(
       await screen.findByText(/Which do you want to save/),
     ).toBeInTheDocument();
+  });
+});
+
+describe("SuggestionSheet: names and servings", () => {
+  it("does not repeat a brand the name already has", async () => {
+    open({ ...packaged, name: "Arnott's Tim Tam Original", per100: undefined });
+
+    expect(await screen.findByLabelText("Name")).toHaveValue(
+      "Arnott's Tim Tam Original",
+    );
+  });
+
+  it("uses a serving label that says more than an amount as the Portion", async () => {
+    open({
+      ...packaged,
+      per100: undefined,
+      serving: { calories: 96, label: "1 biscuit (18.3 g)" },
+    });
+
+    expect(await screen.findByLabelText("Portion")).toHaveValue(
+      "1 biscuit (18.3 g)",
+    );
   });
 });
 

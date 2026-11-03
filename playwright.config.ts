@@ -28,8 +28,8 @@ export default defineConfig({
     command: `pnpm start --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
-    // Photo import reads notes with a stand-in, so tests never call Google.
-    env: { NOTES_READER: "fake" },
+    // Photo import and product search use stand-ins, so tests never call Google or Open Food Facts.
+    env: { NOTES_READER: "fake", OFF_SOURCE: "fixture" },
     timeout: 60_000,
   },
 });

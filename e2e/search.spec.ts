@@ -181,3 +181,95 @@ test("a liquid scales per 100 ml", async ({ page }) => {
 
   await expect(dialog.getByLabel("Calories")).toHaveValue("163"); // 162.5
 });
+
+const packaged = (page: Page) =>
+  page.getByRole("list", { name: "Packaged products" });
+
+test("packaged products are listed with brand and energy", async ({ page }) => {
+  await page.goto("/foods/search");
+
+  await search(page, "tim tam");
+
+  const first = packaged(page).getByRole("button").first();
+  await expect(first).toContainText("Tim Tam");
+  await expect(first).toContainText("Arnott's");
+  await expect(first).toContainText("524 kcal per 100 g");
+  await expect(first).toContainText("96 kcal per serving");
+});
+
+test("a packaged product asks per serving or per 100 g, then saves as chosen", async ({
+  page,
+}) => {
+  const name = unique("Biscuit");
+  await page.goto("/foods/search");
+  await search(page, "tim tam");
+
+  await packaged(page).getByRole("button").first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText(/Which do you want to save/)).toBeVisible();
+  await dialog.getByRole("button", { name: /Per serving/ }).click();
+
+  await expect(dialog.getByLabel("Name")).toHaveValue("Arnott's Tim Tam");
+  await expect(dialog.getByLabel("Portion")).toHaveValue("1 biscuit (18.3 g)");
+  await expect(dialog.getByLabel("Calories")).toHaveValue("96");
+  await expect(dialog.getByText("From Open Food Facts")).toBeVisible();
+  await dialog.getByLabel("Name").fill(name);
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes("/rest/v1/foods") &&
+      response.request().method() === "POST",
+  );
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await saved;
+  await page.goto("/foods");
+  await expect(
+    page.getByRole("button", { name: new RegExp(`^Edit ${name},`) }),
+  ).toContainText("1 biscuit (18.3 g) · 96 kcal");
+});
+
+test("per 100 g from a product rescales to the portion typed", async ({
+  page,
+}) => {
+  await page.goto("/foods/search");
+  await search(page, "tim tam");
+  await packaged(page).getByRole("button").first().click();
+  const dialog = page.getByRole("dialog");
+
+  await dialog.getByRole("button", { name: /Per 100 g/ }).click();
+  await expect(dialog.getByLabel("Calories")).toHaveValue("524");
+  await dialog.getByLabel("Portion").fill("30 g");
+
+  await expect(dialog.getByLabel("Calories")).toHaveValue("157"); // 523.7 -> 524 x 0.3 = 157.2
+});
+
+test("when packaged products fail the section says so and the rest still shows", async ({
+  page,
+}) => {
+  await page.route("**/api/search/products*", (route) =>
+    route.fulfill({ status: 503, json: { code: "unavailable" } }),
+  );
+  await page.goto("/foods/search");
+
+  await search(page, "banana");
+
+  await expect(
+    page.getByText("Packaged products unavailable right now"),
+  ).toBeVisible();
+  await expect(
+    australian(page).getByRole("button", { name: /Banana, cavendish, raw/ }),
+  ).toBeVisible();
+});
+
+test("the products endpoint refuses someone signed out", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  });
+  const response = await context.request.get("/api/search/products?q=tim", {
+    maxRedirects: 0,
+  });
+
+  expect(response.status()).toBe(401);
+  await context.close();
+});
