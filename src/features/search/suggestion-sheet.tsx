@@ -119,17 +119,25 @@ function SuggestionBody({
           };
 
   return (
-    <FoodForm
-      initialValues={initialValues}
-      sourceLabel={suggestion.sourceLabel}
-      scaleFrom={basis === "per100" ? per100 : undefined}
-      findExisting={(input) => findDuplicate(foods, input)}
-      onEditExisting={onEditExisting}
-      onSubmit={(input) => {
-        onSave(input);
-        onClose();
-      }}
-    />
+    <div className="flex flex-col gap-3">
+      {suggestion.estimate && suggestion.basis ? (
+        <p className="rounded-lg bg-muted p-3 text-sm">
+          <span className="font-medium">Basis: </span>
+          {suggestion.basis}
+        </p>
+      ) : null}
+      <FoodForm
+        initialValues={initialValues}
+        sourceLabel={suggestion.sourceLabel}
+        scaleFrom={basis === "per100" ? per100 : undefined}
+        findExisting={(input) => findDuplicate(foods, input)}
+        onEditExisting={onEditExisting}
+        onSubmit={(input) => {
+          onSave(input);
+          onClose();
+        }}
+      />
+    </div>
   );
 }
 

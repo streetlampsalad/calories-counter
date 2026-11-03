@@ -29,7 +29,11 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     // Photo import and product search use stand-ins, so tests never call Google or Open Food Facts.
-    env: { NOTES_READER: "fake", OFF_SOURCE: "fixture" },
+    env: {
+      NOTES_READER: "fake",
+      CALORIE_GUESSER: "fake",
+      OFF_SOURCE: "fixture",
+    },
     timeout: 60_000,
   },
 });

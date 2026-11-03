@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
@@ -12,6 +12,7 @@ import { formatFoodDetail, matchesFoodQuery } from "@/features/foods/domain";
 import { useAddFood, useFoods } from "@/features/foods/queries";
 import type { Food, FoodInput } from "@/features/foods/types";
 import { normalizeText } from "@/features/foods/validation";
+import { askBestGuess } from "./guess";
 import { MIN_QUERY } from "./limits";
 import { useProductSearch, useReferenceSearch } from "./queries";
 import { SuggestionSheet } from "./suggestion-sheet";
@@ -76,6 +77,9 @@ export function SearchScreen() {
   const [submitted, setSubmitted] = useState("");
   const [tooShort, setTooShort] = useState(false);
   const [picked, setPicked] = useState<Suggestion | null>(null);
+  const [guessing, setGuessing] = useState<
+    "idle" | "asking" | "unavailable" | "failed"
+  >("idle");
   const reference = useReferenceSearch(submitted);
   const products = useProductSearch(submitted);
 
@@ -90,6 +94,17 @@ export function SearchScreen() {
     const query = normalizeText(draft);
     setTooShort(query.length < MIN_QUERY);
     if (query.length >= MIN_QUERY) setSubmitted(query);
+  }
+
+  async function bestGuess() {
+    setGuessing("asking");
+    const result = await askBestGuess(submitted);
+    if (result.kind === "guess") {
+      setGuessing("idle");
+      setPicked(result.suggestion);
+    } else {
+      setGuessing(result.kind);
+    }
   }
 
   function save(input: FoodInput) {
@@ -220,6 +235,37 @@ export function SearchScreen() {
                 />
               ))}
             </ul>
+          ) : null}
+        </Section>
+      ) : null}
+
+      {submitted ? (
+        <Section title="Best guess">
+          <p className="text-muted-foreground text-sm">
+            Can't find it? Ask for an estimate. It is a guess, so check it
+            before saving.
+          </p>
+          <Button
+            variant="outline"
+            onClick={bestGuess}
+            disabled={guessing === "asking"}
+            className="h-12 gap-2 text-base"
+          >
+            <Sparkles aria-hidden="true" />
+            {guessing === "asking"
+              ? "Estimating…"
+              : `Best guess for “${submitted}”`}
+          </Button>
+          {guessing === "unavailable" ? (
+            <p role="alert" className="text-sm">
+              Best guess isn't available right now. The search above still
+              works.
+            </p>
+          ) : null}
+          {guessing === "failed" ? (
+            <p role="alert" className="text-sm">
+              Couldn't make a guess. Try again.
+            </p>
           ) : null}
         </Section>
       ) : null}

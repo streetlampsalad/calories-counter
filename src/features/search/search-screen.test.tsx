@@ -48,6 +48,9 @@ vi.mock("./queries", () => ({
   },
 }));
 
+const guessApi = vi.hoisted(() => ({ askBestGuess: vi.fn() }));
+vi.mock("./guess", () => guessApi);
+
 import { SearchScreen } from "./search-screen";
 
 const banana = {
@@ -178,6 +181,7 @@ describe("SearchScreen", () => {
       "Your foods",
       "Australian foods",
       "Packaged products",
+      "Best guess",
     ]);
     const link = within(
       screen.getByRole("list", { name: "Your foods" }),
@@ -320,7 +324,11 @@ describe("SearchScreen: packaged products (AC-3)", () => {
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((h) => h.textContent);
-    expect(headings).toEqual(["Australian foods", "Packaged products"]);
+    expect(headings).toEqual([
+      "Australian foods",
+      "Packaged products",
+      "Best guess",
+    ]);
   });
 
   it("says the section is unavailable when it fails, while Australian foods still show", async () => {
@@ -362,5 +370,108 @@ describe("SearchScreen: packaged products (AC-3)", () => {
     expect(screen.getByLabelText("Portion")).toHaveValue("1 biscuit (18.3 g)");
     expect(screen.getByLabelText("Calories")).toHaveValue("96");
     expect(screen.getByText("From Open Food Facts")).toBeInTheDocument();
+  });
+});
+
+describe("SearchScreen: best guess (AC-7, AC-8)", () => {
+  const estimate = {
+    key: "guess:1",
+    name: "Lamington",
+    portion: "1 piece",
+    calories: 190,
+    basis: "Sponge with chocolate icing and coconut",
+    estimate: true,
+    sourceLabel: "Estimate: check before saving",
+  };
+
+  beforeEach(() => {
+    foodsData.foods = [];
+    guessApi.askBestGuess.mockReset();
+    reference.state = { data: [], isPending: false, isError: false };
+    products.state = { data: [], isPending: false, isError: false };
+  });
+
+  it("offers a best guess for what was searched, only after a search", async () => {
+    render(<SearchScreen />);
+    expect(
+      screen.queryByRole("button", { name: /Best guess/ }),
+    ).not.toBeInTheDocument();
+
+    await search("lamington");
+
+    expect(
+      screen.getByRole("button", { name: "Best guess for “lamington”" }),
+    ).toBeEnabled();
+  });
+
+  it("opens the form with the estimate, labelled, with the basis", async () => {
+    guessApi.askBestGuess.mockResolvedValue({
+      kind: "guess",
+      suggestion: estimate,
+    });
+    render(<SearchScreen />);
+    await search("lamington");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Best guess for/ }),
+    );
+
+    expect(guessApi.askBestGuess).toHaveBeenCalledWith("lamington");
+    expect(await screen.findByLabelText("Name")).toHaveValue("Lamington");
+    expect(screen.getByLabelText("Portion")).toHaveValue("1 piece");
+    expect(screen.getByLabelText("Calories")).toHaveValue("190");
+    expect(
+      screen.getByText("Estimate: check before saving"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sponge with chocolate icing and coconut/),
+    ).toBeInTheDocument();
+  });
+
+  it("shows it is working, and cannot be pressed twice", async () => {
+    guessApi.askBestGuess.mockReturnValue(new Promise(() => undefined));
+    render(<SearchScreen />);
+    await search("lamington");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Best guess for/ }),
+    );
+
+    expect(screen.getByRole("button", { name: "Estimating…" })).toBeDisabled();
+  });
+
+  it("says best guess is unavailable, while the search still works", async () => {
+    guessApi.askBestGuess.mockResolvedValue({ kind: "unavailable" });
+    reference.state = { data: [banana], isPending: false, isError: false };
+    render(<SearchScreen />);
+    await search("banana");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Best guess for/ }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Best guess isn't available right now",
+    );
+    expect(
+      screen.getByRole("list", { name: "Australian foods" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Best guess for/ }),
+    ).toBeEnabled();
+  });
+
+  it("says when a guess could not be made", async () => {
+    guessApi.askBestGuess.mockResolvedValue({ kind: "failed" });
+    render(<SearchScreen />);
+    await search("lamington");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Best guess for/ }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Couldn't make a guess",
+    );
   });
 });

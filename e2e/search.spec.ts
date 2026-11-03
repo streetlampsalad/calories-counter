@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { authFile } from "./support/auth";
 import { userClient } from "./support/db";
 import { seedFood, unique } from "./support/seed";
 
@@ -272,4 +273,97 @@ test("the products endpoint refuses someone signed out", async ({
 
   expect(response.status()).toBe(401);
   await context.close();
+});
+
+test("Best guess opens the form with a labelled estimate to check", async ({
+  page,
+}) => {
+  const name = unique("Lamington");
+  await page.goto("/foods/search");
+  await search(page, "lamington");
+
+  await page.getByRole("button", { name: /Best guess for/ }).click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Estimate: check before saving")).toBeVisible();
+  await expect(dialog.getByText(/Basis:/)).toBeVisible();
+  await expect(dialog.getByLabel("Name")).toHaveValue("Lamington");
+  await expect(dialog.getByLabel("Portion")).toHaveValue("1 piece");
+  await expect(dialog.getByLabel("Calories")).toHaveValue("190");
+  await dialog.getByLabel("Name").fill(name);
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes("/rest/v1/foods") &&
+      response.request().method() === "POST",
+  );
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await saved;
+  await page.goto("/foods");
+  await expect(
+    page.getByRole("button", { name: new RegExp(`^Edit ${name},`) }),
+  ).toContainText("1 piece · 190 kcal");
+});
+
+test("when Best guess is unavailable it says so and search carries on", async ({
+  page,
+}) => {
+  await page.route("**/api/search/guess", (route) =>
+    route.fulfill({ status: 503, json: { code: "guess_unavailable" } }),
+  );
+  await page.goto("/foods/search");
+  await search(page, "banana");
+
+  await page.getByRole("button", { name: /Best guess for/ }).click();
+
+  await expect(
+    page.getByRole("region", { name: "Best guess" }).getByRole("alert"),
+  ).toContainText("isn't available right now");
+  await expect(
+    australian(page).getByRole("button", { name: /Banana, cavendish, raw/ }),
+  ).toBeVisible();
+});
+
+test.describe("the guess endpoint", () => {
+  test("refuses someone signed out", async ({ browser }) => {
+    const context = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+    });
+    const response = await context.request.post("/api/search/guess", {
+      data: { query: "lamington" },
+      maxRedirects: 0,
+    });
+
+    expect(response.status()).toBe(401);
+    await context.close();
+  });
+
+  test("turns away a query that is too short", async ({ request }) => {
+    const response = await request.post("/api/search/guess", {
+      data: { query: "a" },
+    });
+
+    expect(response.status()).toBe(400);
+  });
+});
+
+test.describe("the guess daily limit", () => {
+  test.use({ storageState: authFile("ivy") });
+
+  test("refuses with 429 once the day's guesses are used, whatever photos were read", async ({
+    request,
+  }) => {
+    const send = () =>
+      request.post("/api/search/guess", { data: { query: "lamington" } });
+
+    let allowed = 0;
+    let response = await send();
+    while (response.status() === 200 && allowed < 31) {
+      allowed += 1;
+      response = await send();
+    }
+
+    expect(allowed).toBeLessThanOrEqual(30);
+    expect(response.status()).toBe(429);
+    expect(await response.json()).toEqual({ code: "limit_reached" });
+  });
 });

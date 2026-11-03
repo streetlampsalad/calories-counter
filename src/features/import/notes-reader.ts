@@ -1,3 +1,4 @@
+import { AiUnavailable } from "@/lib/ai";
 import type { ImportRow } from "./parse";
 
 // Reads a photo of handwritten food notes into rows for Import Review. The rows have the same
@@ -6,14 +7,8 @@ export interface NotesReader {
   readNotes(image: Uint8Array, mimeType: string): Promise<ImportRow[]>;
 }
 
-// The service cannot help right now: its free quota is used up, or it is down. Not a bug, so the
-// User is offered the copy-prompt route instead.
-export class ReaderUnavailable extends Error {
-  constructor(reason: string) {
-    super(`Notes reader unavailable: ${reason}`);
-    this.name = "ReaderUnavailable";
-  }
-}
+// The photo reader cannot help right now: see AiUnavailable.
+export { AiUnavailable as ReaderUnavailable } from "@/lib/ai";
 
 const FIXTURE_ROWS: ImportRow[] = [
   {
@@ -37,7 +32,7 @@ export class FakeNotesReader implements NotesReader {
 // What production uses when no reader is set up, so nobody is ever given made-up foods.
 class UnavailableReader implements NotesReader {
   async readNotes(): Promise<ImportRow[]> {
-    throw new ReaderUnavailable("no reader is configured");
+    throw new AiUnavailable("no reader is configured");
   }
 }
 
