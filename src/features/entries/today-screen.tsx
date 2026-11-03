@@ -1,12 +1,13 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Food } from "@/features/foods/types";
-import { dayLabel, parseDay } from "./days";
+import { DayHeader } from "./day-header";
+import { parseDay } from "./days";
 import { formatQuantity } from "./domain";
 import { EditEntrySheet } from "./edit-entry-sheet";
 import { DailyTotal, EntryList } from "./entry-list";
@@ -30,8 +31,19 @@ function Skeleton() {
   );
 }
 
-function DayView({ day, today }: { day: string; today: string }) {
+function DayView({ urlDay, today }: { urlDay: string; today: string }) {
+  const router = useRouter();
+  // The Day shown moves the instant it is chosen; the URL catches up a moment later. Without
+  // this, two quick taps on an arrow would both step from the URL's old Day and go back only one.
+  const [day, setDay] = useState(urlDay);
+  useEffect(() => setDay(urlDay), [urlDay]);
   const { data: entries, isPending, isError, refetch } = useDayEntries(day);
+
+  // Each Day is a history entry, so the back button returns to the Day before. Today is just "/".
+  const goToDay = (next: string) => {
+    setDay(next);
+    router.push(next === today ? "/" : `/?day=${next}`);
+  };
   const addEntry = useAddEntry();
   const removeEntry = useRemoveEntry();
   const updateQuantity = useUpdateEntryQuantity();
@@ -105,9 +117,7 @@ function DayView({ day, today }: { day: string; today: string }) {
 
   return (
     <main className="flex flex-1 flex-col gap-4">
-      <h1 className="font-semibold text-2xl tracking-tight">
-        {dayLabel(day, today)}
-      </h1>
+      <DayHeader day={day} today={today} onChange={goToDay} />
 
       {isPending ? <Skeleton /> : null}
 
@@ -171,7 +181,7 @@ export function TodayScreen() {
   }
   return (
     <DayView
-      day={parseDay(params.get("day") ?? undefined, today)}
+      urlDay={parseDay(params.get("day") ?? undefined, today)}
       today={today}
     />
   );
