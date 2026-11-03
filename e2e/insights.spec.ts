@@ -372,3 +372,73 @@ test("Top foods follows the chosen range", async ({ page }) => {
   await expect(topFoodRows(page).first()).toContainText("220 kcal");
   await expect(topFoodRows(page).first()).toContainText("100%");
 });
+
+// Four whole weeks (Mon 5 Oct to Sun 1 Nov): every Saturday 2,600 kcal, every other day 1,800.
+async function arrangeWeekdays(weekStartsOn?: 0 | 1) {
+  const gus = await startFresh();
+  const high = await seedFood(gus, { name: "Big", calories: 130 });
+  const low = await seedFood(gus, { name: "Small", calories: 90 });
+  const entries = Array.from({ length: 28 }, (_, i) => {
+    const date = new Date(Date.UTC(2026, 9, 5 + i));
+    return {
+      foodId: date.getUTCDay() === 6 ? high.id : low.id,
+      day: date.toISOString().slice(0, 10),
+      quantity: 20,
+    };
+  });
+  await seedEntries(gus, entries);
+  if (weekStartsOn !== undefined) {
+    await gus
+      .from("user_settings")
+      .upsert({ week_starts_on: weekStartsOn }, { onConflict: "user_id" });
+  }
+}
+
+const weekdayCard = (page: Page) =>
+  page.getByRole("region", { name: "Day of week" });
+const weekdayRows = (page: Page) =>
+  weekdayCard(page)
+    .getByRole("list", { name: "Average by weekday" })
+    .getByRole("listitem");
+
+test("Day of week calls out the highest weekday in words", async ({ page }) => {
+  await arrangeWeekdays();
+
+  await page.goto("/summary/insights");
+
+  await expect(weekdayCard(page)).toContainText("Saturdays average 2,600 kcal");
+  await expect(weekdayRows(page)).toHaveCount(7);
+  await expect(weekdayRows(page).nth(0)).toContainText("Mon");
+  await expect(weekdayRows(page).nth(0)).toContainText("1,800 kcal");
+  await expect(weekdayRows(page).nth(5)).toContainText("Sat");
+  await expect(weekdayRows(page).nth(5)).toContainText("Highest");
+});
+
+test("Day of week starts on the User's week start", async ({ page }) => {
+  await arrangeWeekdays(0);
+
+  await page.goto("/summary/insights");
+
+  await expect(weekdayRows(page).nth(0)).toContainText("Sun");
+  await expect(weekdayRows(page).nth(6)).toContainText("Sat");
+});
+
+test("Day of week says what is needed when there is too little data", async ({
+  page,
+}) => {
+  const gus = await startFresh();
+  const food = await seedFood(gus, { calories: 100 });
+  await seedEntries(
+    gus,
+    ["2026-11-01", "2026-11-02", "2026-11-03"].map((day) => ({
+      foodId: food.id,
+      day,
+      quantity: 5,
+    })),
+  );
+
+  await page.goto("/summary/insights");
+
+  await expect(weekdayCard(page)).toContainText("Not enough data yet");
+  await expect(weekdayCard(page)).toContainText("3 of 14 days logged so far");
+});

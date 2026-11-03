@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToday } from "@/features/entries/use-today";
 import { DEFAULT_SETTINGS } from "@/features/settings/domain";
 import { useSettings } from "@/features/settings/queries";
+import { DayOfWeekCard } from "./day-of-week-card";
 import {
   formatRange,
   INSIGHT_RANGES,
@@ -63,6 +64,11 @@ function InsightsContent({
         <div className="flex flex-col gap-4">
           <TrendCard totals={totals} range={range} goal={goal} today={today} />
           <TopFoodsCard range={range} />
+          <DayOfWeekCard
+            totals={totals}
+            range={range}
+            weekStartsOn={weekStartsOn}
+          />
         </div>
       ) : null}
     </>
