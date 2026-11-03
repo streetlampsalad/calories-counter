@@ -499,3 +499,49 @@ test.describe("adding a Food by hand", () => {
     await expect(list(page).getByText(second)).toBeVisible();
   });
 });
+
+test.describe("entering kilojoules from an Australian label", () => {
+  test("converts to calories, saves the converted figure, and remembers the unit", async ({
+    page,
+  }) => {
+    const name = unique("Flat white");
+    await page.goto("/foods");
+    await openManualForm(page);
+
+    await page.getByRole("button", { name: "kJ" }).click();
+    await page.getByLabel("Name").fill(name);
+    await page.getByRole("button", { name: "100 ml" }).click();
+    await page.getByLabel("Kilojoules").fill("1000");
+    await expect(page.getByText("= 239 kcal")).toBeVisible();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    const row = list(page).getByRole("listitem").filter({ hasText: name });
+    await expect(row).toContainText("100 ml · 239 kcal");
+
+    await page.reload();
+    await openManualForm(page);
+    await expect(page.getByLabel("Kilojoules")).toBeVisible();
+    await expect(page.getByRole("button", { name: "kJ" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  test("editing an existing Food shows its calories in kcal", async ({
+    page,
+  }) => {
+    const name = unique("Stays kcal");
+    await page.goto("/foods");
+    await addFood(page, name, "1 piece", "150");
+    await page.evaluate(() =>
+      localStorage.setItem("calories-counter:energy-unit", "kj"),
+    );
+
+    await page
+      .getByRole("button", { name: new RegExp(`^Edit ${name}`) })
+      .click();
+
+    await expect(page.getByLabel("Calories")).toHaveValue("150");
+  });
+});

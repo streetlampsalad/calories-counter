@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FoodForm } from "./food-form";
 import type { Food } from "./types";
 
@@ -255,5 +255,132 @@ describe("FoodForm: prefilled from elsewhere", () => {
     render(<FoodForm onSubmit={vi.fn()} />);
 
     expect(screen.queryByText(/^From /)).not.toBeInTheDocument();
+  });
+});
+
+describe("FoodForm: kilojoules", () => {
+  beforeEach(() => localStorage.clear());
+
+  const unit = (name: "kcal" | "kJ") => screen.getByRole("button", { name });
+
+  it("offers kcal and kJ, starting on Calories", () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    expect(
+      screen.getByRole("group", { name: "Energy unit" }),
+    ).toBeInTheDocument();
+    expect(unit("kcal")).toHaveAttribute("aria-pressed", "true");
+    expect(unit("kJ")).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByLabelText("Calories")).toBeInTheDocument();
+  });
+
+  it("shows the conversion as the kilojoules are typed", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.click(unit("kJ"));
+    await userEvent.type(screen.getByLabelText("Kilojoules"), "1000");
+
+    expect(screen.getByText("= 239 kcal")).toBeInTheDocument();
+  });
+
+  it("saves the converted Calories", async () => {
+    const onSubmit = vi.fn();
+    render(<FoodForm onSubmit={onSubmit} />);
+
+    await userEvent.click(unit("kJ"));
+    await userEvent.type(screen.getByLabelText("Name"), "Flat white");
+    await userEvent.click(screen.getByRole("button", { name: "100 ml" }));
+    await userEvent.type(screen.getByLabelText("Kilojoules"), "1000");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      name: "Flat white",
+      portion: "100 ml",
+      calories: 239,
+    });
+  });
+
+  it("shows no conversion until there is a usable number", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.click(unit("kJ"));
+    expect(screen.queryByText(/^= /)).not.toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText("Kilojoules"), "abc");
+    expect(screen.queryByText(/^= /)).not.toBeInTheDocument();
+  });
+
+  it("rejects more kilojoules than 9,999 kcal allows", async () => {
+    const onSubmit = vi.fn();
+    render(<FoodForm onSubmit={onSubmit} />);
+
+    await userEvent.click(unit("kJ"));
+    await userEvent.type(screen.getByLabelText("Name"), "Feast");
+    await userEvent.type(screen.getByLabelText("Portion"), "1 piece");
+    await userEvent.type(screen.getByLabelText("Kilojoules"), "41838");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(
+      screen.getByText("Kilojoules must be a whole number from 0 to 41,837"),
+    ).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("converts the number already typed when the unit is switched", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText("Calories"), "239");
+    await userEvent.click(unit("kJ"));
+    expect(screen.getByLabelText("Kilojoules")).toHaveValue("1000");
+
+    await userEvent.click(unit("kcal"));
+    expect(screen.getByLabelText("Calories")).toHaveValue("239");
+  });
+
+  it("leaves unusable text alone when the unit is switched", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText("Calories"), "12x");
+    await userEvent.click(unit("kJ"));
+
+    expect(screen.getByLabelText("Kilojoules")).toHaveValue("12x");
+  });
+
+  it("remembers the choice for the next Food", async () => {
+    const { unmount } = render(<FoodForm onSubmit={vi.fn()} />);
+    await userEvent.click(unit("kJ"));
+    unmount();
+
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    expect(await screen.findByLabelText("Kilojoules")).toBeInTheDocument();
+    expect(unit("kJ")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("shows an existing Food's Calories in kcal, whatever the saved choice", () => {
+    localStorage.setItem("calories-counter:energy-unit", "kj");
+    render(
+      <FoodForm
+        submitLabel="Save changes"
+        initialValues={{ name: "Rice", portion: "100 g", calories: "130" }}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Calories")).toHaveValue("130");
+  });
+
+  it("copes with browser storage being unavailable", async () => {
+    const setItem = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("blocked");
+      });
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.click(unit("kJ"));
+
+    expect(screen.getByLabelText("Kilojoules")).toBeInTheDocument();
+    setItem.mockRestore();
   });
 });

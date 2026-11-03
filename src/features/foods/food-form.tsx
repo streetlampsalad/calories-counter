@@ -4,7 +4,14 @@ import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  caloriesToKilojoules,
+  kilojoulesToCalories,
+  MAX_KILOJOULES,
+  parseKilojoules,
+} from "@/lib/energy";
 import { cn } from "@/lib/utils";
+import { type EnergyUnit, readEnergyUnit, saveEnergyUnit } from "./energy-unit";
 import type { Food, FoodInput } from "./types";
 import {
   type FoodErrors,
@@ -112,6 +119,37 @@ function PortionChips({
 
 const NO_TOUCHED = { name: false, portion: false, calories: false };
 
+function EnergyUnitToggle({
+  unit,
+  onChange,
+}: {
+  unit: EnergyUnit;
+  onChange: (unit: EnergyUnit) => void;
+}) {
+  const option = (value: EnergyUnit, label: string) => (
+    <button
+      type="button"
+      aria-pressed={unit === value}
+      onClick={() => onChange(value)}
+      className={cn(
+        "min-h-11 min-w-14 rounded-full px-4 text-sm",
+        unit === value
+          ? "bg-primary text-primary-foreground"
+          : "text-foreground",
+      )}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <fieldset className="m-0 flex min-w-0 gap-1 rounded-full border border-input p-0.5">
+      <legend className="sr-only">Energy unit</legend>
+      {option("kcal", "kcal")}
+      {option("kj", "kJ")}
+    </fieldset>
+  );
+}
+
 export function FoodForm({
   initialValues,
   submitLabel = "Save",
@@ -130,9 +168,29 @@ export function FoodForm({
   // A field is only judged once visited, so a fresh form isn't covered in red.
   const [touched, setTouched] = useState(NO_TOUCHED);
   const [duplicate, setDuplicate] = useState<Food | null>(null);
+  // An existing Food always opens in kcal; otherwise use the unit last chosen on this device.
+  const [unit, setUnit] = useState<EnergyUnit>(() =>
+    initialValues?.calories ? "kcal" : readEnergyUnit(),
+  );
 
-  const parsed = parseFoodInput(values);
-  const errors: FoodErrors = parsed.ok ? {} : parsed.errors;
+  // Labels give kJ; the app stores kcal. Convert before validating, and show what will be saved.
+  const kilojoules = unit === "kj" ? parseKilojoules(values.calories) : null;
+  const energyAsCalories =
+    unit === "kj"
+      ? kilojoules === null
+        ? ""
+        : String(kilojoulesToCalories(kilojoules))
+      : values.calories;
+  const parsed = parseFoodInput({ ...values, calories: energyAsCalories });
+  const errors: FoodErrors = parsed.ok ? {} : { ...parsed.errors };
+  if (unit === "kj") {
+    // A valid kJ figure always converts to valid kcal, so only the kJ message can apply.
+    if (kilojoules === null) {
+      errors.calories = `Kilojoules must be a whole number from 0 to ${MAX_KILOJOULES.toLocaleString("en-AU")}`;
+    } else {
+      errors.calories = undefined;
+    }
+  }
   const shown = (field: keyof FoodFormValues) =>
     touched[field] ? errors[field] : undefined;
 
@@ -140,6 +198,21 @@ export function FoodForm({
     setValues((current) => ({ ...current, [field]: value }));
     setDuplicate(null);
   };
+  // Carry the number across when the unit changes, if there is a usable one to carry.
+  function chooseUnit(next: EnergyUnit) {
+    if (next === unit) return;
+    const text = values.calories.trim();
+    let converted = values.calories;
+    if (unit === "kcal" && /^[0-9]+$/.test(text)) {
+      converted = String(caloriesToKilojoules(Number(text)));
+    } else if (unit === "kj") {
+      const kj = parseKilojoules(text);
+      if (kj !== null) converted = String(kilojoulesToCalories(kj));
+    }
+    setValues((current) => ({ ...current, calories: converted }));
+    setUnit(next);
+    saveEnergyUnit(next);
+  }
   const visit = (field: keyof FoodFormValues) => () =>
     setTouched((current) => ({ ...current, [field]: true }));
 
@@ -199,17 +272,27 @@ export function FoodForm({
         />
         <PortionChips portion={values.portion} onPick={set("portion")} />
       </div>
-      <Field
-        id={`${id}-calories`}
-        label="Calories"
-        value={values.calories}
-        error={shown("calories")}
-        onChange={set("calories")}
-        onBlur={visit("calories")}
-        inputMode="numeric"
-        pattern="[0-9]*"
-        enterKeyHint="done"
-      />
+      <div className="flex flex-col gap-2">
+        <Field
+          id={`${id}-calories`}
+          label={unit === "kj" ? "Kilojoules" : "Calories"}
+          value={values.calories}
+          error={shown("calories")}
+          onChange={set("calories")}
+          onBlur={visit("calories")}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          enterKeyHint="done"
+        />
+        <div className="flex items-center justify-between gap-3">
+          <EnergyUnitToggle unit={unit} onChange={chooseUnit} />
+          {kilojoules !== null ? (
+            <p aria-live="polite" className="text-muted-foreground text-sm">
+              = {kilojoulesToCalories(kilojoules)} kcal
+            </p>
+          ) : null}
+        </div>
+      </div>
       {duplicate ? (
         <p className="text-destructive text-sm">
           You already have {duplicate.name} ({duplicate.portion})
