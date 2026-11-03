@@ -5,16 +5,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { filterFoods, findDuplicate, formatFoodDetail } from "./domain";
+import { AddFoodSheet } from "./add-food-sheet";
+import { filterFoods, formatFoodDetail } from "./domain";
 import { EditFoodSheet } from "./edit-food-sheet";
-import { FoodForm } from "./food-form";
 import { FoodSearchBox } from "./food-search-box";
 import {
   useAddFood,
@@ -83,7 +76,6 @@ export function FoodsScreen() {
 
   function save(input: FoodInput) {
     const food: Food = { id: crypto.randomUUID(), archivedAt: null, ...input };
-    setAdding(false);
     addFood.mutate(food, {
       onError: (error) =>
         toast.error(error.message, {
@@ -207,22 +199,12 @@ export function FoodsScreen() {
         onClose={() => setEditing(null)}
       />
 
-      <Sheet open={adding} onOpenChange={setAdding}>
-        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Add food</SheetTitle>
-            <SheetDescription>
-              Calories are for one portion, like 1 slice or 100 g.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="px-4 pb-6">
-            <FoodForm
-              findExisting={(input) => findDuplicate(foods ?? [], input)}
-              onSubmit={save}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      <AddFoodSheet
+        open={adding}
+        foods={foods ?? []}
+        onSave={save}
+        onClose={() => setAdding(false)}
+      />
     </main>
   );
 }

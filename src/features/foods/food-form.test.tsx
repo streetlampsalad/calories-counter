@@ -95,3 +95,165 @@ describe("FoodForm", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("FoodForm: Portion chips", () => {
+  const chips = ["100 g", "100 ml", "1 serve", "1 slice", "1 cup", "1 piece"];
+
+  it("offers the common Portions as tap targets", () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    const group = screen.getByRole("group", { name: "Common portions" });
+    expect(
+      Array.from(group.querySelectorAll("button")).map((b) => b.textContent),
+    ).toEqual(chips);
+  });
+
+  it("fills the Portion field when tapped, and the field stays editable", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "1 slice" }));
+    expect(screen.getByLabelText("Portion")).toHaveValue("1 slice");
+
+    await userEvent.type(screen.getByLabelText("Portion"), "s");
+    expect(screen.getByLabelText("Portion")).toHaveValue("1 slices");
+  });
+
+  it("highlights the chip that matches the Portion, ignoring case and spacing", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText("Portion"), "  100   G ");
+
+    expect(screen.getByRole("button", { name: "100 g" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "100 ml" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+});
+
+describe("FoodForm: errors appear as you type", () => {
+  it("stays quiet until a field has been visited", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText("Name"), "x");
+    await userEvent.clear(screen.getByLabelText("Name"));
+
+    expect(screen.queryByText("Enter a name")).not.toBeInTheDocument();
+  });
+
+  it("flags a field once the User leaves it, and clears the message when fixed", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.click(screen.getByLabelText("Name"));
+    await userEvent.tab();
+    expect(screen.getByText("Enter a name")).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText("Name"), "Toast");
+    expect(screen.queryByText("Enter a name")).not.toBeInTheDocument();
+  });
+
+  it("keeps checking the calories as digits change", async () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText("Calories"), "12000");
+    await userEvent.tab();
+    expect(
+      screen.getByText("Calories must be a whole number from 0 to 9,999"),
+    ).toBeInTheDocument();
+
+    await userEvent.clear(screen.getByLabelText("Calories"));
+    await userEvent.type(screen.getByLabelText("Calories"), "120");
+    expect(
+      screen.queryByText("Calories must be a whole number from 0 to 9,999"),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("FoodForm: Save and add another", () => {
+  it("is only offered when the caller can handle it", () => {
+    const { unmount } = render(<FoodForm onSubmit={vi.fn()} />);
+    expect(
+      screen.queryByRole("button", { name: "Save and add another" }),
+    ).not.toBeInTheDocument();
+    unmount();
+
+    render(<FoodForm onSubmit={vi.fn()} onSubmitAnother={vi.fn()} />);
+    expect(
+      screen.getByRole("button", { name: "Save and add another" }),
+    ).toBeInTheDocument();
+  });
+
+  it("saves, clears the name and calories, keeps the Portion, and refocuses the name", async () => {
+    const onSubmit = vi.fn();
+    const onSubmitAnother = vi.fn();
+    render(<FoodForm onSubmit={onSubmit} onSubmitAnother={onSubmitAnother} />);
+
+    await fill("Sourdough toast", "1 slice", "110");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Save and add another" }),
+    );
+
+    expect(onSubmitAnother).toHaveBeenCalledWith({
+      name: "Sourdough toast",
+      portion: "1 slice",
+      calories: 110,
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Name")).toHaveValue("");
+    expect(screen.getByLabelText("Calories")).toHaveValue("");
+    expect(screen.getByLabelText("Portion")).toHaveValue("1 slice");
+    expect(screen.getByRole("button", { name: "1 slice" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByLabelText("Name")).toHaveFocus();
+  });
+
+  it("starts the next Food with a clean slate, without leftover error messages", async () => {
+    render(<FoodForm onSubmit={vi.fn()} onSubmitAnother={vi.fn()} />);
+
+    await fill("Toast", "1 slice", "110");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Save and add another" }),
+    );
+
+    expect(screen.queryByText("Enter a name")).not.toBeInTheDocument();
+  });
+
+  it("does not clear anything when the Food is invalid", async () => {
+    const onSubmitAnother = vi.fn();
+    render(<FoodForm onSubmit={vi.fn()} onSubmitAnother={onSubmitAnother} />);
+
+    await userEvent.type(screen.getByLabelText("Name"), "Toast");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Save and add another" }),
+    );
+
+    expect(onSubmitAnother).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Name")).toHaveValue("Toast");
+  });
+});
+
+describe("FoodForm: prefilled from elsewhere", () => {
+  it("shows where the values came from", () => {
+    render(
+      <FoodForm
+        sourceLabel="From Open Food Facts"
+        initialValues={{ name: "Banana", portion: "100 g", calories: "89" }}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("From Open Food Facts")).toBeInTheDocument();
+    expect(screen.getByLabelText("Name")).toHaveValue("Banana");
+  });
+
+  it("shows no source line when there is none", () => {
+    render(<FoodForm onSubmit={vi.fn()} />);
+
+    expect(screen.queryByText(/^From /)).not.toBeInTheDocument();
+  });
+});

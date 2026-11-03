@@ -1,22 +1,38 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import type { Food, FoodInput } from "./types";
 import {
   type FoodErrors,
   type FoodFormValues,
+  normalizeText,
   parseFoodInput,
 } from "./validation";
+
+// Australian, metric. Tapping one fills the Portion field, which stays freely editable.
+export const PORTION_CHIPS = [
+  "100 g",
+  "100 ml",
+  "1 serve",
+  "1 slice",
+  "1 cup",
+  "1 piece",
+] as const;
 
 type Props = {
   initialValues?: Partial<FoodFormValues>;
   submitLabel?: string;
+  /** Where prefilled values came from, e.g. "From Open Food Facts". */
+  sourceLabel?: string;
   /** The live Food that already uses this name and Portion, if any. */
   findExisting?: (input: FoodInput) => Food | undefined;
   onSubmit: (value: FoodInput) => void;
+  /** When given, a "Save and add another" button saves, then clears the form for the next Food. */
+  onSubmitAnother?: (value: FoodInput) => void;
 };
 
 type FieldProps = {
@@ -25,7 +41,8 @@ type FieldProps = {
   value: string;
   error?: string;
   onChange: (value: string) => void;
-} & Omit<React.ComponentProps<"input">, "id" | "value" | "onChange">;
+  inputRef?: React.Ref<HTMLInputElement>;
+} & Omit<React.ComponentProps<"input">, "id" | "value" | "onChange" | "ref">;
 
 function Field({
   id,
@@ -33,6 +50,7 @@ function Field({
   value,
   error,
   onChange,
+  inputRef,
   ...inputProps
 }: FieldProps) {
   return (
@@ -40,6 +58,7 @@ function Field({
       <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}
+        ref={inputRef}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
@@ -57,67 +76,136 @@ function Field({
   );
 }
 
+function PortionChips({
+  portion,
+  onPick,
+}: {
+  portion: string;
+  onPick: (chip: string) => void;
+}) {
+  const current = normalizeText(portion).toLowerCase();
+  return (
+    <fieldset className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0">
+      <legend className="sr-only">Common portions</legend>
+      {PORTION_CHIPS.map((chip) => {
+        const pressed = chip.toLowerCase() === current;
+        return (
+          <button
+            key={chip}
+            type="button"
+            aria-pressed={pressed}
+            onClick={() => onPick(chip)}
+            className={cn(
+              "min-h-11 rounded-full border px-4 text-sm",
+              pressed
+                ? "border-primary bg-primary text-primary-foreground"
+                : "bg-background text-foreground",
+            )}
+          >
+            {chip}
+          </button>
+        );
+      })}
+    </fieldset>
+  );
+}
+
+const NO_TOUCHED = { name: false, portion: false, calories: false };
+
 export function FoodForm({
   initialValues,
   submitLabel = "Save",
+  sourceLabel,
   findExisting,
   onSubmit,
+  onSubmitAnother,
 }: Props) {
   const id = useId();
+  const nameRef = useRef<HTMLInputElement>(null);
   const [values, setValues] = useState<FoodFormValues>({
     name: initialValues?.name ?? "",
     portion: initialValues?.portion ?? "",
     calories: initialValues?.calories ?? "",
   });
-  const [errors, setErrors] = useState<FoodErrors>({});
+  // A field is only judged once visited, so a fresh form isn't covered in red.
+  const [touched, setTouched] = useState(NO_TOUCHED);
   const [duplicate, setDuplicate] = useState<Food | null>(null);
+
+  const parsed = parseFoodInput(values);
+  const errors: FoodErrors = parsed.ok ? {} : parsed.errors;
+  const shown = (field: keyof FoodFormValues) =>
+    touched[field] ? errors[field] : undefined;
 
   const set = (field: keyof FoodFormValues) => (value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
     setDuplicate(null);
   };
+  const visit = (field: keyof FoodFormValues) => () =>
+    setTouched((current) => ({ ...current, [field]: true }));
+
+  // Returns the checked Food, or null after surfacing whatever is wrong with it.
+  function check(): FoodInput | null {
+    setTouched({ name: true, portion: true, calories: true });
+    if (!parsed.ok) return null;
+    const existing = findExisting?.(parsed.value);
+    if (existing) {
+      setDuplicate(existing);
+      return null;
+    }
+    return parsed.value;
+  }
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
-    const result = parseFoodInput(values);
-    if (!result.ok) {
-      setErrors(result.errors);
-      return;
-    }
-    setErrors({});
-    const existing = findExisting?.(result.value);
-    if (existing) {
-      setDuplicate(existing);
-      return;
-    }
-    onSubmit(result.value);
+    const food = check();
+    if (food) onSubmit(food);
+  }
+
+  function submitAnother() {
+    const food = check();
+    if (!food) return;
+    onSubmitAnother?.(food);
+    // Keep the Portion: foods added in a row often share one.
+    setValues((current) => ({ ...current, name: "", calories: "" }));
+    setTouched(NO_TOUCHED);
+    nameRef.current?.focus();
   }
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+      {sourceLabel ? (
+        <p className="text-muted-foreground text-sm">{sourceLabel}</p>
+      ) : null}
       <Field
         id={`${id}-name`}
         label="Name"
         value={values.name}
-        error={errors.name}
+        error={shown("name")}
         onChange={set("name")}
+        onBlur={visit("name")}
+        inputRef={nameRef}
         enterKeyHint="next"
         autoFocus
       />
-      <Field
-        id={`${id}-portion`}
-        label="Portion"
-        value={values.portion}
-        error={errors.portion}
-        onChange={set("portion")}
-        enterKeyHint="next"
-      />
+      <div className="flex flex-col gap-2">
+        <Field
+          id={`${id}-portion`}
+          label="Portion"
+          value={values.portion}
+          error={shown("portion")}
+          onChange={set("portion")}
+          onBlur={visit("portion")}
+          enterKeyHint="next"
+        />
+        <PortionChips portion={values.portion} onPick={set("portion")} />
+      </div>
       <Field
         id={`${id}-calories`}
         label="Calories"
         value={values.calories}
-        error={errors.calories}
+        error={shown("calories")}
         onChange={set("calories")}
+        onBlur={visit("calories")}
         inputMode="numeric"
         pattern="[0-9]*"
         enterKeyHint="done"
@@ -127,9 +215,21 @@ export function FoodForm({
           You already have {duplicate.name} ({duplicate.portion})
         </p>
       ) : null}
-      <Button type="submit" className="h-12 w-full text-base">
-        {submitLabel}
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button type="submit" className="h-12 w-full text-base">
+          {submitLabel}
+        </Button>
+        {onSubmitAnother ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12 w-full text-base"
+            onClick={submitAnother}
+          >
+            Save and add another
+          </Button>
+        ) : null}
+      </div>
     </form>
   );
 }

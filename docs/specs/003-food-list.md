@@ -1,6 +1,6 @@
 # 003: Food List
 
-- **Status**: Ready
+- **Status**: Done
 - **Depends on**: 002
 - **Tracking issue**: [#11](https://github.com/streetlampsalad/calories-counter/issues/11)
 - **ADRs**: 0001

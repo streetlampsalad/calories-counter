@@ -6,6 +6,12 @@ import { userClient } from "./support/db";
 const unique = (base: string) =>
   `${base} ${Math.random().toString(36).slice(2, 8)}`;
 
+async function openManualForm(page: Page) {
+  await page.getByRole("button", { name: "Add food" }).click();
+  await page.getByRole("button", { name: /Enter manually/ }).click();
+  await expect(page.getByLabel("Name")).toBeVisible();
+}
+
 // Adds a Food through the sheet and waits for the sheet to finish closing. Without that wait the
 // next step can find two sheets mid-animation. Pass stayOpen when the save is expected to be refused.
 async function addFood(
@@ -15,9 +21,9 @@ async function addFood(
   calories: string,
   { stayOpen = false } = {},
 ) {
-  await page.getByRole("button", { name: "Add food" }).click();
+  await openManualForm(page);
   await page.getByLabel("Name").fill(name);
-  await page.getByLabel("Portion").fill(portion);
+  await page.getByLabel("Portion", { exact: true }).fill(portion);
   await page.getByLabel("Calories").fill(calories);
   await page.getByRole("button", { name: "Save", exact: true }).click();
   if (!stayOpen) await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -77,7 +83,7 @@ test("an incomplete form says what is missing and saves nothing", async ({
   page,
 }) => {
   await page.goto("/foods");
-  await page.getByRole("button", { name: "Add food" }).click();
+  await openManualForm(page);
 
   await page.getByRole("button", { name: "Save", exact: true }).click();
 
@@ -204,7 +210,7 @@ test.describe("editing a Food", () => {
 
     await openEditor(page, name);
     await page.getByLabel("Calories").fill("175");
-    await page.getByLabel("Portion").fill("2 pieces");
+    await page.getByLabel("Portion", { exact: true }).fill("2 pieces");
     await page.getByRole("button", { name: "Save changes" }).click();
 
     await expect(rowFor(page, name)).toContainText("2 pieces · 175 kcal");
@@ -400,4 +406,96 @@ test("the Foods tab opens the Food List", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Foods", exact: true }),
   ).toBeVisible();
+});
+
+test.describe("adding a Food by hand", () => {
+  test("opens with the name focused and a numeric keypad for calories", async ({
+    page,
+  }) => {
+    await page.goto("/foods");
+
+    await openManualForm(page);
+
+    await expect(page.getByLabel("Name")).toBeFocused();
+    await expect(page.getByLabel("Calories")).toHaveAttribute(
+      "inputmode",
+      "numeric",
+    );
+  });
+
+  test("Portion chips fill the field, which stays editable", async ({
+    page,
+  }) => {
+    await page.goto("/foods");
+    await openManualForm(page);
+
+    await page.getByRole("button", { name: "100 ml" }).click();
+    await expect(page.getByLabel("Portion", { exact: true })).toHaveValue(
+      "100 ml",
+    );
+    await expect(page.getByRole("button", { name: "100 ml" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await page.getByLabel("Portion", { exact: true }).fill("250 ml");
+    await expect(page.getByRole("button", { name: "100 ml" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  test("errors appear as you leave a field and go away when fixed", async ({
+    page,
+  }) => {
+    await page.goto("/foods");
+    await openManualForm(page);
+
+    await page.getByLabel("Calories").fill("12000");
+    await page.getByLabel("Name").focus();
+    await expect(
+      page.getByText("Calories must be a whole number from 0 to 9,999"),
+    ).toBeVisible();
+
+    await page.getByLabel("Calories").fill("120");
+    await expect(
+      page.getByText("Calories must be a whole number from 0 to 9,999"),
+    ).toHaveCount(0);
+  });
+
+  test("Save and add another keeps the sheet open and the Portion, and both Foods are saved", async ({
+    page,
+  }) => {
+    const suffix = unique("batch");
+    const first = `Wholemeal toast ${suffix}`;
+    const second = `White toast ${suffix}`;
+    await page.goto("/foods");
+    await openManualForm(page);
+
+    await page.getByLabel("Name").fill(first);
+    await page.getByRole("button", { name: "1 slice" }).click();
+    await page.getByLabel("Calories").fill("95");
+    await page.getByRole("button", { name: "Save and add another" }).click();
+
+    await expect(page.getByLabel("Name")).toHaveValue("");
+    await expect(page.getByLabel("Name")).toBeFocused();
+    await expect(page.getByLabel("Portion", { exact: true })).toHaveValue(
+      "1 slice",
+    );
+    await expect(page.getByRole("button", { name: "1 slice" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await page.getByLabel("Name").fill(second);
+    await page.getByLabel("Calories").fill("80");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await expect(list(page).getByText(first)).toBeVisible();
+    await expect(list(page).getByText(second)).toBeVisible();
+    await page.reload();
+    await expect(list(page).getByText(first)).toBeVisible();
+    await expect(list(page).getByText(second)).toBeVisible();
+  });
 });
