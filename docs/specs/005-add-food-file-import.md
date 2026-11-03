@@ -1,6 +1,6 @@
 # 005: Add Food: file import and Import Review
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 004
 - **Tracking issue**: [#20](https://github.com/streetlampsalad/calories-counter/issues/20)
 
@@ -86,5 +86,7 @@ Rules:
 | 5 | `import_foods` RPC and Save all | AC-8, AC-9 | [#25](https://github.com/streetlampsalad/calories-counter/issues/25) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Should Import Review survive a page reload, for example if Android kills the tab while I'm in the AI app?** Default: yes, keep the reducer state in `sessionStorage` until saved or discarded. This matters on phones where switching apps reloads the page.

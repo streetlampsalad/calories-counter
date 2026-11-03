@@ -1,6 +1,6 @@
 # 002: Sign in with Google and the app shell
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 001
 - **Tracking issue**: [#5](https://github.com/streetlampsalad/calories-counter/issues/5)
 - **ADRs**: 0002
@@ -84,5 +84,7 @@ No test-only route or button ships in the production bundle. A unit test asserts
 | 5 | Production Google provider setup (human) and the manual Android check | AC-2, AC-4 | [#10](https://github.com/streetlampsalad/calories-counter/issues/10) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Should Google show the account chooser every time, or reuse the last account?** Default: reuse the last account (no `prompt=select_account`), since each phone has one person.

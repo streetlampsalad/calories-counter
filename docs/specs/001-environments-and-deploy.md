@@ -1,6 +1,6 @@
 # 001: Environments and deploy pipeline
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: — (the repository scaffold is already in place)
 - **Tracking issue**: [#1](https://github.com/streetlampsalad/calories-counter/issues/1)
 - **ADRs**: 0003
@@ -77,5 +77,7 @@ Steps that need a human (creating the Vercel project, creating tokens, setting s
 | 3 | Deploy workflow: migrate, then deploy, then health check | AC-1, AC-2, AC-3, AC-4 | [#4](https://github.com/streetlampsalad/calories-counter/issues/4) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Should CI cache the Supabase Docker images to speed up runs?** Default: no. Add it only if CI regularly takes longer than 10 minutes.

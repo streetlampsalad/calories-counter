@@ -1,6 +1,6 @@
 # 003: Food List
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 002
 - **Tracking issue**: [#11](https://github.com/streetlampsalad/calories-counter/issues/11)
 - **ADRs**: 0001
@@ -88,5 +88,7 @@ unique index on (user_id, lower(btrim(name)), lower(btrim(portion))) where archi
 | 4 | Delete or archive, and the Archived Foods screen with restore. Add the Foods tab to the bottom nav | AC-5, AC-6, AC-7 | [#15](https://github.com/streetlampsalad/calories-counter/issues/15) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Should restoring an Archived Food that clashes with a current Food (same name and Portion) be blocked?** Default: yes, with the AC-9 message.

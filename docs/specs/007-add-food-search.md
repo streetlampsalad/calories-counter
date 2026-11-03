@@ -1,6 +1,6 @@
 # 007: Add Food: search and best guess
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 004
 - **Tracking issue**: [#31](https://github.com/streetlampsalad/calories-counter/issues/31)
 
@@ -76,5 +76,7 @@ A User types a food ("banana", "Arnott's Tim Tam") and gets Suggestions from fre
 | 6 | Attribution in results | AC-10 | [#37](https://github.com/streetlampsalad/calories-counter/issues/37) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Should search query Open Food Facts automatically, or only when I tap "Search packaged products"?** Default: automatically on submit, in parallel with Reference Foods.

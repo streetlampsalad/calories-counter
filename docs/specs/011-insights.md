@@ -1,6 +1,6 @@
 # 011: Insights
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 010
 - **Tracking issue**: [#55](https://github.com/streetlampsalad/calories-counter/issues/55)
 
@@ -66,5 +66,7 @@ From the Summary, a User can dig deeper: long-term trends, which Foods drive the
 | 6 | Performance check on 12 months of seeded data | AC-8 | [#61](https://github.com/streetlampsalad/calories-counter/issues/61) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Should Top foods rank by total Calories or by times logged?** Default: by total Calories, with a toggle for times logged.

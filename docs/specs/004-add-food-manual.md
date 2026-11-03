@@ -1,6 +1,6 @@
 # 004: Add Food: manual entry
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 003
 - **Tracking issue**: [#16](https://github.com/streetlampsalad/calories-counter/issues/16)
 
@@ -58,5 +58,7 @@ Adding a Food by hand takes seconds on a phone: type a name, tap a Portion chip,
 | 3 | Duplicate handling with a link to the existing Food | AC-5 | [#19](https://github.com/streetlampsalad/calories-counter/issues/19) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Should the kcal/kJ choice be remembered between visits?** Default: yes, per device in `localStorage`, starting on kcal.

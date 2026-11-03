@@ -1,6 +1,6 @@
 # 010: Summaries
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 008, 009
 - **Tracking issue**: [#50](https://github.com/streetlampsalad/calories-counter/issues/50)
 - **ADRs**: 0001
@@ -80,5 +80,7 @@ The **Summary** tab answers "how am I going?" within a second of opening it. Cho
 | 4 | Daily bar chart with the Goal line and tap-through to the Day | AC-5, AC-6 | [#54](https://github.com/streetlampsalad/calories-counter/issues/54) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Should today count in "This week" averages while the day is still in progress?** Default: yes, if it has Entries. The headline marks it "includes today so far".

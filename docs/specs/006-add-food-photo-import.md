@@ -1,6 +1,6 @@
 # 006: Add Food: photo of handwritten notes
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 005
 - **Tracking issue**: [#26](https://github.com/streetlampsalad/calories-counter/issues/26)
 
@@ -68,5 +68,7 @@ A User takes a photo of their handwritten food notes in the app, and the rows ap
 | 4 | `GeminiNotesReader` with structured output, the key-leak build check, and the production key (human sets `GEMINI_API_KEY` in Vercel) | AC-9, the manual check | [#30](https://github.com/streetlampsalad/calories-counter/issues/30) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **Is 30 photos per Day the right limit?** Default: 30. Check the current free-tier limits for `gemini-3.8-flash` while implementing, and set it comfortably below them for the whole group.

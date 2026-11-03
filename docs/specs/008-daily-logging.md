@@ -1,6 +1,6 @@
 # 008: Daily logging
 
-- **Status**: Draft
+- **Status**: Ready
 - **Depends on**: 003
 - **Tracking issue**: [#38](https://github.com/streetlampsalad/calories-counter/issues/38)
 - **ADRs**: 0001
@@ -98,6 +98,8 @@ index on (user_id, day)
 | 6 | Past-Day navigation with the URL-synced Day | AC-7 | [#44](https://github.com/streetlampsalad/calories-counter/issues/44) |
 
 ## Open questions
+
+The owner accepted every default below on 2026-11-03; treat them as decisions.
 
 - **When the same Food is added twice on one Day, should the Entries merge (Quantity adds up) or stay separate?** Default: separate, which matches "I had toast twice" and makes Undo exact. Revisit if the list gets cluttered.
 - **Should tapping a Recent chip log Quantity 1 immediately, with no Quantity step?** Default: no. Keep it consistent with AC-3, so it's still two taps.
