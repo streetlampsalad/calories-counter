@@ -37,6 +37,8 @@ type Props = {
   sourceLabel?: string;
   /** The live Food that already uses this name and Portion, if any. */
   findExisting?: (input: FoodInput) => Food | undefined;
+  /** When given, a duplicate offers a button to open that existing Food for editing. */
+  onEditExisting?: (food: Food) => void;
   onSubmit: (value: FoodInput) => void;
   /** When given, a "Save and add another" button saves, then clears the form for the next Food. */
   onSubmitAnother?: (value: FoodInput) => void;
@@ -155,6 +157,7 @@ export function FoodForm({
   submitLabel = "Save",
   sourceLabel,
   findExisting,
+  onEditExisting,
   onSubmit,
   onSubmitAnother,
 }: Props) {
@@ -294,9 +297,20 @@ export function FoodForm({
         </div>
       </div>
       {duplicate ? (
-        <p className="text-destructive text-sm">
-          You already have {duplicate.name} ({duplicate.portion})
-        </p>
+        <div className="flex flex-col items-start text-destructive text-sm">
+          <p>
+            You already have {duplicate.name} ({duplicate.portion})
+          </p>
+          {onEditExisting ? (
+            <button
+              type="button"
+              onClick={() => onEditExisting(duplicate)}
+              className="min-h-11 font-medium underline"
+            >
+              Edit {duplicate.name}
+            </button>
+          ) : null}
+        </div>
       ) : null}
       <div className="flex flex-col gap-2">
         <Button type="submit" className="h-12 w-full text-base">

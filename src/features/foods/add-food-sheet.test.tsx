@@ -122,3 +122,36 @@ describe("AddFoodSheet", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("AddFoodSheet: a duplicate Food", () => {
+  it("lets the User jump to editing the Food they already have", async () => {
+    const existing: Food = {
+      id: "1",
+      name: "Toast",
+      portion: "1 slice",
+      calories: 110,
+      archivedAt: null,
+    };
+    const onEditExisting = vi.fn();
+    render(
+      <AddFoodSheet
+        open
+        foods={[existing]}
+        onSave={vi.fn()}
+        onEditExisting={onEditExisting}
+        onClose={vi.fn()}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: /enter manually/i }),
+    );
+
+    await userEvent.type(screen.getByLabelText("Name"), "Toast");
+    await userEvent.click(screen.getByRole("button", { name: "1 slice" }));
+    await userEvent.type(screen.getByLabelText("Calories"), "999");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await userEvent.click(screen.getByRole("button", { name: "Edit Toast" }));
+
+    expect(onEditExisting).toHaveBeenCalledWith(existing);
+  });
+});

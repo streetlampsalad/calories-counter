@@ -18,6 +18,8 @@ type Props = {
   foods: readonly Food[];
   /** Adds the Food to the list (optimistically). The sheet decides whether to close. */
   onSave: (food: FoodInput) => void;
+  /** Opens a Food the User already has, when what they typed duplicates it. */
+  onEditExisting?: (food: Food) => void;
   onClose: () => void;
 };
 
@@ -33,7 +35,13 @@ const OPTIONS = [
   },
 ];
 
-export function AddFoodSheet({ open, foods, onSave, onClose }: Props) {
+export function AddFoodSheet({
+  open,
+  foods,
+  onSave,
+  onEditExisting,
+  onClose,
+}: Props) {
   const [mode, setMode] = useState<Mode>("choose");
 
   // Always start from the choices when the sheet is opened again.
@@ -81,6 +89,7 @@ export function AddFoodSheet({ open, foods, onSave, onClose }: Props) {
           ) : (
             <FoodForm
               findExisting={(input) => findDuplicate(foods, input)}
+              onEditExisting={onEditExisting}
               onSubmit={(input) => {
                 onSave(input);
                 onClose();

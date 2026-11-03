@@ -203,6 +203,10 @@ export function FoodsScreen() {
         open={adding}
         foods={foods ?? []}
         onSave={save}
+        onEditExisting={(food) => {
+          setAdding(false);
+          setEditing(food);
+        }}
         onClose={() => setAdding(false)}
       />
     </main>

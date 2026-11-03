@@ -545,3 +545,24 @@ test.describe("entering kilojoules from an Australian label", () => {
     await expect(page.getByLabel("Calories")).toHaveValue("150");
   });
 });
+
+test("a duplicate offers to edit the Food that is already there", async ({
+  page,
+}) => {
+  const name = unique("Already here");
+  await page.goto("/foods");
+  await addFood(page, name, "1 slice", "90");
+  await expect(list(page).getByText(name)).toBeVisible();
+
+  await addFood(page, name.toLowerCase(), "1 slice", "999", { stayOpen: true });
+  await expect(
+    page.getByText(`You already have ${name} (1 slice)`),
+  ).toBeVisible();
+  await page.getByRole("button", { name: `Edit ${name}` }).click();
+
+  // The add sheet slides out as the edit sheet slides in, so look only inside the editor.
+  const editor = page.getByRole("dialog", { name: "Edit food" });
+  await expect(editor).toBeVisible();
+  await expect(editor.getByLabel("Name")).toHaveValue(name);
+  await expect(editor.getByLabel("Calories")).toHaveValue("90");
+});

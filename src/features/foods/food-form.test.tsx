@@ -384,3 +384,63 @@ describe("FoodForm: kilojoules", () => {
     setItem.mockRestore();
   });
 });
+
+describe("FoodForm: a duplicate of an existing Food", () => {
+  const existing: Food = {
+    id: "toast",
+    name: "Sourdough toast",
+    portion: "1 slice",
+    calories: 110,
+    archivedAt: null,
+  };
+
+  async function submitDuplicate(onEditExisting?: (food: Food) => void) {
+    const onSubmit = vi.fn();
+    render(
+      <FoodForm
+        findExisting={() => existing}
+        onEditExisting={onEditExisting}
+        onSubmit={onSubmit}
+      />,
+    );
+    await fill("sourdough toast", "1 slice", "120");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    return onSubmit;
+  }
+
+  it("offers to edit the Food that is already there", async () => {
+    const onEditExisting = vi.fn();
+    const onSubmit = await submitDuplicate(onEditExisting);
+
+    expect(
+      screen.getByText("You already have Sourdough toast (1 slice)"),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit Sourdough toast" }),
+    );
+
+    expect(onEditExisting).toHaveBeenCalledWith(existing);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("only offers it when the caller can open the editor", async () => {
+    await submitDuplicate(undefined);
+
+    expect(
+      screen.getByText("You already have Sourdough toast (1 slice)"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Edit / }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("drops the offer as soon as the name or Portion is changed", async () => {
+    await submitDuplicate(vi.fn());
+
+    await userEvent.type(screen.getByLabelText("Name"), "s");
+
+    expect(
+      screen.queryByRole("button", { name: /^Edit / }),
+    ).not.toBeInTheDocument();
+  });
+});
