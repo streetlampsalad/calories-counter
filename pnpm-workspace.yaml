@@ -3,6 +3,8 @@ allowBuilds:
   supabase: true
   sharp: false
   unrs-resolver: false
+  '@google/genai': false
+  protobufjs: false
 minimumReleaseAgeExclude:
   - '@next/env@16.4.4'
   - '@next/swc-darwin-arm64@16.4.4'
