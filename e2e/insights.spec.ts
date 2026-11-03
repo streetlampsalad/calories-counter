@@ -243,3 +243,132 @@ test("every average is also available as a table", async ({ page }) => {
   await expect(rows).toHaveCount(25); // header + 24 Days with a full window
   await expect(rows.nth(1)).toContainText("Sun 11 Oct");
 });
+
+// Toast 3 x 2 portions of 110 = 660, Rice 2 x 130 = 260, and an Archived Pie 300: 1,220 in all.
+async function arrangeTopFoods() {
+  const gus = await startFresh();
+  const toast = await seedFood(gus, {
+    name: "Toast",
+    portion: "1 slice",
+    calories: 110,
+  });
+  const rice = await seedFood(gus, {
+    name: "Rice",
+    portion: "100 g",
+    calories: 130,
+  });
+  const pie = await seedFood(gus, {
+    name: "Pie",
+    portion: "1 slice",
+    calories: 300,
+  });
+  await seedEntries(gus, [
+    { foodId: toast.id, day: "2026-10-20", quantity: 2 },
+    { foodId: toast.id, day: "2026-10-27", quantity: 2 },
+    { foodId: toast.id, day: "2026-11-02", quantity: 2 },
+    { foodId: rice.id, day: "2026-10-28", quantity: 2 },
+    { foodId: pie.id, day: "2026-10-29", quantity: 1 },
+  ]);
+  const archived = await gus
+    .from("foods")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", pie.id);
+  if (archived.error) throw new Error(archived.error.message);
+  return { toast, rice, pie };
+}
+
+const topFoodsCard = (page: Page) =>
+  page.getByRole("region", { name: "Top foods" });
+const topFoodRows = (page: Page) =>
+  topFoodsCard(page)
+    .getByRole("list", { name: "Top foods" })
+    .getByRole("listitem");
+
+test("Top foods ranks Foods by calories, with each share, and includes Archived ones", async ({
+  page,
+}) => {
+  await arrangeTopFoods();
+
+  await page.goto("/summary/insights");
+
+  const rows = topFoodRows(page);
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toContainText("Toast");
+  await expect(rows.nth(0)).toContainText("660 kcal");
+  await expect(rows.nth(0)).toContainText("54%");
+  await expect(rows.nth(0)).toContainText("3 times");
+  await expect(rows.nth(1)).toContainText("Pie");
+  await expect(rows.nth(1)).toContainText("Archived");
+  await expect(rows.nth(1)).toContainText("25%");
+  await expect(rows.nth(1)).toContainText("1 time");
+  await expect(rows.nth(2)).toContainText("Rice");
+  await expect(rows.nth(2)).toContainText("21%");
+});
+
+test("Top foods can rank by how often Foods were logged", async ({ page }) => {
+  await arrangeTopFoods();
+  await page.goto("/summary/insights");
+  await expect(topFoodRows(page).first()).toContainText("Toast");
+
+  await topFoodsCard(page)
+    .getByRole("button", { name: "Times logged" })
+    .click();
+
+  // Toast three times; Rice and Pie once each, and ties go to the one with more calories.
+  await expect(topFoodRows(page).nth(0)).toContainText("Toast");
+  await expect(topFoodRows(page).nth(1)).toContainText("Pie");
+  await expect(topFoodRows(page).nth(2)).toContainText("Rice");
+  await expect(
+    topFoodsCard(page).getByRole("button", { name: "Times logged" }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
+
+test("tapping a Food in Top foods opens it in the Food List", async ({
+  page,
+}) => {
+  await arrangeTopFoods();
+  await page.goto("/summary/insights");
+
+  await topFoodRows(page).first().getByRole("link").click();
+
+  await expect(page).toHaveURL("/foods");
+  await expect(page.getByRole("heading", { name: "Edit food" })).toBeVisible();
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Toast");
+});
+
+test("tapping an Archived Food in Top foods goes to Archived foods", async ({
+  page,
+}) => {
+  await arrangeTopFoods();
+  await page.goto("/summary/insights");
+
+  await topFoodRows(page).nth(1).getByRole("link").click();
+
+  await expect(page).toHaveURL("/foods/archived");
+  await expect(
+    page.getByRole("heading", { name: "Archived foods" }),
+  ).toBeVisible();
+});
+
+test("Top foods says so when nothing was logged in the Period", async ({
+  page,
+}) => {
+  await startFresh();
+
+  await page.goto("/summary/insights");
+
+  await expect(topFoodsCard(page)).toContainText(
+    "Nothing logged in this period",
+  );
+});
+
+test("Top foods follows the chosen range", async ({ page }) => {
+  await arrangeTopFoods();
+
+  await page.goto("/summary/insights?range=this-week");
+
+  // This week (from Mon 2 Nov) holds only Toast's Entry on the 2nd.
+  await expect(topFoodRows(page)).toHaveCount(1);
+  await expect(topFoodRows(page).first()).toContainText("220 kcal");
+  await expect(topFoodRows(page).first()).toContainText("100%");
+});

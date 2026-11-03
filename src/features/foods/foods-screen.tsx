@@ -2,7 +2,8 @@
 
 import { Archive, Plus, Salad } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddFoodSheet } from "./add-food-sheet";
@@ -71,8 +72,18 @@ export function FoodsScreen() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Food | null>(null);
   const [query, setQuery] = useState("");
+  const router = useRouter();
+  const linkedFood = useSearchParams().get("food");
   // Filtered in memory on every keystroke: no request, however long the list gets.
   const visible = foods ? filterFoods(foods, query) : undefined;
+
+  // A link such as /foods?food=<id> (from Insights) opens that Food once, then tidies the address.
+  useEffect(() => {
+    if (!linkedFood || !foods) return;
+    const food = foods.find((candidate) => candidate.id === linkedFood);
+    if (food) setEditing(food);
+    router.replace("/foods");
+  }, [linkedFood, foods, router]);
 
   function save(input: FoodInput) {
     const food: Food = { id: crypto.randomUUID(), archivedAt: null, ...input };

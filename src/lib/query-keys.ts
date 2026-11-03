@@ -8,4 +8,5 @@ export const summaryKeys = {
   all: ["summary"] as const,
   period: (from: string, to: string) =>
     ["summary", "period", from, to] as const,
+  foods: (from: string, to: string) => ["summary", "foods", from, to] as const,
 };

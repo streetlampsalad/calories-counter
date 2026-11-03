@@ -83,6 +83,11 @@ isOneToOne: false
               "entry_count": number,"food_id": string
             }[]
                            },
+"food_totals":
+{ Args: { "range_from": string,"range_to": string }; Returns: {
+              "archived": boolean,"calories": number,"entry_count": number,"food_id": string,"name": string,"portion": string
+            }[]
+                           },
 "food_usage":
 { Args: { "since": string }; Returns: {
               "entry_count": number,"food_id": string,"last_logged_at": string

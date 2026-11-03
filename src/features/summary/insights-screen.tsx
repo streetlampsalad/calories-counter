@@ -16,6 +16,7 @@ import {
 } from "./period";
 import { PeriodChips } from "./period-chips";
 import { useDailyTotals } from "./queries";
+import { TopFoodsCard } from "./top-foods-card";
 import { TrendCard } from "./trend-card";
 
 function Skeleton() {
@@ -61,6 +62,7 @@ function InsightsContent({
       {totals ? (
         <div className="flex flex-col gap-4">
           <TrendCard totals={totals} range={range} goal={goal} today={today} />
+          <TopFoodsCard range={range} />
         </div>
       ) : null}
     </>
