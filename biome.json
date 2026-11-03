@@ -16,7 +16,8 @@
       "!src/lib/supabase/database.types.ts",
       "!playwright-report",
       "!test-results",
-      "!supabase/.temp"
+      "!supabase/.temp",
+      "!src/features/import/fixtures"
     ]
   },
   "formatter": {
