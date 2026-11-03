@@ -19,6 +19,26 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"entries": {
+                  Row: {
+                    "created_at": string,"day": string,"food_id": string,"id": string,"quantity": number,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"day": string,"food_id": string,"id"?: string,"quantity": number,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"day"?: string,"food_id"?: string,"id"?: string,"quantity"?: number,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "entries_food_id_fkey"
+      columns: ["food_id"]
+isOneToOne: false
+      referencedRelation: "foods"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"foods": {
                   Row: {
                     "archived_at": string | null,"calories": number,"created_at": string,"id": string,"name": string,"portion": string,"updated_at": string,"user_id": string

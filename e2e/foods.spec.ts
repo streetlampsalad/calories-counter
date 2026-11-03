@@ -114,7 +114,9 @@ test("the Foods screen fits a phone without sideways scrolling", async ({
   page,
 }) => {
   await page.goto("/foods");
-  await expect(page.getByRole("heading", { name: "Foods" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Foods", exact: true }),
+  ).toBeVisible();
 
   const overflows = await page.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth,
@@ -565,4 +567,61 @@ test("a duplicate offers to edit the Food that is already there", async ({
   await expect(editor).toBeVisible();
   await expect(editor.getByLabel("Name")).toHaveValue(name);
   await expect(editor.getByLabel("Calories")).toHaveValue("90");
+});
+
+test.describe("a Food that has Entries", () => {
+  test("warns about history, is archived rather than deleted, and keeps its Entries", async ({
+    page,
+  }) => {
+    const name = unique("Has history");
+    await page.goto("/foods");
+    await addFood(page, name, "1 slice", "100");
+    await expect(list(page).getByText(name)).toBeVisible();
+
+    const ada = await userClient("ada");
+    const { data: food } = await ada
+      .from("foods")
+      .select("id")
+      .eq("name", name)
+      .single();
+    expect(food).not.toBeNull();
+    const foodId = food?.id ?? "";
+    const { error: entryError } = await ada
+      .from("entries")
+      .insert({ food_id: foodId, day: "2001-02-03", quantity: 1.5 });
+    expect(entryError).toBeNull();
+
+    // The database itself refuses to delete a Food with history (ADR 0001).
+    const { error: deleteError } = await ada
+      .from("foods")
+      .delete()
+      .eq("id", foodId);
+    expect(deleteError?.code).toBe("23503");
+
+    await page.reload();
+    await page
+      .getByRole("button", { name: new RegExp(`^Edit ${name}`) })
+      .click();
+    await expect(
+      page.getByText("Changing this updates 1 past Entry"),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Delete food" })).toHaveCount(
+      0,
+    );
+
+    await page.getByRole("button", { name: "Archive food" }).click();
+    await expect(page.getByText(`Archived ${name}`)).toBeVisible();
+    await expect(list(page).getByText(name)).toHaveCount(0);
+
+    // History is untouched: the Entry still points at the archived Food.
+    const { data: entries } = await ada
+      .from("entries")
+      .select("quantity, food:foods(name, archived_at)")
+      .eq("food_id", foodId);
+    expect(entries).toHaveLength(1);
+    expect(entries?.[0].food?.archived_at).not.toBeNull();
+
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(list(page).getByText(name)).toBeVisible();
+  });
 });
