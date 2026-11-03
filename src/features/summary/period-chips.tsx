@@ -20,7 +20,7 @@ export function PeriodChips({
 }: Props) {
   return (
     <nav aria-label="Period">
-      <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-3">
         {options.map(({ id, label }) => {
           const current = id === selected;
           return (
