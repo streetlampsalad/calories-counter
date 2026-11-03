@@ -1,9 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { publicEnv } from "@/lib/env";
 import type { Database } from "./database.types";
 
 export async function createClient() {
+  // Supabase checks token expiry with Date.now(), which Cache Components refuses to
+  // prerender. Waiting for a real request first keeps every caller at request time.
+  await connection();
   const env = publicEnv();
   const cookieStore = await cookies();
 
