@@ -1,0 +1,75 @@
+# Deploys production after CI passes on main (docs/adr/0003, spec 001).
+# Order matters: migrations first, then the app, then a check that production serves this commit.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  VERCEL_CLI: vercel@65.0.0
+  SHA: ${{ github.event.workflow_run.head_sha }}
+
+jobs:
+  deploy:
+    # PRODUCTION_URL is the last value scripts/setup-production.sh sets, so an unconfigured
+    # repository skips this job instead of failing it.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      vars.PRODUCTION_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.SHA }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply database migrations
+        run: |
+          pnpm exec supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+          pnpm exec supabase db push
+
+      - name: Build for production
+        run: |
+          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token="$VERCEL_TOKEN"
+          pnpm dlx "$VERCEL_CLI" build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy to production
+        run: pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --env COMMIT_SHA="$SHA" --token="$VERCEL_TOKEN"
+
+      - name: Wait for production to serve this commit
+        run: |
+          url="${{ vars.PRODUCTION_URL }}/api/health"
+          for attempt in $(seq 1 12); do
+            body="$(curl --silent --show-error --max-time 10 "$url" || true)"
+            echo "attempt $attempt: $body"
+            if [ "$(echo "$body" | node -pe 'try{JSON.parse(require("fs").readFileSync(0,"utf8")).commit}catch{""}')" = "$SHA" ]; then
+              echo "Production is serving $SHA"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Production did not report commit $SHA within 2 minutes"
+          exit 1
