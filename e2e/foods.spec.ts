@@ -1,21 +1,26 @@
 import { expect, type Page, test } from "@playwright/test";
 import { authFile } from "./support/auth";
+import { userClient } from "./support/db";
 
 // Tests share ada's Food List, so every Food gets a unique name and nothing counts rows.
 const unique = (base: string) =>
   `${base} ${Math.random().toString(36).slice(2, 8)}`;
 
+// Adds a Food through the sheet and waits for the sheet to finish closing. Without that wait the
+// next step can find two sheets mid-animation. Pass stayOpen when the save is expected to be refused.
 async function addFood(
   page: Page,
   name: string,
   portion: string,
   calories: string,
+  { stayOpen = false } = {},
 ) {
   await page.getByRole("button", { name: "Add food" }).click();
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Portion").fill(portion);
   await page.getByLabel("Calories").fill(calories);
   await page.getByRole("button", { name: "Save", exact: true }).click();
+  if (!stayOpen) await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 
 const list = (page: Page) => page.getByRole("list", { name: "Your foods" });
@@ -91,7 +96,7 @@ test("the same name and Portion cannot be added twice, whatever the case", async
   await addFood(page, name, "1 slice", "90");
   await expect(list(page).getByText(name)).toBeVisible();
 
-  await addFood(page, name.toUpperCase(), "1 SLICE", "95");
+  await addFood(page, name.toUpperCase(), "1 SLICE", "95", { stayOpen: true });
 
   await expect(
     page.getByText(`You already have ${name.toUpperCase()}`, { exact: false }),
@@ -256,4 +261,143 @@ test.describe("editing a Food", () => {
       page.getByRole("heading", { name: "Edit food" }),
     ).toBeVisible();
   });
+});
+
+test.describe("removing a Food", () => {
+  const rowFor = (page: Page, name: string) =>
+    list(page).getByRole("listitem").filter({ hasText: name });
+
+  async function openEditor(page: Page, name: string) {
+    await page
+      .getByRole("button", { name: new RegExp(`^Edit ${name}`) })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Edit food" }),
+    ).toBeVisible();
+  }
+
+  test("a Food with no Entries can be deleted for good, after confirming", async ({
+    page,
+  }) => {
+    const name = unique("Delete me");
+    await page.goto("/foods");
+    await addFood(page, name, "1 piece", "80");
+    await expect(rowFor(page, name)).toBeVisible();
+
+    await openEditor(page, name);
+    await page.getByRole("button", { name: "Delete food" }).click();
+    await expect(page.getByText(`Delete ${name} for good?`)).toBeVisible();
+    await page.getByRole("button", { name: "Yes, delete" }).click();
+
+    await expect(rowFor(page, name)).toHaveCount(0);
+    await expect(page.getByText(`Deleted ${name}`)).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Add food" })).toBeVisible();
+    await expect(rowFor(page, name)).toHaveCount(0);
+  });
+
+  test("cancelling the confirmation keeps the Food", async ({ page }) => {
+    const name = unique("Keep me");
+    await page.goto("/foods");
+    await addFood(page, name, "1 piece", "80");
+    await expect(rowFor(page, name)).toBeVisible();
+
+    await openEditor(page, name);
+    await page.getByRole("button", { name: "Delete food" }).click();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await page.keyboard.press("Escape");
+
+    await expect(rowFor(page, name)).toBeVisible();
+  });
+
+  test("an Archived Food leaves the list, shows under Archived foods, and can be restored", async ({
+    page,
+  }) => {
+    const name = unique("Archive me");
+    await page.goto("/foods");
+    await addFood(page, name, "1 slice", "300");
+    await expect(rowFor(page, name)).toBeVisible();
+
+    // Archive it directly: the UI only archives Foods with Entries, which arrive with spec 008.
+    const ada = await userClient("ada");
+    const { error } = await ada
+      .from("foods")
+      .update({ archived_at: new Date().toISOString() })
+      .eq("name", name);
+    expect(error).toBeNull();
+
+    await page.reload();
+    await expect(rowFor(page, name)).toHaveCount(0);
+
+    await page.getByRole("link", { name: "Archived foods" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Archived foods" }),
+    ).toBeVisible();
+    const archivedRow = page
+      .getByRole("list", { name: "Archived foods" })
+      .getByRole("listitem")
+      .filter({ hasText: name });
+    await expect(archivedRow).toContainText("1 slice · 300 kcal");
+
+    await page.getByRole("button", { name: `Restore ${name}` }).click();
+    await expect(archivedRow).toHaveCount(0);
+    await expect(page.getByText(`Restored ${name}`)).toBeVisible();
+
+    await page
+      .getByRole("link", { name: "Foods", exact: true })
+      .first()
+      .click();
+    await expect(rowFor(page, name)).toContainText("1 slice · 300 kcal");
+  });
+
+  test("restoring is refused while a live Food has the same name and Portion", async ({
+    page,
+  }) => {
+    const name = unique("Clash");
+    await page.goto("/foods");
+    await addFood(page, name, "1 slice", "300");
+    await expect(rowFor(page, name)).toBeVisible();
+    const ada = await userClient("ada");
+    await ada
+      .from("foods")
+      .update({ archived_at: new Date().toISOString() })
+      .eq("name", name);
+    await page.reload();
+    await addFood(page, name, "1 slice", "310");
+    await expect(rowFor(page, name)).toContainText("310 kcal");
+
+    await page.goto("/foods/archived");
+    await page.getByRole("button", { name: `Restore ${name}` }).click();
+
+    await expect(
+      page.getByText(`You already have ${name} (1 slice)`),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: `Restore ${name}` }),
+    ).toBeVisible();
+  });
+});
+
+test.describe("with nothing archived", () => {
+  test.use({ storageState: authFile("cleo") });
+
+  test("Archived foods says so", async ({ page }) => {
+    await page.goto("/foods/archived");
+
+    await expect(page.getByText("No archived foods.")).toBeVisible();
+  });
+});
+
+test("the Foods tab opens the Food List", async ({ page }) => {
+  await page.goto("/");
+
+  await page
+    .getByRole("navigation", { name: "Main" })
+    .getByRole("link", { name: "Foods" })
+    .click();
+
+  await expect(page).toHaveURL("/foods");
+  await expect(
+    page.getByRole("heading", { name: "Foods", exact: true }),
+  ).toBeVisible();
 });

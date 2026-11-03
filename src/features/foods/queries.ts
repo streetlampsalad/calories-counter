@@ -15,6 +15,7 @@ import type { Food } from "./types";
 export const foodKeys = {
   all: ["foods"] as const,
   list: () => [...foodKeys.all, "list"] as const,
+  archived: () => [...foodKeys.all, "archived"] as const,
   entryCounts: () => [...foodKeys.all, "entry-counts"] as const,
 };
 
@@ -130,5 +131,103 @@ export function useUpdateFood() {
         queryClient.invalidateQueries({ queryKey: entryKeys.all }),
         queryClient.invalidateQueries({ queryKey: summaryKeys.all }),
       ]),
+  });
+}
+
+export function useArchivedFoods() {
+  return useQuery({
+    queryKey: foodKeys.archived(),
+    queryFn: async (): Promise<Food[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("foods")
+        .select("*")
+        .not("archived_at", "is", null);
+      if (error) throw error;
+      return sortFoods(data.map(toFood));
+    },
+  });
+}
+
+const FOREIGN_KEY_VIOLATION = "23503";
+
+type Removal = { food: Food; hasEntries: boolean };
+
+// A Food that Entries refer to is archived, never deleted, so history stays true (ADR 0001).
+// A Food with none is deleted for good. Both leave the list immediately.
+export function useRemoveFood() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ food, hasEntries }: Removal) => {
+      const supabase = createClient();
+      const failure = () =>
+        new Error(
+          `Couldn't remove ${food.name}. Check your connection and try again.`,
+        );
+
+      const archive = async () => {
+        const { data, error } = await supabase
+          .from("foods")
+          .update({ archived_at: new Date().toISOString() })
+          .eq("id", food.id)
+          .select("id");
+        if (error || !data?.length) throw failure();
+        return "archived" as const;
+      };
+      if (hasEntries) return archive();
+
+      const { data, error } = await supabase
+        .from("foods")
+        .delete()
+        .eq("id", food.id)
+        .select("id");
+      // Entries appeared since the count was read: keep the history, archive instead.
+      if (error?.code === FOREIGN_KEY_VIOLATION) return archive();
+      if (error || !data?.length) throw failure();
+      return "deleted" as const;
+    },
+    onMutate: ({ food }) =>
+      patchList(queryClient, (current) =>
+        current.filter((existing) => existing.id !== food.id),
+      ),
+    onError: (_error, _removal, context) => restoreList(queryClient, context),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: foodKeys.all }),
+  });
+}
+
+// Brings an Archived Food back into the list. Refused if a live Food now has its name and Portion.
+export function useRestoreFood() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (food: Food) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("foods")
+        .update({ archived_at: null })
+        .eq("id", food.id)
+        .select("id");
+      if (error || !data?.length) throw saveFailure(error, food);
+    },
+    onMutate: async (food) => {
+      await queryClient.cancelQueries({ queryKey: foodKeys.all });
+      const previousList = queryClient.getQueryData<Food[]>(foodKeys.list());
+      const previousArchived = queryClient.getQueryData<Food[]>(
+        foodKeys.archived(),
+      );
+      queryClient.setQueryData<Food[]>(foodKeys.archived(), (current = []) =>
+        current.filter((existing) => existing.id !== food.id),
+      );
+      queryClient.setQueryData<Food[]>(foodKeys.list(), (current = []) =>
+        sortFoods([...current, { ...food, archivedAt: null }]),
+      );
+      return { previousList, previousArchived };
+    },
+    onError: (_error, _food, context) => {
+      queryClient.setQueryData(foodKeys.list(), context?.previousList);
+      queryClient.setQueryData(foodKeys.archived(), context?.previousArchived);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: foodKeys.all }),
   });
 }

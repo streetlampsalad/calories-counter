@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, Salad } from "lucide-react";
+import { Archive, Plus, Salad } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,13 @@ import { filterFoods, findDuplicate, formatFoodDetail } from "./domain";
 import { EditFoodSheet } from "./edit-food-sheet";
 import { FoodForm } from "./food-form";
 import { FoodSearchBox } from "./food-search-box";
-import { useAddFood, useFoods, useUpdateFood } from "./queries";
+import {
+  useAddFood,
+  useFoods,
+  useRemoveFood,
+  useRestoreFood,
+  useUpdateFood,
+} from "./queries";
 import type { Food, FoodInput } from "./types";
 
 function FoodRow({ food, onEdit }: { food: Food; onEdit: () => void }) {
@@ -66,6 +73,8 @@ export function FoodsScreen() {
   const { data: foods, isPending, isError, refetch } = useFoods();
   const addFood = useAddFood();
   const updateFood = useUpdateFood();
+  const removeFood = useRemoveFood();
+  const restoreFood = useRestoreFood();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Food | null>(null);
   const [query, setQuery] = useState("");
@@ -83,6 +92,34 @@ export function FoodsScreen() {
     });
   }
 
+  function remove(food: Food, hasEntries: boolean) {
+    setEditing(null);
+    removeFood.mutate(
+      { food, hasEntries },
+      {
+        onSuccess: (outcome) =>
+          outcome === "archived"
+            ? toast(`Archived ${food.name}`, {
+                action: {
+                  label: "Undo",
+                  onClick: () =>
+                    restoreFood.mutate(food, {
+                      onError: (error) => toast.error(error.message),
+                    }),
+                },
+              })
+            : toast(`Deleted ${food.name}`),
+        onError: (error) =>
+          toast.error(error.message, {
+            action: {
+              label: "Retry",
+              onClick: () => removeFood.mutate({ food, hasEntries }),
+            },
+          }),
+      },
+    );
+  }
+
   function saveChanges(food: Food) {
     setEditing(null);
     updateFood.mutate(food, {
@@ -95,7 +132,15 @@ export function FoodsScreen() {
 
   return (
     <main className="flex flex-1 flex-col gap-4">
-      <h1 className="font-semibold text-2xl tracking-tight">Foods</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-semibold text-2xl tracking-tight">Foods</h1>
+        <Link
+          href="/foods/archived"
+          className="flex min-h-11 items-center gap-1.5 text-muted-foreground text-sm"
+        >
+          <Archive aria-hidden="true" className="size-4" /> Archived foods
+        </Link>
+      </div>
 
       {isPending ? <ListSkeleton /> : null}
 
@@ -158,6 +203,7 @@ export function FoodsScreen() {
         food={editing}
         foods={foods ?? []}
         onSave={saveChanges}
+        onRemove={remove}
         onClose={() => setEditing(null)}
       />
 

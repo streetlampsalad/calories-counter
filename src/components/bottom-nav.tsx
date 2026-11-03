@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Settings } from "lucide-react";
+import { CalendarDays, Settings, Utensils } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 // Each feature spec adds its own tab here in its final slice (ADR 0003).
 const TABS = [
   { href: "/", label: "Today", icon: CalendarDays },
+  { href: "/foods", label: "Foods", icon: Utensils },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

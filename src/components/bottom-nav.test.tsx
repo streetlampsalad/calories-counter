@@ -16,6 +16,7 @@ describe("BottomNav", () => {
     const links = screen.getAllByRole("link");
     expect(links.map((link) => link.textContent)).toEqual([
       "Today",
+      "Foods",
       "Settings",
     ]);
   });
@@ -33,7 +34,7 @@ describe("BottomNav", () => {
     );
   });
 
-  it("marks Settings as current on its route and nested routes", () => {
+  it("marks a tab as current on its route and nested routes", () => {
     usePathname.mockReturnValue("/settings/about");
     render(<BottomNav />);
 
