@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 003
+- **Tracking issue**: [#38](https://github.com/streetlampsalad/calories-counter/issues/38)
 - **ADRs**: 0001
 
 ## Goal
@@ -87,14 +88,14 @@ index on (user_id, day)
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | `entries` table with RLS, constraints and pgTAP. Real `food_entry_counts` | AC-8, AC-9, AC-10 |
-| 2 | Today screen: Day header, Daily Total, Entry list (read-only, seeded data) | AC-1 |
-| 3 | Picker sheet with search, Quantity buttons and optimistic add with Undo | AC-2 (without ordering), AC-3, AC-4, AC-11 |
-| 4 | Edit Quantity and remove with Undo | AC-5, AC-6 |
-| 5 | Recent row and frequency ordering (`food_usage`) | AC-2 |
-| 6 | Past-Day navigation with the URL-synced Day | AC-7 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | `entries` table with RLS, constraints and pgTAP. Real `food_entry_counts` | AC-8, AC-9, AC-10 | [#39](https://github.com/streetlampsalad/calories-counter/issues/39) |
+| 2 | Today screen: Day header, Daily Total, Entry list (read-only, seeded data) | AC-1 | [#40](https://github.com/streetlampsalad/calories-counter/issues/40) |
+| 3 | Picker sheet with search, Quantity buttons and optimistic add with Undo | AC-2 (without ordering), AC-3, AC-4, AC-11 | [#41](https://github.com/streetlampsalad/calories-counter/issues/41) |
+| 4 | Edit Quantity and remove with Undo | AC-5, AC-6 | [#42](https://github.com/streetlampsalad/calories-counter/issues/42) |
+| 5 | Recent row and frequency ordering (`food_usage`) | AC-2 | [#43](https://github.com/streetlampsalad/calories-counter/issues/43) |
+| 6 | Past-Day navigation with the URL-synced Day | AC-7 | [#44](https://github.com/streetlampsalad/calories-counter/issues/44) |
 
 ## Open questions
 

@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 002
+- **Tracking issue**: [#11](https://github.com/streetlampsalad/calories-counter/issues/11)
 - **ADRs**: 0001
 
 ## Goal
@@ -79,12 +80,12 @@ unique index on (user_id, lower(btrim(name)), lower(btrim(portion))) where archi
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | `foods` table, RLS and pgTAP. Foods screen with list and empty state, plus the minimal add form (name, Portion, Calories) | AC-1, AC-8, AC-9, AC-10, AC-11 |
-| 2 | In-memory search | AC-2 |
-| 3 | Edit sheet with optimistic update, rollback and the past-Entries warning | AC-3, AC-4 |
-| 4 | Delete or archive, and the Archived Foods screen with restore. Add the Foods tab to the bottom nav | AC-5, AC-6, AC-7 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | `foods` table, RLS and pgTAP. Foods screen with list and empty state, plus the minimal add form (name, Portion, Calories) | AC-1, AC-8, AC-9, AC-10, AC-11 | [#12](https://github.com/streetlampsalad/calories-counter/issues/12) |
+| 2 | In-memory search | AC-2 | [#13](https://github.com/streetlampsalad/calories-counter/issues/13) |
+| 3 | Edit sheet with optimistic update, rollback and the past-Entries warning | AC-3, AC-4 | [#14](https://github.com/streetlampsalad/calories-counter/issues/14) |
+| 4 | Delete or archive, and the Archived Foods screen with restore. Add the Foods tab to the bottom nav | AC-5, AC-6, AC-7 | [#15](https://github.com/streetlampsalad/calories-counter/issues/15) |
 
 ## Open questions
 

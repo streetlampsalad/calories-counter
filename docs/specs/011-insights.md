@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 010
+- **Tracking issue**: [#55](https://github.com/streetlampsalad/calories-counter/issues/55)
 
 ## Goal
 
@@ -55,14 +56,14 @@ From the Summary, a User can dig deeper: long-term trends, which Foods drive the
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | Insights route and range selector, with the entry point from the Summary | AC-1 |
-| 2 | Trend card | AC-2, AC-7, AC-9 |
-| 3 | `food_totals` and the Top foods card | AC-3, AC-7, AC-9 |
-| 4 | Day of week card | AC-4, AC-7, AC-9 |
-| 5 | Goal and logging streak cards | AC-5, AC-6, AC-7, AC-9 |
-| 6 | Performance check on 12 months of seeded data | AC-8 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | Insights route and range selector, with the entry point from the Summary | AC-1 | [#56](https://github.com/streetlampsalad/calories-counter/issues/56) |
+| 2 | Trend card | AC-2, AC-7, AC-9 | [#57](https://github.com/streetlampsalad/calories-counter/issues/57) |
+| 3 | `food_totals` and the Top foods card | AC-3, AC-7, AC-9 | [#58](https://github.com/streetlampsalad/calories-counter/issues/58) |
+| 4 | Day of week card | AC-4, AC-7, AC-9 | [#59](https://github.com/streetlampsalad/calories-counter/issues/59) |
+| 5 | Goal and logging streak cards | AC-5, AC-6, AC-7, AC-9 | [#60](https://github.com/streetlampsalad/calories-counter/issues/60) |
+| 6 | Performance check on 12 months of seeded data | AC-8 | [#61](https://github.com/streetlampsalad/calories-counter/issues/61) |
 
 ## Open questions
 

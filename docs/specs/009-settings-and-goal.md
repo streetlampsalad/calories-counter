@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 002
+- **Tracking issue**: [#45](https://github.com/streetlampsalad/calories-counter/issues/45)
 
 ## Goal
 
@@ -42,12 +43,12 @@ A User can set an optional daily calorie **Goal**, which Today (008) and summari
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | `user_settings` table and `useSettings` with defaults | AC-6 |
-| 2 | Settings screen: Goal set and clear, and Goal progress on Today | AC-1, AC-2, AC-3 |
-| 3 | Week start setting | AC-4 |
-| 4 | About section | AC-5 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | `user_settings` table and `useSettings` with defaults | AC-6 | [#46](https://github.com/streetlampsalad/calories-counter/issues/46) |
+| 2 | Settings screen: Goal set and clear, and Goal progress on Today | AC-1, AC-2, AC-3 | [#47](https://github.com/streetlampsalad/calories-counter/issues/47) |
+| 3 | Week start setting | AC-4 | [#48](https://github.com/streetlampsalad/calories-counter/issues/48) |
+| 4 | About section | AC-5 | [#49](https://github.com/streetlampsalad/calories-counter/issues/49) |
 
 ## Open questions
 

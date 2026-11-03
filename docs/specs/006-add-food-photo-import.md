@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 005
+- **Tracking issue**: [#26](https://github.com/streetlampsalad/calories-counter/issues/26)
 
 ## Goal
 
@@ -59,12 +60,12 @@ A User takes a photo of their handwritten food notes in the app, and the rows ap
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | `NotesReader` interface, `FakeNotesReader` and the photo route (auth, shape, errors) | AC-5, AC-6, AC-7 |
-| 2 | Scan notes UI with resize, progress and hand-off to Import Review. Add **Scan notes** to the Add food sheet | AC-1, AC-2, AC-3, AC-4 |
-| 3 | `ai_usage` table and the daily limit | AC-8 |
-| 4 | `GeminiNotesReader` with structured output, the key-leak build check, and the production key (human sets `GEMINI_API_KEY` in Vercel) | AC-9, the manual check |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | `NotesReader` interface, `FakeNotesReader` and the photo route (auth, shape, errors) | AC-5, AC-6, AC-7 | [#27](https://github.com/streetlampsalad/calories-counter/issues/27) |
+| 2 | Scan notes UI with resize, progress and hand-off to Import Review. Add **Scan notes** to the Add food sheet | AC-1, AC-2, AC-3, AC-4 | [#28](https://github.com/streetlampsalad/calories-counter/issues/28) |
+| 3 | `ai_usage` table and the daily limit | AC-8 | [#29](https://github.com/streetlampsalad/calories-counter/issues/29) |
+| 4 | `GeminiNotesReader` with structured output, the key-leak build check, and the production key (human sets `GEMINI_API_KEY` in Vercel) | AC-9, the manual check | [#30](https://github.com/streetlampsalad/calories-counter/issues/30) |
 
 ## Open questions
 

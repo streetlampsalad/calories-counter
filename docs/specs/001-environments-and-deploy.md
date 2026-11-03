@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: — (the repository scaffold is already in place)
+- **Tracking issue**: [#1](https://github.com/streetlampsalad/calories-counter/issues/1)
 - **ADRs**: 0003
 
 ## Goal
@@ -69,11 +70,11 @@ Steps that need a human (creating the Vercel project, creating tokens, setting s
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | Health route and `vercel.json` (region, Git deploys off) | AC-4 (route), AC-5, AC-6 |
-| 2 | Setup wizard: create the Vercel project, set Vercel env vars and GitHub secrets (human-run) | AC-7 |
-| 3 | Deploy workflow: migrate, then deploy, then health check | AC-1, AC-2, AC-3, AC-4 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | Health route and `vercel.json` (region, Git deploys off) | AC-4 (route), AC-5, AC-6 | [#2](https://github.com/streetlampsalad/calories-counter/issues/2) |
+| 2 | Setup wizard: create the Vercel project, set Vercel env vars and GitHub secrets (human-run) | AC-7 | [#3](https://github.com/streetlampsalad/calories-counter/issues/3) |
+| 3 | Deploy workflow: migrate, then deploy, then health check | AC-1, AC-2, AC-3, AC-4 | [#4](https://github.com/streetlampsalad/calories-counter/issues/4) |
 
 ## Open questions
 

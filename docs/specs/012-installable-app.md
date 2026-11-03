@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 002
+- **Tracking issue**: [#62](https://github.com/streetlampsalad/calories-counter/issues/62)
 
 ## Goal
 
@@ -45,11 +46,11 @@ Friends install the app on their Android home screen, and it opens full-screen l
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | Manifest and icons | AC-1, AC-2 |
-| 2 | Service worker with the offline screen | AC-4, AC-5 |
-| 3 | Standalone polish: safe areas, and the manual Android checks including sign-in | AC-3, AC-6 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | Manifest and icons | AC-1, AC-2 | [#63](https://github.com/streetlampsalad/calories-counter/issues/63) |
+| 2 | Service worker with the offline screen | AC-4, AC-5 | [#64](https://github.com/streetlampsalad/calories-counter/issues/64) |
+| 3 | Standalone polish: safe areas, and the manual Android checks including sign-in | AC-3, AC-6 | [#65](https://github.com/streetlampsalad/calories-counter/issues/65) |
 
 ## Open questions
 

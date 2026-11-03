@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 001
+- **Tracking issue**: [#5](https://github.com/streetlampsalad/calories-counter/issues/5)
 - **ADRs**: 0002
 
 ## Goal
@@ -74,13 +75,13 @@ No test-only route or button ships in the production bundle. A unit test asserts
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | Local auth harness: seed Users, Playwright `globalSetup` and storage states | prerequisite for E2E |
-| 2 | Proxy session refresh, redirects, and the `/sign-in` page with the Google button and `/auth/callback` | AC-1, AC-6 |
-| 3 | Allowed Emails table and Before User Created hook, with pgTAP | AC-3, AC-7 |
-| 4 | App shell with bottom navigation, Today placeholder and Settings with Sign out | AC-5, AC-8 |
-| 5 | Production Google provider setup (human) and the manual Android check | AC-2, AC-4 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | Local auth harness: seed Users, Playwright `globalSetup` and storage states | prerequisite for E2E | [#6](https://github.com/streetlampsalad/calories-counter/issues/6) |
+| 2 | Proxy session refresh, redirects, and the `/sign-in` page with the Google button and `/auth/callback` | AC-1, AC-6 | [#7](https://github.com/streetlampsalad/calories-counter/issues/7) |
+| 3 | Allowed Emails table and Before User Created hook, with pgTAP | AC-3, AC-7 | [#8](https://github.com/streetlampsalad/calories-counter/issues/8) |
+| 4 | App shell with bottom navigation, Today placeholder and Settings with Sign out | AC-5, AC-8 | [#9](https://github.com/streetlampsalad/calories-counter/issues/9) |
+| 5 | Production Google provider setup (human) and the manual Android check | AC-2, AC-4 | [#10](https://github.com/streetlampsalad/calories-counter/issues/10) |
 
 ## Open questions
 

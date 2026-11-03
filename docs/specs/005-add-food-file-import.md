@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 004
+- **Tracking issue**: [#20](https://github.com/streetlampsalad/calories-counter/issues/20)
 
 ## Goal
 
@@ -76,13 +77,13 @@ Rules:
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | Import screen with the prompt and Copy button. Add **Import from notes** to the Add food sheet | AC-1, AC-2 |
-| 2 | CSV and JSON parsing and validation with fixtures (pure functions only) | AC-3, AC-4, AC-5, AC-10 |
-| 3 | Import Review list with inline fixes and the keep toggle | AC-6, AC-11 |
-| 4 | Duplicate detection against the Food List and within the Import | AC-7 |
-| 5 | `import_foods` RPC and Save all | AC-8, AC-9 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | Import screen with the prompt and Copy button. Add **Import from notes** to the Add food sheet | AC-1, AC-2 | [#21](https://github.com/streetlampsalad/calories-counter/issues/21) |
+| 2 | CSV and JSON parsing and validation with fixtures (pure functions only) | AC-3, AC-4, AC-5, AC-10 | [#22](https://github.com/streetlampsalad/calories-counter/issues/22) |
+| 3 | Import Review list with inline fixes and the keep toggle | AC-6, AC-11 | [#23](https://github.com/streetlampsalad/calories-counter/issues/23) |
+| 4 | Duplicate detection against the Food List and within the Import | AC-7 | [#24](https://github.com/streetlampsalad/calories-counter/issues/24) |
+| 5 | `import_foods` RPC and Save all | AC-8, AC-9 | [#25](https://github.com/streetlampsalad/calories-counter/issues/25) |
 
 ## Open questions
 

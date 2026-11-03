@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 003
+- **Tracking issue**: [#16](https://github.com/streetlampsalad/calories-counter/issues/16)
 
 ## Goal
 
@@ -50,11 +51,11 @@ Adding a Food by hand takes seconds on a phone: type a name, tap a Portion chip,
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | `FoodForm` with validation and Portion chips, replacing spec 003's minimal form. **Add food** action sheet with **Enter manually** | AC-1, AC-2, AC-4, AC-6, AC-7 |
-| 2 | kJ entry and conversion | AC-3 |
-| 3 | Duplicate handling with a link to the existing Food | AC-5 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | `FoodForm` with validation and Portion chips, replacing spec 003's minimal form. **Add food** action sheet with **Enter manually** | AC-1, AC-2, AC-4, AC-6, AC-7 | [#17](https://github.com/streetlampsalad/calories-counter/issues/17) |
+| 2 | kJ entry and conversion | AC-3 | [#18](https://github.com/streetlampsalad/calories-counter/issues/18) |
+| 3 | Duplicate handling with a link to the existing Food | AC-5 | [#19](https://github.com/streetlampsalad/calories-counter/issues/19) |
 
 ## Open questions
 

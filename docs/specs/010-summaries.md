@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 008, 009
+- **Tracking issue**: [#50](https://github.com/streetlampsalad/calories-counter/issues/50)
 - **ADRs**: 0001
 
 ## Goal
@@ -71,12 +72,12 @@ The **Summary** tab answers "how am I going?" within a second of opening it. Cho
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | `periodRange` and `summarise` pure functions with exhaustive tests | AC-2, AC-3, AC-4 (logic) |
-| 2 | `daily_totals` database function with pgTAP | AC-7, AC-8 |
-| 3 | Summary screen with Period chips and headline, and the Summary tab in the nav | AC-1, AC-3, AC-4, AC-9, AC-10 |
-| 4 | Daily bar chart with the Goal line and tap-through to the Day | AC-5, AC-6 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | `periodRange` and `summarise` pure functions with exhaustive tests | AC-2, AC-3, AC-4 (logic) | [#51](https://github.com/streetlampsalad/calories-counter/issues/51) |
+| 2 | `daily_totals` database function with pgTAP | AC-7, AC-8 | [#52](https://github.com/streetlampsalad/calories-counter/issues/52) |
+| 3 | Summary screen with Period chips and headline, and the Summary tab in the nav | AC-1, AC-3, AC-4, AC-9, AC-10 | [#53](https://github.com/streetlampsalad/calories-counter/issues/53) |
+| 4 | Daily bar chart with the Goal line and tap-through to the Day | AC-5, AC-6 | [#54](https://github.com/streetlampsalad/calories-counter/issues/54) |
 
 ## Open questions
 

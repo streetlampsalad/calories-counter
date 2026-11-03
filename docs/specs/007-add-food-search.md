@@ -2,6 +2,7 @@
 
 - **Status**: Draft
 - **Depends on**: 004
+- **Tracking issue**: [#31](https://github.com/streetlampsalad/calories-counter/issues/31)
 
 ## Goal
 
@@ -65,14 +66,14 @@ A User types a food ("banana", "Arnott's Tim Tam") and gets Suggestions from fre
 
 ## Issue breakdown
 
-| # | Slice | Covers |
-|---|---|---|
-| 1 | `reference_foods` table, AFCD seed build script, data migration and search function | AC-2, AC-10 (data) |
-| 2 | Search screen with **Your foods** and **Australian foods**, and pick → prefilled `FoodForm`. Add **Search** to the Add food sheet | AC-1, AC-4, AC-9 |
-| 3 | Portion scaling and the per-serving or per-100 g choice | AC-4, AC-5, AC-6 |
-| 4 | Open Food Facts search route and the **Packaged products** section | AC-3, AC-6 |
-| 5 | Best guess route, Gemini guesser and the estimate label | AC-7, AC-8 |
-| 6 | Attribution in results | AC-10 |
+| # | Slice | Covers | Issue |
+|---|---|---|---|
+| 1 | `reference_foods` table, AFCD seed build script, data migration and search function | AC-2, AC-10 (data) | [#32](https://github.com/streetlampsalad/calories-counter/issues/32) |
+| 2 | Search screen with **Your foods** and **Australian foods**, and pick → prefilled `FoodForm`. Add **Search** to the Add food sheet | AC-1, AC-4, AC-9 | [#33](https://github.com/streetlampsalad/calories-counter/issues/33) |
+| 3 | Portion scaling and the per-serving or per-100 g choice | AC-4, AC-5, AC-6 | [#34](https://github.com/streetlampsalad/calories-counter/issues/34) |
+| 4 | Open Food Facts search route and the **Packaged products** section | AC-3, AC-6 | [#35](https://github.com/streetlampsalad/calories-counter/issues/35) |
+| 5 | Best guess route, Gemini guesser and the estimate label | AC-7, AC-8 | [#36](https://github.com/streetlampsalad/calories-counter/issues/36) |
+| 6 | Attribution in results | AC-10 | [#37](https://github.com/streetlampsalad/calories-counter/issues/37) |
 
 ## Open questions
 
