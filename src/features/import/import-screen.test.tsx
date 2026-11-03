@@ -1,9 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const toast = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
+const push = vi.hoisted(() => vi.fn());
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -33,6 +35,8 @@ describe("ImportScreen", () => {
   beforeEach(() => {
     toast.mockReset();
     toast.error.mockReset();
+    push.mockReset();
+    sessionStorage.clear();
     window.getSelection()?.removeAllRanges();
   });
 
@@ -96,5 +100,196 @@ describe("ImportScreen", () => {
       "href",
       "/foods",
     );
+  });
+});
+
+const CSV = [
+  "name,portion,calories",
+  "Banana,1 medium,105",
+  "Mystery,1 serve,",
+  "Chocolate,1 bar,",
+].join("\n");
+
+async function paste(text: string) {
+  await userEvent.click(screen.getByLabelText("Paste the result"));
+  await userEvent.paste(text);
+  await userEvent.click(
+    screen.getByRole("button", { name: "Review pasted result" }),
+  );
+}
+const rowCards = () =>
+  within(screen.getByRole("list", { name: "Rows to review" })).getAllByRole(
+    "listitem",
+  );
+
+describe("ImportScreen: pasting a result", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    push.mockReset();
+  });
+
+  it("shows every row for review, valid ones on and flagged ones off", async () => {
+    render(<ImportScreen />);
+
+    await paste(CSV);
+
+    expect(rowCards()).toHaveLength(3);
+    expect(within(rowCards()[0]).getByRole("switch")).toBeChecked();
+    expect(within(rowCards()[1]).getByRole("switch")).not.toBeChecked();
+    expect(within(rowCards()[1]).getByRole("switch")).toBeDisabled();
+    expect(rowCards()[1]).toHaveTextContent("Add calories or kilojoules");
+    expect(
+      screen.getByText(/1 of 3 rows will be saved, 2 need fixing/),
+    ).toBeInTheDocument();
+  });
+
+  it("switches a flagged row on once it is fixed", async () => {
+    render(<ImportScreen />);
+    await paste(CSV);
+
+    await userEvent.type(
+      within(rowCards()[1]).getByLabelText("Calories"),
+      "180",
+    );
+
+    expect(within(rowCards()[1]).getByRole("switch")).toBeChecked();
+    expect(within(rowCards()[1]).getByRole("switch")).toBeEnabled();
+    expect(rowCards()[1]).not.toHaveTextContent("Add calories or kilojoules");
+    expect(
+      screen.getByText(/2 of 3 rows will be saved, 1 needs fixing/),
+    ).toBeInTheDocument();
+  });
+
+  it("lets a valid row be switched off and on", async () => {
+    render(<ImportScreen />);
+    await paste(CSV);
+    const toggle = within(rowCards()[0]).getByRole("switch");
+
+    await userEvent.click(toggle);
+    expect(toggle).not.toBeChecked();
+    await userEvent.click(toggle);
+    expect(toggle).toBeChecked();
+  });
+
+  it("shows the kilojoules a row was converted from", async () => {
+    render(<ImportScreen />);
+
+    await paste("name,portion,kilojoules\nChocolate,1 bar,1000");
+
+    expect(rowCards()[0]).toHaveTextContent("(from 1,000 kJ)");
+    expect(within(rowCards()[0]).getByLabelText("Calories")).toHaveValue("239");
+  });
+
+  it("explains text it cannot read, and stays on the source", async () => {
+    render(<ImportScreen />);
+
+    await paste("Remember to buy milk");
+
+    expect(screen.getByRole("alert")).toHaveTextContent("CSV or JSON");
+    expect(
+      screen.queryByRole("list", { name: "Rows to review" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("rejects a file that is not CSV or JSON, and one that is too big", async () => {
+    render(<ImportScreen />);
+    const input = screen.getByLabelText("CSV or JSON file");
+
+    await userEvent.upload(
+      input,
+      new File(["x"], "notes.pdf", { type: "application/pdf" }),
+      { applyAccept: false },
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("CSV or JSON");
+
+    const big = new File(["x"], "big.csv", { type: "text/csv" });
+    Object.defineProperty(big, "size", { value: 2 * 1024 * 1024 });
+    await userEvent.upload(input, big);
+    expect(screen.getByRole("alert")).toHaveTextContent("1 MB");
+  });
+
+  it("reads a chosen CSV file", async () => {
+    render(<ImportScreen />);
+
+    await userEvent.upload(
+      screen.getByLabelText("CSV or JSON file"),
+      new File([CSV], "foods.csv", { type: "text/csv" }),
+    );
+
+    expect(
+      await screen.findByRole("list", { name: "Rows to review" }),
+    ).toBeInTheDocument();
+    expect(rowCards()).toHaveLength(3);
+  });
+
+  it("keeps the rows if the page reloads", async () => {
+    const first = render(<ImportScreen />);
+    await paste(CSV);
+    first.unmount();
+
+    render(<ImportScreen />);
+
+    expect(rowCards()).toHaveLength(3);
+  });
+});
+
+describe("ImportScreen: leaving with unsaved rows (AC-11)", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    push.mockReset();
+  });
+
+  it("leaves straight away when there is nothing to lose", async () => {
+    render(<ImportScreen />);
+
+    await userEvent.click(screen.getByRole("link", { name: /Foods/ }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("asks before leaving, and stays if the User keeps editing", async () => {
+    render(<ImportScreen />);
+    await paste(CSV);
+
+    await userEvent.click(screen.getByRole("link", { name: /Foods/ }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("3 rows haven't been saved");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Keep editing" }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(rowCards()).toHaveLength(3);
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("discards the rows and goes on when the User confirms", async () => {
+    render(<ImportScreen />);
+    await paste(CSV);
+    await userEvent.click(screen.getByRole("link", { name: /Foods/ }));
+
+    await userEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Discard",
+      }),
+    );
+
+    expect(push).toHaveBeenCalledWith("/foods");
+    expect(sessionStorage.getItem("import-review")).toBeNull();
+  });
+
+  it("asks before starting over, and goes back to the source when confirmed", async () => {
+    render(<ImportScreen />);
+    await paste(CSV);
+
+    await userEvent.click(screen.getByRole("button", { name: "Start over" }));
+    await userEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Discard",
+      }),
+    );
+
+    expect(screen.getByLabelText("Paste the result")).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
 });
