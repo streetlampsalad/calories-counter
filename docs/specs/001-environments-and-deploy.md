@@ -1,6 +1,6 @@
 # 001: Environments and deploy pipeline
 
-- **Status**: Ready
+- **Status**: In progress
 - **Depends on**: — (the repository scaffold is already in place)
 - **Tracking issue**: [#1](https://github.com/streetlampsalad/calories-counter/issues/1)
 - **ADRs**: 0003
@@ -56,11 +56,13 @@ Every push to `main` that passes CI reaches production automatically, with datab
 | `VERCEL_ORG_ID` | Vercel team or account the project belongs to. |
 | `VERCEL_PROJECT_ID` | The Vercel project. |
 
+**Repository variable** (GitHub Actions): `PRODUCTION_URL`, the production domain such as `https://calories-counter.vercel.app`, which the health check polls.
+
 **Vercel environment variables** (production): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and later `GEMINI_API_KEY` (specs 006 and 007).
 
-**Health route**: `src/app/api/health/route.ts` returns `VERCEL_GIT_COMMIT_SHA`. The deploy passes the SHA with `--build-env` and `--env`, because a prebuilt deploy has no Git metadata.
+**Health route**: `src/app/api/health/route.ts` returns `COMMIT_SHA`, which the deploy passes with `vercel deploy --env COMMIT_SHA=<sha>`. Vercel's own `VERCEL_GIT_COMMIT_SHA` is not available in prebuilt deployments. The route calls `connection()` so it runs on every request instead of being prerendered at build time.
 
-Steps that need a human (creating the Vercel project, creating tokens, setting secrets) should be packaged as an interactive wizard script (`scripts/setup-production.sh`), using the `mattpocock-skills:wizard` skill.
+**Setup wizard**: `scripts/setup-production.sh` walks the owner through the steps only a human can do (create tokens, import the Vercel project) and writes every secret, variable and Vercel environment variable the workflow needs. It is safe to re-run and never writes secrets to disk.
 
 ## Test plan
 
