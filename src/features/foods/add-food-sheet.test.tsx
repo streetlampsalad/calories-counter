@@ -32,6 +32,14 @@ describe("AddFoodSheet", () => {
     expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
   });
 
+  it("offers Import from notes, which opens the import screen", () => {
+    open();
+
+    expect(
+      screen.getByRole("link", { name: /import from notes/i }),
+    ).toHaveAttribute("href", "/foods/import");
+  });
+
   it("opens the form with the name field focused and the numeric keypad for calories", async () => {
     open();
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight, PencilLine } from "lucide-react";
+import { ChevronRight, FileText, PencilLine } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Sheet,
@@ -25,13 +26,29 @@ type Props = {
 
 type Mode = "choose" | "manual";
 
-// Each way of adding a Food is an option here; the other specs add theirs (import, scan, search).
-const OPTIONS = [
+const ROW_CLASS =
+  "flex min-h-16 w-full items-center gap-3 rounded-lg border px-4 text-left";
+
+// Each way of adding a Food is an option here; the other specs add theirs (scan, search).
+// Manual entry swaps the sheet's content; the others open a screen of their own.
+type Option = {
+  label: string;
+  hint: string;
+  icon: typeof PencilLine;
+} & ({ mode: "manual" } | { href: string });
+
+const OPTIONS: Option[] = [
   {
-    mode: "manual" as const,
+    mode: "manual",
     label: "Enter manually",
     hint: "Type a name, portion and calories",
     icon: PencilLine,
+  },
+  {
+    href: "/foods/import",
+    label: "Import from notes",
+    hint: "Turn a photo of handwritten notes into foods",
+    icon: FileText,
   },
 ];
 
@@ -61,30 +78,44 @@ export function AddFoodSheet({
         <div className="px-4 pb-6">
           {mode === "choose" ? (
             <ul className="flex flex-col gap-2">
-              {OPTIONS.map(({ mode: optionMode, label, hint, icon: Icon }) => (
-                <li key={optionMode}>
-                  <button
-                    type="button"
-                    onClick={() => setMode(optionMode)}
-                    className="flex min-h-16 w-full items-center gap-3 rounded-lg border px-4 text-left"
-                  >
+              {OPTIONS.map((option) => {
+                const Icon = option.icon;
+                const content = (
+                  <>
                     <Icon
                       aria-hidden="true"
                       className="size-5 text-muted-foreground"
                     />
                     <span className="flex flex-1 flex-col">
-                      <span className="font-medium">{label}</span>
+                      <span className="font-medium">{option.label}</span>
                       <span className="text-muted-foreground text-sm">
-                        {hint}
+                        {option.hint}
                       </span>
                     </span>
                     <ChevronRight
                       aria-hidden="true"
                       className="size-4 text-muted-foreground"
                     />
-                  </button>
-                </li>
-              ))}
+                  </>
+                );
+                return (
+                  <li key={option.label}>
+                    {"href" in option ? (
+                      <Link href={option.href} className={ROW_CLASS}>
+                        {content}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setMode(option.mode)}
+                        className={ROW_CLASS}
+                      >
+                        {content}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <FoodForm
