@@ -36,9 +36,9 @@ A User types a food ("banana", "Arnott's Tim Tam") and gets Suggestions from fre
 ## Design
 
 **Reference Foods (AFCD)**
-- Source: Food Standards Australia New Zealand's Australian Food Composition Database. Download the current release's food details and nutrient files. *While implementing, confirm the licence (expected to be CC BY 4.0) and the exact attribution text.*
+- Source: Food Standards Australia New Zealand's Australian Food Composition Database. Download the current release's files (Release 3 was used) into `scripts/afcd/data/`, which is git-ignored. *Licence: the release carries no licence text. The owner decided the publicly available data is fine to use, and the app credits FSANZ wherever it shows these foods.*
 - Table: `reference_foods (id, source text, source_id text, name text, energy_kj_per_100 numeric, calories_per_100 integer, unit text check (unit in ('g','ml')))`, with a GIN trigram index on `name`. It is shared read-only: RLS select for `authenticated` and no write policies.
-- Loading: `scripts/afcd/build-seed.mjs` turns the downloaded files into `supabase/seeds/reference_foods.sql`. That file is committed and loaded locally through `config.toml` `[db.seed]`. Production is loaded by a data migration that inserts the same rows, so the data is versioned and reviewable.
+- Loading: `node scripts/afcd/build-seed.mjs <output.sql>` turns the "Nutrient profiles" spreadsheet into a data migration (`supabase/migrations/…_afcd_reference_foods.sql`, 1,588 foods). Because it is a migration, local and production load the same committed rows, so the data is versioned and reviewable. Energy is "Energy with dietary fibre, equated" in kJ; liquids use their per 100 mL row (unit `ml`), everything else is per 100 g. The `FIXTURE` rows in `supabase/seed.sql` remain for tests.
 - Search: `search_reference_foods(q text, max int default 20)` (security invoker) using `similarity` and `ilike 'q%'` ranking.
 
 **Open Food Facts**

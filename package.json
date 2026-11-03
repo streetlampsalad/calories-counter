@@ -59,6 +59,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "jsdom": "^30.1.3",
     "lefthook": "^2.2.2",
+    "read-excel-file": "^9.3.14",
     "supabase": "2.122.0",
     "tailwindcss": "^4",
     "typescript": "^5",
