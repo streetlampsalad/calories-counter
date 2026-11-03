@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import { authFile } from "./support/auth";
+import { userClient } from "./support/db";
+import { seedFood, unique } from "./support/seed";
 
 // The import screen only reads and copies, so it can share a User with other specs.
 test.use({ storageState: authFile("bea") });
@@ -213,4 +215,52 @@ test("the bottom navigation asks before leaving too", async ({ page }) => {
 
   await expect(page.getByRole("dialog")).toContainText("haven't been saved");
   await expect(page).toHaveURL("/foods/import");
+});
+
+test("a row already in the Food List is flagged, skipped by default, and can update the Food", async ({
+  page,
+}) => {
+  const bea = await userClient("bea");
+  const name = unique("Dup banana");
+  await seedFood(bea, { name, portion: "1 medium", calories: 90 });
+  await page.goto("/foods/import");
+
+  await pasteResult(
+    page,
+    `name,portion,calories\n${name.toUpperCase()}, 1 Medium ,105\nFresh ${name},1 piece,50`,
+  );
+
+  const duplicate = reviewRows(page).nth(0);
+  await expect(duplicate).toContainText("Already in your list (90 kcal)");
+  await expect(duplicate.getByRole("radio", { name: "Skip" })).toBeChecked();
+  await expect(duplicate).toContainText("Skipped, already in your list");
+  await expect(reviewRows(page).nth(1)).not.toContainText(
+    "Already in your list",
+  );
+  await expect(
+    page.getByText("1 of 2 rows will be saved, 1 already in your list"),
+  ).toBeVisible();
+
+  await duplicate.getByText("Update existing").click();
+
+  await expect(duplicate).toContainText("Will update your existing food");
+  await expect(duplicate).toContainText("Past days will use the new calories");
+  await expect(page.getByText("2 of 2 rows will be saved")).toBeVisible();
+});
+
+test("identical rows in one import are merged into one", async ({ page }) => {
+  await page.goto("/foods/import");
+
+  await pasteResult(
+    page,
+    "name,portion,calories\nMerge me,1 slice,100\nmerge me,1 slice,100\nMerge me,1 slice,120",
+  );
+
+  await expect(reviewRows(page)).toHaveCount(1);
+  await expect(reviewRows(page).first()).toContainText(
+    "Merged with 2 identical rows",
+  );
+  await expect(reviewRows(page).first()).toContainText(
+    "Another row said 120 kcal",
+  );
 });

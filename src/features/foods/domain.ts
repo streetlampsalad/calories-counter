@@ -22,7 +22,7 @@ export function sortFoods(foods: readonly Food[]): Food[] {
   );
 }
 
-const key = (name: string, portion: string) =>
+export const foodKey = (name: string, portion: string) =>
   `${normalizeText(name).toLowerCase()}|${normalizeText(portion).toLowerCase()}`;
 
 // Mirrors the database's unique index: one live Food per name and Portion, ignoring case.
@@ -31,12 +31,12 @@ export function findDuplicate(
   candidate: { name: string; portion: string },
   excludeId?: string,
 ): Food | undefined {
-  const wanted = key(candidate.name, candidate.portion);
+  const wanted = foodKey(candidate.name, candidate.portion);
   return foods.find(
     (food) =>
       food.archivedAt === null &&
       food.id !== excludeId &&
-      key(food.name, food.portion) === wanted,
+      foodKey(food.name, food.portion) === wanted,
   );
 }
 

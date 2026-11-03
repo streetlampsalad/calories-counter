@@ -5,6 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const toast = vi.hoisted(() => Object.assign(vi.fn(), { error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 const push = vi.hoisted(() => vi.fn());
+const foodsData = vi.hoisted(() => ({ foods: [] as unknown[] }));
+vi.mock("@/features/foods/queries", () => ({
+  useFoods: () => ({ data: foodsData.foods }),
+}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("next/link", () => ({
   default: ({
@@ -37,6 +41,7 @@ describe("ImportScreen", () => {
     toast.error.mockReset();
     push.mockReset();
     sessionStorage.clear();
+    foodsData.foods = [];
     window.getSelection()?.removeAllRanges();
   });
 
@@ -291,5 +296,99 @@ describe("ImportScreen: leaving with unsaved rows (AC-11)", () => {
 
     expect(screen.getByLabelText("Paste the result")).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
+  });
+});
+
+describe("ImportScreen: duplicates (AC-7)", () => {
+  const banana = {
+    id: "food-1",
+    name: "Banana",
+    portion: "1 medium",
+    calories: 90,
+    archivedAt: null,
+  };
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    push.mockReset();
+    foodsData.foods = [banana];
+  });
+
+  it("flags a row already in the Food List and skips it by default", async () => {
+    render(<ImportScreen />);
+
+    await paste("name,portion,calories\nBanana,1 medium,105\nRice,100 g,130");
+
+    expect(rowCards()[0]).toHaveTextContent("Already in your list (90 kcal)");
+    expect(
+      within(rowCards()[0]).getByRole("radio", { name: "Skip" }),
+    ).toBeChecked();
+    expect(rowCards()[0]).toHaveTextContent("Skipped, already in your list");
+    expect(rowCards()[1]).not.toHaveTextContent("Already in your list");
+    expect(rowCards()[1]).toHaveTextContent("Will be added");
+    expect(
+      screen.getByText(/1 of 2 rows will be saved, 1 already in your list/),
+    ).toBeInTheDocument();
+  });
+
+  it("updates the existing Food when asked, and says past days follow", async () => {
+    render(<ImportScreen />);
+    await paste("name,portion,calories\nBanana,1 medium,105");
+
+    await userEvent.click(
+      within(rowCards()[0]).getByRole("radio", { name: "Update existing" }),
+    );
+
+    expect(rowCards()[0]).toHaveTextContent("Will update your existing food");
+    expect(rowCards()[0]).toHaveTextContent(
+      "Past days will use the new calories",
+    );
+    expect(screen.getByText(/1 of 1 row will be saved/)).toBeInTheDocument();
+  });
+
+  it("ignores case and spacing, and ignores Archived Foods", async () => {
+    foodsData.foods = [
+      banana,
+      {
+        ...banana,
+        id: "food-2",
+        name: "Rice",
+        portion: "100 g",
+        archivedAt: "2026-01-01",
+      },
+    ];
+    render(<ImportScreen />);
+
+    await paste(
+      "name,portion,calories\n BANANA ,1  Medium,105\nRice,100 g,130",
+    );
+
+    expect(rowCards()[0]).toHaveTextContent("Already in your list");
+    expect(rowCards()[1]).not.toHaveTextContent("Already in your list");
+  });
+
+  it("merges identical rows within the import into one", async () => {
+    foodsData.foods = [];
+    render(<ImportScreen />);
+
+    await paste(
+      "name,portion,calories\nBanana,1 medium,105\nbanana,1 medium,105",
+    );
+
+    expect(rowCards()).toHaveLength(1);
+    expect(rowCards()[0]).toHaveTextContent("Merged with 1 identical row");
+  });
+
+  it("keeps the first of two rows that disagree and says what the other said", async () => {
+    foodsData.foods = [];
+    render(<ImportScreen />);
+
+    await paste(
+      "name,portion,calories\nBanana,1 medium,105\nBanana,1 medium,110",
+    );
+
+    expect(rowCards()).toHaveLength(1);
+    expect(within(rowCards()[0]).getByLabelText("Calories")).toHaveValue("105");
+    expect(rowCards()[0]).toHaveTextContent("Another row said 110 kcal");
   });
 });

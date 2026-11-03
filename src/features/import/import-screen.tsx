@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useFoods } from "@/features/foods/queries";
 import { AI_PROMPT } from "./ai-prompt";
 import { DiscardSheet } from "./discard-sheet";
 import { ImportSource } from "./import-source";
@@ -81,6 +82,7 @@ function PromptSection() {
 export function ImportScreen() {
   const router = useRouter();
   const { state, dispatch } = useImportReview();
+  const { data: foods } = useFoods();
   const hasRows = state.rows.length > 0;
   const { pending, stay } = useLeaveGuard(hasRows);
   const [startingOver, setStartingOver] = useState(false);
@@ -109,10 +111,14 @@ export function ImportScreen() {
         <>
           <ReviewList
             state={state}
+            foods={foods ?? []}
             onEdit={(id, field, value) =>
               dispatch({ type: "edit", id, field, value })
             }
             onToggle={(id) => dispatch({ type: "toggle", id })}
+            onDuplicate={(id, action) =>
+              dispatch({ type: "duplicate", id, action })
+            }
           />
           <Button
             variant="outline"

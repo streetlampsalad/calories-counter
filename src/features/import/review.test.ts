@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type { Food } from "@/features/foods/types";
 import type { ImportRow } from "./parse";
 import {
   checkRow,
   initialReview,
   keptCount,
+  planCounts,
+  planFor,
   type ReviewRow,
   restoreReview,
   reviewReducer,
@@ -25,7 +28,11 @@ const load = (rows: ImportRow[]) =>
 describe("reviewRows", () => {
   it("switches valid rows on and invalid rows off (AC-6)", () => {
     const rows = reviewRows(
-      [row(), row({ name: "", calories: "" }), row({ calories: "99999" })],
+      [
+        row(),
+        row({ name: "", calories: "" }),
+        row({ name: "Huge", calories: "99999" }),
+      ],
       ids,
     );
 
@@ -193,6 +200,9 @@ describe("checkRow and keptCount", () => {
     const converted: ReviewRow = {
       id: "x",
       keep: true,
+      onDuplicate: "skip",
+      merged: 0,
+      alsoListed: [],
       ...row({ calories: "", kilojoules: "1000" }),
     };
 
@@ -254,5 +264,174 @@ describe("restoreReview", () => {
     expect(restoreReview("[]")).toBeNull();
     expect(restoreReview('{"rows":[{"name":"x"}]}')).toBeNull();
     expect(restoreReview('{"rows":"x"}')).toBeNull();
+  });
+});
+
+const food = (over: Partial<Food> = {}): Food => ({
+  id: "food-1",
+  name: "Banana",
+  portion: "1 medium",
+  calories: 90,
+  archivedAt: null,
+  ...over,
+});
+
+describe("merging identical rows (AC-7)", () => {
+  it("merges two rows with the same name, portion and calories into one", () => {
+    const rows = reviewRows([row(), row()], ids);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].merged).toBe(1);
+    expect(rows[0].alsoListed).toEqual([]);
+  });
+
+  it("ignores case and spacing when matching", () => {
+    const rows = reviewRows(
+      [
+        row({ name: "Banana" }),
+        row({ name: "  banana ", portion: "1  MEDIUM" }),
+      ],
+      ids,
+    );
+
+    expect(rows).toHaveLength(1);
+  });
+
+  it("keeps the first row and notes a different value the other one gave", () => {
+    const rows = reviewRows(
+      [row({ calories: "105" }), row({ calories: "110" })],
+      ids,
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].calories).toBe("105");
+    expect(rows[0].alsoListed).toEqual(["110 kcal"]);
+  });
+
+  it("counts every row merged into one", () => {
+    expect(reviewRows([row(), row(), row()], ids)[0].merged).toBe(2);
+  });
+
+  it("does not merge rows with different portions or names", () => {
+    expect(
+      reviewRows(
+        [row(), row({ portion: "1 large" }), row({ name: "Rice" })],
+        ids,
+      ),
+    ).toHaveLength(3);
+  });
+
+  it("does not merge rows that have no name or portion yet", () => {
+    expect(
+      reviewRows([row({ name: "" }), row({ name: "" })], ids),
+    ).toHaveLength(2);
+  });
+
+  it("merges rows added later into the rows already there", () => {
+    const state = load([row()]);
+
+    const added = reviewReducer(state, {
+      type: "add",
+      rows: reviewRows([row({ name: "Rice" }), row()], ids),
+    });
+
+    expect(added.rows.map((r) => r.name)).toEqual(["Banana", "Rice"]);
+    expect(added.rows[0].merged).toBe(1);
+  });
+});
+
+describe("planFor (AC-7)", () => {
+  it("adds a valid row that is new", () => {
+    const state = load([row({ name: "Rice" })]);
+
+    expect(planFor(state.rows[0], [food()])).toEqual({ kind: "add" });
+  });
+
+  it("skips a row already in the Food List by default, naming the Food", () => {
+    const state = load([row()]);
+
+    expect(state.rows[0].onDuplicate).toBe("skip");
+    expect(planFor(state.rows[0], [food()])).toEqual({
+      kind: "skip",
+      existing: food(),
+    });
+  });
+
+  it("updates the existing Food when asked", () => {
+    let state = load([row()]);
+    state = reviewReducer(state, {
+      type: "duplicate",
+      id: state.rows[0].id,
+      action: "update",
+    });
+
+    expect(planFor(state.rows[0], [food()])).toEqual({
+      kind: "update",
+      existing: food(),
+    });
+  });
+
+  it("matches the name and portion without regard to case or spacing", () => {
+    const state = load([row({ name: " BANANA ", portion: "1 Medium" })]);
+
+    expect(planFor(state.rows[0], [food()]).kind).toBe("skip");
+  });
+
+  it("ignores Archived Foods, which do not block a new one", () => {
+    const state = load([row()]);
+
+    expect(
+      planFor(state.rows[0], [food({ archivedAt: "2026-01-01" })]),
+    ).toEqual({ kind: "add" });
+  });
+
+  it("does nothing with a row that is switched off or flagged", () => {
+    const state = load([row(), row({ name: "Rice", calories: "" })]);
+    const off = reviewReducer(state, { type: "toggle", id: state.rows[0].id });
+
+    expect(planFor(off.rows[0], [])).toEqual({ kind: "off" });
+    expect(planFor(state.rows[1], [])).toEqual({ kind: "off" });
+  });
+
+  it("becomes a plain add once an edit makes the row differ from the existing Food", () => {
+    let state = load([row()]);
+    state = reviewReducer(state, {
+      type: "edit",
+      id: state.rows[0].id,
+      field: "portion",
+      value: "1 large",
+    });
+
+    expect(planFor(state.rows[0], [food()])).toEqual({ kind: "add" });
+  });
+});
+
+describe("planCounts", () => {
+  it("counts what Save will add and update, and what it leaves out", () => {
+    let state = load([
+      row({ name: "New" }),
+      row({ name: "Also new", portion: "1 piece" }),
+      row(),
+      row({ name: "Banana", portion: "1 large" }),
+      row({ name: "Bad", calories: "" }),
+    ]);
+    // Banana 1 medium exists; ask to update the row that matches it.
+    state = reviewReducer(state, {
+      type: "duplicate",
+      id: state.rows[2].id,
+      action: "update",
+    });
+    const existing = [
+      food(),
+      food({ id: "food-2", portion: "1 large", name: "Banana" }),
+    ];
+
+    expect(planCounts(state, existing)).toEqual({
+      add: 2,
+      update: 1,
+      skip: 1,
+      off: 0,
+      flagged: 1,
+    });
   });
 });
