@@ -1,0 +1,2 @@
+-- Local development and test data. Loaded by `pnpm db:reset` (never in production).
+-- Spec 002 adds the seeded test Users here.

@@ -1,7 +1,7 @@
 // Generates TypeScript types from the local Supabase schema.
 //   --write  overwrite src/lib/supabase/database.types.ts
 //   --check  fail if the committed file differs from the schema (used by validate)
-import { execFileSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const TARGET = "src/lib/supabase/database.types.ts";
@@ -12,19 +12,9 @@ if (mode !== "--write" && mode !== "--check") {
   process.exit(2);
 }
 
-const generated = execFileSync(
-  "pnpm",
-  [
-    "exec",
-    "supabase",
-    "gen",
-    "types",
-    "typescript",
-    "--local",
-    "--schema",
-    "public",
-  ],
-  { encoding: "utf8", shell: process.platform === "win32" },
+const generated = execSync(
+  "pnpm exec supabase gen types typescript --local --schema public",
+  { encoding: "utf8" },
 ).replace(/\r\n/g, "\n");
 
 if (mode === "--write") {
