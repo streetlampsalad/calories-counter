@@ -1,6 +1,6 @@
 # 002: Sign in with Google and the app shell
 
-- **Status**: In progress
+- **Status**: Done
 - **Depends on**: 001
 - **Tracking issue**: [#5](https://github.com/streetlampsalad/calories-counter/issues/5)
 - **ADRs**: 0002
