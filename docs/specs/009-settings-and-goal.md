@@ -1,6 +1,6 @@
 # 009: Settings and Goal
 
-- **Status**: Ready
+- **Status**: Done
 - **Depends on**: 002
 - **Tracking issue**: [#45](https://github.com/streetlampsalad/calories-counter/issues/45)
 
