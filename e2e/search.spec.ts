@@ -367,3 +367,32 @@ test.describe("the guess daily limit", () => {
     expect(await response.json()).toEqual({ code: "limit_reached" });
   });
 });
+
+test("results carry the food data attribution, and Settings → About says the same", async ({
+  page,
+}) => {
+  await page.goto("/foods/search");
+  await expect(
+    page.getByText(/Food Standards Australia New Zealand/),
+  ).toHaveCount(0);
+
+  await search(page, "banana");
+
+  const attribution = page
+    .getByRole("main")
+    .getByText(/Australian Food Composition Database/);
+  await expect(attribution).toContainText(
+    "Food Standards Australia New Zealand",
+  );
+  await expect(attribution).toContainText("Open Database Licence");
+  await expect(
+    attribution.getByRole("link", { name: "Open Food Facts" }),
+  ).toHaveAttribute("href", "https://world.openfoodfacts.org");
+
+  await page.goto("/settings");
+  await expect(
+    page
+      .getByRole("region", { name: "About" })
+      .getByText(/Australian Food Composition Database/),
+  ).toContainText("Open Database Licence");
+});

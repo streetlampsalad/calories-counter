@@ -1,3 +1,5 @@
+import { FoodDataAttribution } from "@/features/search/attribution";
+
 export function AboutSection({ version }: { version: string }) {
   return (
     <section aria-labelledby="about-heading" className="flex flex-col gap-3">
@@ -8,20 +10,7 @@ export function AboutSection({ version }: { version: string }) {
 
       <div className="flex flex-col gap-1">
         <h3 className="font-medium text-sm">Food data</h3>
-        <p className="text-muted-foreground text-sm">
-          Australian food data comes from the Australian Food Composition
-          Database, © Food Standards Australia New Zealand. Packaged product
-          data comes from{" "}
-          <a
-            href="https://world.openfoodfacts.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            Open Food Facts
-          </a>
-          , available under the Open Database Licence.
-        </p>
+        <FoodDataAttribution className="text-muted-foreground text-sm" />
       </div>
 
       <div className="flex flex-col gap-1">

@@ -12,6 +12,7 @@ import { formatFoodDetail, matchesFoodQuery } from "@/features/foods/domain";
 import { useAddFood, useFoods } from "@/features/foods/queries";
 import type { Food, FoodInput } from "@/features/foods/types";
 import { normalizeText } from "@/features/foods/validation";
+import { FoodDataAttribution } from "./attribution";
 import { askBestGuess } from "./guess";
 import { MIN_QUERY } from "./limits";
 import { useProductSearch, useReferenceSearch } from "./queries";
@@ -268,6 +269,10 @@ export function SearchScreen() {
             </p>
           ) : null}
         </Section>
+      ) : null}
+
+      {submitted ? (
+        <FoodDataAttribution className="text-muted-foreground text-xs" />
       ) : null}
 
       <SuggestionSheet
