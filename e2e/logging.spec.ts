@@ -10,6 +10,14 @@ const entries = (page: Page) =>
 const picker = (page: Page) =>
   page.getByRole("dialog", { name: "Add to your day" });
 
+// Resolves when the server has answered a write to entries: the UI updates before that.
+const savedEntry = (page: Page, method: "POST" | "DELETE") =>
+  page.waitForResponse(
+    (response) =>
+      response.request().method() === method &&
+      response.url().includes("/rest/v1/entries"),
+  );
+
 async function openPickerFor(page: Page, foodName: string) {
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await expect(picker(page)).toBeVisible();
@@ -37,6 +45,7 @@ test("two taps log a Food: it appears with the total, and is still there after a
   await expect(page.getByText("Nothing logged yet")).toBeVisible();
 
   await openPickerFor(page, food.name);
+  const saved = savedEntry(page, "POST");
   await picker(page).getByRole("button", { name: "Add 1½" }).click();
 
   await expect(entries(page)).toHaveCount(1);
@@ -45,6 +54,7 @@ test("two taps log a Food: it appears with the total, and is still there after a
   await expect(total(page)).toContainText("150");
   await expect(page.getByText(`Added 1½ × ${food.name}`)).toBeVisible();
 
+  await saved; // the Entry is shown optimistically: make sure it landed before reloading
   await page.reload();
   await expect(entries(page)).toHaveCount(1);
   await expect(total(page)).toContainText("150");
@@ -61,10 +71,12 @@ test("Undo takes the Entry back off, for good", async ({ page }) => {
     .click();
   await expect(entries(page)).toHaveCount(1);
 
+  const removed = savedEntry(page, "DELETE");
   await page.getByRole("button", { name: "Undo" }).click();
 
   await expect(entries(page)).toHaveCount(0);
   await expect(total(page)).toContainText("0");
+  await removed;
   await page.reload();
   await expect(page.getByText("Nothing logged yet")).toBeVisible();
 });

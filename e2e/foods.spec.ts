@@ -25,7 +25,17 @@ async function addFood(
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Portion", { exact: true }).fill(portion);
   await page.getByLabel("Calories").fill(calories);
+  // The list updates instantly (optimistically); wait for the server too, so a test that
+  // reloads or writes to the database next cannot race an insert that is still in flight.
+  const saved = stayOpen
+    ? null
+    : page.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          response.url().includes("/rest/v1/foods"),
+      );
   await page.getByRole("button", { name: "Save", exact: true }).click();
+  if (saved) await saved;
   if (!stayOpen) await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 
@@ -213,9 +223,15 @@ test.describe("editing a Food", () => {
     await openEditor(page, name);
     await page.getByLabel("Calories").fill("175");
     await page.getByLabel("Portion", { exact: true }).fill("2 pieces");
+    const updated = page.waitForResponse(
+      (response) =>
+        response.request().method() === "PATCH" &&
+        response.url().includes("/rest/v1/foods"),
+    );
     await page.getByRole("button", { name: "Save changes" }).click();
 
     await expect(rowFor(page, name)).toContainText("2 pieces · 175 kcal");
+    await updated; // the list is optimistic: make sure it reached the server before reloading
     await page.reload();
     await expect(rowFor(page, name)).toContainText("2 pieces · 175 kcal");
   });
