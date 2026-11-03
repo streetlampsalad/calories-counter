@@ -10,6 +10,7 @@ import {
   MAX_KILOJOULES,
   parseKilojoules,
 } from "@/lib/energy";
+import { parseMetricPortion, scaleCalories } from "@/lib/portion";
 import { cn } from "@/lib/utils";
 import { type EnergyUnit, readEnergyUnit, saveEnergyUnit } from "./energy-unit";
 import type { Food, FoodInput } from "./types";
@@ -35,6 +36,11 @@ type Props = {
   submitLabel?: string;
   /** Where prefilled values came from, e.g. "From Open Food Facts". */
   sourceLabel?: string;
+  /**
+   * Calories per 100 g or ml. While set, a Portion in grams or millilitres (like "150 g") works
+   * out the Calories, until the User types their own number.
+   */
+  scaleFrom?: { calories: number; unit: "g" | "ml" };
   /** The live Food that already uses this name and Portion, if any. */
   findExisting?: (input: FoodInput) => Food | undefined;
   /** When given, a duplicate offers a button to open that existing Food for editing. */
@@ -156,6 +162,7 @@ export function FoodForm({
   initialValues,
   submitLabel = "Save",
   sourceLabel,
+  scaleFrom,
   findExisting,
   onEditExisting,
   onSubmit,
@@ -171,6 +178,8 @@ export function FoodForm({
   // A field is only judged once visited, so a fresh form isn't covered in red.
   const [touched, setTouched] = useState(NO_TOUCHED);
   const [duplicate, setDuplicate] = useState<Food | null>(null);
+  // Once the User types their own Calories, a changed Portion no longer overwrites them.
+  const [caloriesTyped, setCaloriesTyped] = useState(false);
   // An existing Food always opens in kcal; otherwise use the unit last chosen on this device.
   const [unit, setUnit] = useState<EnergyUnit>(() =>
     initialValues?.calories ? "kcal" : readEnergyUnit(),
@@ -200,6 +209,26 @@ export function FoodForm({
   const set = (field: keyof FoodFormValues) => (value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
     setDuplicate(null);
+  };
+  // A Portion like "150 g" scales the Calories of a food measured per 100 g, unless overridden.
+  const setPortion = (value: string) => {
+    setValues((current) => {
+      const next = { ...current, portion: value };
+      const metric =
+        scaleFrom && !caloriesTyped ? parseMetricPortion(value) : null;
+      if (scaleFrom && metric && metric.unit === scaleFrom.unit) {
+        const calories = scaleCalories(scaleFrom.calories, metric.amount);
+        next.calories = String(
+          unit === "kj" ? caloriesToKilojoules(calories) : calories,
+        );
+      }
+      return next;
+    });
+    setDuplicate(null);
+  };
+  const setCalories = (value: string) => {
+    setCaloriesTyped(true);
+    set("calories")(value);
   };
   // Carry the number across when the unit changes, if there is a usable one to carry.
   function chooseUnit(next: EnergyUnit) {
@@ -269,11 +298,11 @@ export function FoodForm({
           label="Portion"
           value={values.portion}
           error={shown("portion")}
-          onChange={set("portion")}
+          onChange={setPortion}
           onBlur={visit("portion")}
           enterKeyHint="next"
         />
-        <PortionChips portion={values.portion} onPick={set("portion")} />
+        <PortionChips portion={values.portion} onPick={setPortion} />
       </div>
       <div className="flex flex-col gap-2">
         <Field
@@ -281,7 +310,7 @@ export function FoodForm({
           label={unit === "kj" ? "Kilojoules" : "Calories"}
           value={values.calories}
           error={shown("calories")}
-          onChange={set("calories")}
+          onChange={setCalories}
           onBlur={visit("calories")}
           inputMode="numeric"
           pattern="[0-9]*"

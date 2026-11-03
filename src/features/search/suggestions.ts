@@ -15,8 +15,9 @@ export type Suggestion = {
   sourceLabel: string;
   /** A guess rather than a measured value. */
   estimate?: boolean;
-  /** For an estimate: an Australian Portion and a one-line reason. */
+  /** For an estimate: an Australian Portion, its Calories and a one-line reason. */
   portion?: string;
+  calories?: number;
   basis?: string;
 };
 

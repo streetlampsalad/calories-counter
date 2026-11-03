@@ -129,3 +129,55 @@ test("the search fits a phone", async ({ page }) => {
   );
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test("changing the portion to a gram amount rescales the calories, and the number can still be overridden", async ({
+  page,
+}) => {
+  const name = unique("Scaled banana");
+  await page.goto("/foods/search");
+  await search(page, "banana");
+  await australian(page)
+    .getByRole("button", { name: /Banana, cavendish, raw/ })
+    .click();
+  const dialog = page.getByRole("dialog");
+
+  await dialog.getByLabel("Portion").fill("150 g");
+  await expect(dialog.getByLabel("Calories")).toHaveValue("140"); // 93 x 1.5 = 139.5
+
+  await dialog.getByLabel("Portion").fill("1 cup");
+  await expect(dialog.getByLabel("Calories")).toHaveValue("140"); // not a weight: left alone
+
+  await dialog.getByLabel("Portion").fill("200 g");
+  await expect(dialog.getByLabel("Calories")).toHaveValue("186");
+
+  await dialog.getByLabel("Calories").fill("190");
+  await dialog.getByLabel("Portion").fill("250 g");
+  await expect(dialog.getByLabel("Calories")).toHaveValue("190");
+
+  await dialog.getByLabel("Name").fill(name);
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes("/rest/v1/foods") &&
+      response.request().method() === "POST",
+  );
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await saved;
+  await page.goto("/foods");
+  await expect(
+    page.getByRole("button", { name: new RegExp(`^Edit ${name},`) }),
+  ).toContainText("250 g · 190 kcal");
+});
+
+test("a liquid scales per 100 ml", async ({ page }) => {
+  await page.goto("/foods/search");
+  await search(page, "milk");
+  await australian(page)
+    .getByRole("button", { name: /Milk, cow, full fat/ })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByLabel("Portion")).toHaveValue("100 ml");
+
+  await dialog.getByLabel("Portion").fill("250 ml");
+
+  await expect(dialog.getByLabel("Calories")).toHaveValue("163"); // 162.5
+});
