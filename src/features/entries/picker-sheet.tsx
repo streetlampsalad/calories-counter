@@ -1,0 +1,156 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { filterFoods, formatFoodDetail } from "@/features/foods/domain";
+import { FoodSearchBox } from "@/features/foods/food-search-box";
+import { useFoods } from "@/features/foods/queries";
+import type { Food } from "@/features/foods/types";
+import { cn } from "@/lib/utils";
+import { QuantityPicker } from "./quantity-picker";
+
+type Props = {
+  open: boolean;
+  /** The chosen Food and how many Portions of it. */
+  onPick: (food: Food, quantity: number) => void;
+  onClose: () => void;
+};
+
+function Message({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-10 text-center">
+      {children}
+    </div>
+  );
+}
+
+export function FoodPickerSheet({ open, onPick, onClose }: Props) {
+  const { data: foods, isPending, isError, refetch } = useFoods();
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  // Every time the picker is opened it starts fresh, not on the last search and open Food.
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      setOpenId(null);
+    }
+  }, [open]);
+
+  const visible = foods ? filterFoods(foods, query) : undefined;
+
+  function pick(food: Food, quantity: number) {
+    onPick(food, quantity);
+    onClose();
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent side="bottom" className="h-[85dvh]">
+        <SheetHeader>
+          <SheetTitle>Add to your day</SheetTitle>
+          <SheetDescription>
+            Pick a food, then how much you had.
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-6">
+          {foods && foods.length > 0 ? (
+            <FoodSearchBox
+              value={query}
+              onChange={(next) => {
+                setQuery(next);
+                setOpenId(null);
+              }}
+            />
+          ) : null}
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {isPending ? (
+              <div
+                aria-hidden="true"
+                className="h-14 animate-pulse rounded-lg bg-muted"
+              />
+            ) : null}
+
+            {isError ? (
+              <div
+                role="alert"
+                className="flex flex-col items-start gap-3 rounded-lg border p-4"
+              >
+                <p>Couldn't load your foods.</p>
+                <Button variant="outline" onClick={() => refetch()}>
+                  Try again
+                </Button>
+              </div>
+            ) : null}
+
+            {foods?.length === 0 ? (
+              <Message>
+                <p className="font-medium">You have no foods yet</p>
+                <p className="text-muted-foreground text-sm">
+                  Add the things you eat once, then log them in two taps.
+                </p>
+                <Button
+                  render={<Link href="/foods" />}
+                  className="h-12 px-6 text-base"
+                >
+                  Add your first food
+                </Button>
+              </Message>
+            ) : null}
+
+            {foods && foods.length > 0 && visible?.length === 0 ? (
+              <Message>
+                <p>
+                  No foods match{" "}
+                  <span className="font-medium">“{query.trim()}”</span>
+                </p>
+              </Message>
+            ) : null}
+
+            {visible && visible.length > 0 ? (
+              <ul aria-label="Your foods">
+                {visible.map((food) => {
+                  const expanded = openId === food.id;
+                  return (
+                    <li key={food.id} className="border-b last:border-b-0">
+                      <button
+                        type="button"
+                        aria-expanded={expanded}
+                        onClick={() => setOpenId(expanded ? null : food.id)}
+                        className={cn(
+                          "flex min-h-14 w-full flex-col items-start justify-center gap-0.5 py-3 text-left",
+                        )}
+                      >
+                        <span className="font-medium">{food.name}</span>
+                        <span className="text-muted-foreground text-sm">
+                          {formatFoodDetail(food)}
+                        </span>
+                      </button>
+                      {expanded ? (
+                        <div className="pb-4">
+                          <QuantityPicker
+                            onChoose={(quantity) => pick(food, quantity)}
+                          />
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}

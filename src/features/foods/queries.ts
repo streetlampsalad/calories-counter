@@ -17,6 +17,7 @@ export const foodKeys = {
   list: () => [...foodKeys.all, "list"] as const,
   archived: () => [...foodKeys.all, "archived"] as const,
   entryCounts: () => [...foodKeys.all, "entry-counts"] as const,
+  usage: () => [...foodKeys.all, "usage"] as const,
 };
 
 async function fetchFoods(): Promise<Food[]> {

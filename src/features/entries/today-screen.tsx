@@ -1,10 +1,17 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import type { Food } from "@/features/foods/types";
 import { dayLabel, parseDay } from "./days";
+import { formatQuantity } from "./domain";
 import { DailyTotal, EntryList } from "./entry-list";
-import { useDayEntries } from "./queries";
+import { FoodPickerSheet } from "./picker-sheet";
+import { useAddEntry, useDayEntries, useRemoveEntry } from "./queries";
+import type { Entry } from "./types";
 import { useToday } from "./use-today";
 
 function Skeleton() {
@@ -19,6 +26,42 @@ function Skeleton() {
 
 function DayView({ day, today }: { day: string; today: string }) {
   const { data: entries, isPending, isError, refetch } = useDayEntries(day);
+  const addEntry = useAddEntry();
+  const removeEntry = useRemoveEntry();
+  const [picking, setPicking] = useState(false);
+
+  // The Entry shows up at once; the toast offers Undo, and a failed save takes it back off.
+  function log(food: Food, quantity: number) {
+    const entry: Entry = {
+      id: crypto.randomUUID(),
+      day,
+      quantity,
+      createdAt: new Date().toISOString(),
+      food: {
+        id: food.id,
+        name: food.name,
+        portion: food.portion,
+        calories: food.calories,
+      },
+    };
+    const added = toast(`Added ${formatQuantity(quantity)} × ${food.name}`, {
+      action: {
+        label: "Undo",
+        onClick: () =>
+          removeEntry.mutate(entry, {
+            onError: (error) => toast.error(error.message),
+          }),
+      },
+    });
+    addEntry.mutate(entry, {
+      onError: (error) => {
+        toast.dismiss(added);
+        toast.error(error.message, {
+          action: { label: "Retry", onClick: () => addEntry.mutate(entry) },
+        });
+      },
+    });
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-4">
@@ -46,6 +89,22 @@ function DayView({ day, today }: { day: string; today: string }) {
           <EntryList entries={entries} />
         </>
       ) : null}
+
+      {/* Within thumb reach, just above the bottom navigation. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+0.75rem)] z-30 mx-auto flex max-w-md justify-end px-4">
+        <Button
+          onClick={() => setPicking(true)}
+          className="pointer-events-auto h-14 gap-2 rounded-full px-6 text-base shadow-lg"
+        >
+          <Plus aria-hidden="true" /> Add
+        </Button>
+      </div>
+
+      <FoodPickerSheet
+        open={picking}
+        onPick={log}
+        onClose={() => setPicking(false)}
+      />
     </main>
   );
 }
