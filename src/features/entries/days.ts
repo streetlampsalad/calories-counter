@@ -61,3 +61,15 @@ export function dayLabel(day: string, today: string): string {
     ? label
     : `${label} ${date.getUTCFullYear()}`;
 }
+
+// 0 = Sunday ... 6 = Saturday
+export const dayOfWeek = (day: string) => toUtcDate(day).getUTCDay();
+
+// Every date from `from` to `to`, inclusive; empty if `to` is before `from`.
+export function listDays(from: string, to: string): string[] {
+  const days: string[] = [];
+  for (let day = from; day <= to; day = shiftDay(day, 1)) days.push(day);
+  return days;
+}
+
+export const monthStart = (day: string) => `${day.slice(0, 7)}-01`;

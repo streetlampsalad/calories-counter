@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { dayLabel, localDateString, parseDay, shiftDay } from "./days";
+import {
+  dayLabel,
+  dayOfWeek,
+  listDays,
+  localDateString,
+  monthStart,
+  parseDay,
+  shiftDay,
+} from "./days";
 
 describe("localDateString", () => {
   it("uses the device's calendar date, whatever the time of day", () => {
@@ -116,5 +124,40 @@ describe("dayLabel", () => {
   it("adds the year for a Day in another year", () => {
     expect(dayLabel("2025-12-31", today)).toBe("Wed 31 Dec 2025");
     expect(dayLabel("2024-02-29", today)).toBe("Thu 29 Feb 2024");
+  });
+});
+
+describe("calendar helpers", () => {
+  it("says which day of the week a date falls on (0 = Sunday)", () => {
+    expect(dayOfWeek("2026-11-03")).toBe(2); // Tuesday
+    expect(dayOfWeek("2026-11-01")).toBe(0); // Sunday
+    expect(dayOfWeek("2026-10-31")).toBe(6); // Saturday
+  });
+
+  it("lists every date from one to another, inclusive", () => {
+    expect(listDays("2026-10-30", "2026-11-02")).toEqual([
+      "2026-10-30",
+      "2026-10-31",
+      "2026-11-01",
+      "2026-11-02",
+    ]);
+    expect(listDays("2026-11-03", "2026-11-03")).toEqual(["2026-11-03"]);
+  });
+
+  it("lists nothing when the end is before the start", () => {
+    expect(listDays("2026-11-03", "2026-11-01")).toEqual([]);
+  });
+
+  it("crosses leap days", () => {
+    expect(listDays("2024-02-28", "2024-03-01")).toEqual([
+      "2024-02-28",
+      "2024-02-29",
+      "2024-03-01",
+    ]);
+  });
+
+  it("finds the first day of a month", () => {
+    expect(monthStart("2026-11-17")).toBe("2026-11-01");
+    expect(monthStart("2024-02-29")).toBe("2024-02-01");
   });
 });
