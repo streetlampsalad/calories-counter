@@ -37,7 +37,7 @@ My friends and I can sign in with our Google accounts and stay signed in. Anyone
 **Supabase configuration** (human, done once in the dashboard, recorded in the issue):
 - Create a Google Cloud OAuth client (Web application). Its authorised redirect URI is `https://xrfbpeiugmacbossropu.supabase.co/auth/v1/callback`.
 - Enable the Google provider in Supabase and disable the Email provider. Leave "Allow new users to sign up" **on**: it is one switch for every provider, so turning it off makes Google sign-in fail with `signup_disabled` ("Signups not allowed for this instance"). With the Email provider disabled and the Before User Created hook registered, only Allowed Emails can create an account.
-- Site URL: the production URL. Redirect URLs: the production URL plus `/auth/callback`, and `http://127.0.0.1:3000/auth/callback`.
+- Site URL: the production URL. Redirect URLs: `https://calories-counter-xi-eight.vercel.app/**` and `http://127.0.0.1:3000/**`. The wildcard matters: the app sends `/auth/callback?next=…`, and an exact entry without `**` doesn't match the query string, so Supabase falls back to the Site URL. The Supabase integration on the Vercel team can change the Site URL to `calories-counter-streetlamp-salad.vercel.app`. That address is behind Vercel Deployment Protection, so anyone not signed in to Vercel lands on Vercel's login page.
 - JWT expiry stays at the default, and refresh tokens don't expire, so sessions last until sign-out (AC-4).
 
 **Allowed Emails**
