@@ -175,3 +175,85 @@ test.describe("searching the Food List", () => {
     await expect(list(page).getByText(name)).toBeVisible();
   });
 });
+
+test.describe("editing a Food", () => {
+  const rowFor = (page: Page, name: string) =>
+    list(page).getByRole("listitem").filter({ hasText: name });
+
+  async function openEditor(page: Page, name: string) {
+    await page
+      .getByRole("button", { name: new RegExp(`^Edit ${name}`) })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Edit food" }),
+    ).toBeVisible();
+  }
+
+  test("changes show in the list straight away and survive a reload", async ({
+    page,
+  }) => {
+    const name = unique("Edit me");
+    await page.goto("/foods");
+    await addFood(page, name, "1 piece", "100");
+    await expect(rowFor(page, name)).toContainText("100 kcal");
+
+    await openEditor(page, name);
+    await page.getByLabel("Calories").fill("175");
+    await page.getByLabel("Portion").fill("2 pieces");
+    await page.getByRole("button", { name: "Save changes" }).click();
+
+    await expect(rowFor(page, name)).toContainText("2 pieces · 175 kcal");
+    await page.reload();
+    await expect(rowFor(page, name)).toContainText("2 pieces · 175 kcal");
+  });
+
+  test("a failed save puts the old values back and offers to retry", async ({
+    page,
+  }) => {
+    const name = unique("Rollback");
+    await page.goto("/foods");
+    await addFood(page, name, "1 piece", "100");
+    await expect(rowFor(page, name)).toContainText("100 kcal");
+
+    await page.route("**/rest/v1/foods?*", (route) =>
+      route.request().method() === "PATCH"
+        ? route.fulfill({
+            status: 500,
+            contentType: "application/json",
+            body: "{}",
+          })
+        : route.continue(),
+    );
+    await openEditor(page, name);
+    await page.getByLabel("Calories").fill("999");
+    await page.getByRole("button", { name: "Save changes" }).click();
+
+    await expect(page.getByText(`Couldn't save ${name}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+    await expect(rowFor(page, name)).toContainText("100 kcal");
+    await expect(rowFor(page, name)).not.toContainText("999");
+  });
+
+  test("renaming into another Food's name and Portion is refused", async ({
+    page,
+  }) => {
+    const first = unique("First");
+    const second = unique("Second");
+    await page.goto("/foods");
+    await addFood(page, first, "1 cup", "50");
+    await expect(rowFor(page, first)).toBeVisible();
+    await addFood(page, second, "1 cup", "60");
+    await expect(rowFor(page, second)).toBeVisible();
+
+    await openEditor(page, second);
+    await page.getByLabel("Name").fill(first);
+    await page.getByRole("button", { name: "Save changes" }).click();
+
+    await expect(
+      page.getByText(`You already have ${first} (1 cup)`),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Edit food" }),
+    ).toBeVisible();
+  });
+});

@@ -39,7 +39,12 @@ export type Database = {
             [_ in never]: never
           }
           Functions: {
-            "hook_before_user_created":
+            "food_entry_counts":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "entry_count": number,"food_id": string
+            }[]
+                           },
+"hook_before_user_created":
 { Args: { "event": Json }; Returns: Json
                            }
           }

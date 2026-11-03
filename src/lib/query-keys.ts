@@ -1,0 +1,4 @@
+// Roots of the caches that depend on a Food's Calories. Features extend these with their own
+// narrower keys, and a Food edit invalidates every root (ADR 0001: totals follow the Food).
+export const entryKeys = { all: ["entries"] as const };
+export const summaryKeys = { all: ["summary"] as const };
