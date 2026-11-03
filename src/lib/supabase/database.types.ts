@@ -19,6 +19,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"foods": {
+                  Row: {
+                    "archived_at": string | null,"calories": number,"created_at": string,"id": string,"name": string,"portion": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"calories": number,"created_at"?: string,"id"?: string,"name": string,"portion": string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"calories"?: number,"created_at"?: string,"id"?: string,"name"?: string,"portion"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {

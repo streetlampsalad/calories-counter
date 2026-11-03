@@ -10,6 +10,11 @@ export const TEST_USERS = {
     id: "22222222-2222-2222-2222-222222222222",
     email: "bea@example.test",
   },
+  // Always empty: tests must never leave data behind for cleo.
+  cleo: {
+    id: "33333333-3333-3333-3333-333333333333",
+    email: "cleo@example.test",
+  },
 } as const;
 export const TEST_PASSWORD = "password123";
 
