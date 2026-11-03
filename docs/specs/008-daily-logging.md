@@ -1,6 +1,6 @@
 # 008: Daily logging
 
-- **Status**: Ready
+- **Status**: Done
 - **Depends on**: 003
 - **Tracking issue**: [#38](https://github.com/streetlampsalad/calories-counter/issues/38)
 - **ADRs**: 0001
