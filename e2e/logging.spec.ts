@@ -1,7 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import { authFile } from "./support/auth";
 import { userClient } from "./support/db";
-import { clearDay, seedFood } from "./support/seed";
+import { clearDay, resetUser, seedEntry, seedFood } from "./support/seed";
 
 // Each test logs to a fixed Day long ago that only it uses, emptied first so re-runs start clean.
 const total = (page: Page) => page.getByRole("region", { name: "Daily total" });
@@ -247,4 +247,121 @@ test("the picker fits a phone and its Quantity buttons are easy to hit", async (
     expect(box?.height, label).toBeGreaterThanOrEqual(44);
     expect(box?.width, label).toBeGreaterThanOrEqual(44);
   }
+});
+
+test.describe("the picker learns what you eat", () => {
+  // These depend on a User's whole history, so they use dan alone, one at a time.
+  test.describe.configure({ mode: "serial" });
+  test.use({ storageState: authFile("dan") });
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  // A recent Day, on this machine's calendar (the same one the browser uses).
+  const daysAgo = (count: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() - count);
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  };
+  const startFresh = async () => {
+    const dan = await userClient("dan");
+    await resetUser(dan);
+    return dan;
+  };
+
+  test("lists the most-logged Foods first and shows the latest as Recent", async ({
+    page,
+  }) => {
+    const dan = await startFresh();
+    // Alphabetical order (Aaa, Bbb, Ccc) is the opposite of how often they are logged.
+    const aaa = await seedFood(dan, {
+      name: "Aaa",
+      portion: "1 slice",
+      calories: 100,
+    });
+    const bbb = await seedFood(dan, {
+      name: "Bbb",
+      portion: "1 slice",
+      calories: 100,
+    });
+    const ccc = await seedFood(dan, {
+      name: "Ccc",
+      portion: "1 slice",
+      calories: 100,
+    });
+    const day = daysAgo(3);
+    for (const food of [aaa, ccc, ccc, bbb, bbb, bbb]) {
+      await seedEntry(dan, { foodId: food.id, day, quantity: 1 });
+    }
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(picker(page)).toBeVisible();
+
+    // Recent: newest first (Bbb was logged last, Aaa first).
+    const recent = picker(page)
+      .getByRole("group", { name: "Recent" })
+      .getByRole("button");
+    await expect(recent).toHaveText(["Bbb", "Ccc", "Aaa"]);
+
+    // The list: most-logged first (Bbb 3, Ccc 2, Aaa 1), where plain alphabetical would be reversed.
+    const list = picker(page)
+      .getByRole("list", { name: "Your foods" })
+      .getByRole("listitem");
+    await expect(list.nth(0)).toContainText("Bbb");
+    await expect(list.nth(1)).toContainText("Ccc");
+    await expect(list.nth(2)).toContainText("Aaa");
+
+    // Searching keeps that order and hides Recent.
+    await picker(page)
+      .getByRole("searchbox", { name: "Search foods" })
+      .fill("b");
+    await expect(
+      picker(page).getByRole("group", { name: "Recent" }),
+    ).toHaveCount(0);
+  });
+
+  test("logs a Recent Food in two taps", async ({ page }) => {
+    const dan = await startFresh();
+    const food = await seedFood(dan, {
+      name: "Porridge",
+      portion: "1 cup",
+      calories: 80,
+    });
+    await seedEntry(dan, { foodId: food.id, day: daysAgo(2), quantity: 1 });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await picker(page)
+      .getByRole("group", { name: "Recent" })
+      .getByRole("button", { name: "Porridge" })
+      .click();
+    const saved = savedEntry(page, "POST");
+    await picker(page)
+      .getByRole("button", { name: "Add 2", exact: true })
+      .click();
+
+    await expect(entries(page).filter({ hasText: "Porridge" })).toContainText(
+      "2 × 1 cup · 160 kcal",
+    );
+    await saved;
+  });
+
+  test("Foods logged long ago do not count as Recent", async ({ page }) => {
+    const dan = await startFresh();
+    const food = await seedFood(dan, {
+      name: "Ancient",
+      portion: "1 cup",
+      calories: 80,
+    });
+    await seedEntry(dan, { foodId: food.id, day: "2001-06-01", quantity: 1 });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(
+      picker(page).getByRole("button", { name: /Ancient/ }),
+    ).toBeVisible();
+
+    await expect(
+      picker(page).getByRole("group", { name: "Recent" }),
+    ).toHaveCount(0);
+  });
 });

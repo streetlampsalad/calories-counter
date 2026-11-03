@@ -64,6 +64,11 @@ isOneToOne: false
               "entry_count": number,"food_id": string
             }[]
                            },
+"food_usage":
+{ Args: { "since": string }; Returns: {
+              "entry_count": number,"food_id": string,"last_logged_at": string
+            }[]
+                           },
 "hook_before_user_created":
 { Args: { "event": Json }; Returns: Json
                            }

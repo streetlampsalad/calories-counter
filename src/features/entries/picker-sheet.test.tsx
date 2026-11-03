@@ -5,6 +5,11 @@ import type { Food } from "@/features/foods/types";
 
 const useFoods = vi.fn();
 vi.mock("@/features/foods/queries", () => ({ useFoods: () => useFoods() }));
+const useFoodUsage = vi.fn();
+vi.mock("./queries", () => ({
+  useFoodUsage: (since: string, enabled: boolean) =>
+    useFoodUsage(since, enabled),
+}));
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -36,13 +41,22 @@ const latte = food("Café latte", "250 ml", 120);
 function open() {
   const onPick = vi.fn();
   const onClose = vi.fn();
-  render(<FoodPickerSheet open onPick={onPick} onClose={onClose} />);
+  render(
+    <FoodPickerSheet
+      today="2026-11-03"
+      open
+      onPick={onPick}
+      onClose={onClose}
+    />,
+  );
   return { onPick, onClose };
 }
 
 describe("FoodPickerSheet", () => {
   beforeEach(() => {
     useFoods.mockReset();
+    useFoodUsage.mockReset();
+    useFoodUsage.mockReturnValue({ data: [] });
     useFoods.mockReturnValue({
       data: [apple, latte, toast],
       isPending: false,
@@ -195,6 +209,8 @@ describe("FoodPickerSheet", () => {
 describe("FoodPickerSheet: reopening", () => {
   beforeEach(() => {
     useFoods.mockReset();
+    useFoodUsage.mockReset();
+    useFoodUsage.mockReturnValue({ data: [] });
     useFoods.mockReturnValue({
       data: [apple, latte, toast],
       isPending: false,
@@ -206,7 +222,12 @@ describe("FoodPickerSheet: reopening", () => {
     const onPick = vi.fn();
     const onClose = vi.fn();
     const { rerender } = render(
-      <FoodPickerSheet open onPick={onPick} onClose={onClose} />,
+      <FoodPickerSheet
+        today="2026-11-03"
+        open
+        onPick={onPick}
+        onClose={onClose}
+      />,
     );
     await userEvent.type(
       screen.getByRole("searchbox", { name: "Search foods" }),
@@ -218,9 +239,21 @@ describe("FoodPickerSheet: reopening", () => {
     expect(screen.getByRole("button", { name: "Add 1½" })).toBeInTheDocument();
 
     rerender(
-      <FoodPickerSheet open={false} onPick={onPick} onClose={onClose} />,
+      <FoodPickerSheet
+        today="2026-11-03"
+        open={false}
+        onPick={onPick}
+        onClose={onClose}
+      />,
     );
-    rerender(<FoodPickerSheet open onPick={onPick} onClose={onClose} />);
+    rerender(
+      <FoodPickerSheet
+        today="2026-11-03"
+        open
+        onPick={onPick}
+        onClose={onClose}
+      />,
+    );
 
     expect(screen.getByRole("searchbox", { name: "Search foods" })).toHaveValue(
       "",
@@ -229,5 +262,161 @@ describe("FoodPickerSheet: reopening", () => {
       screen.queryByRole("button", { name: "Add 1½" }),
     ).not.toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
+});
+
+describe("FoodPickerSheet: most-logged first, and Recent", () => {
+  const rice = food("Rice", "100 g", 130);
+  const usageOf = (
+    foodId: string,
+    entryCount: number,
+    lastLoggedAt: string,
+  ) => ({
+    foodId,
+    entryCount,
+    lastLoggedAt,
+  });
+
+  beforeEach(() => {
+    useFoods.mockReset();
+    useFoodUsage.mockReset();
+    useFoods.mockReturnValue({
+      data: [apple, latte, rice, toast],
+      isPending: false,
+      isError: false,
+    });
+  });
+
+  const names = () =>
+    within(screen.getByRole("list", { name: "Your foods" }))
+      .getAllByRole("listitem")
+      .map((row) => row.textContent ?? "");
+
+  it("looks back 90 days, only while the picker is open", () => {
+    useFoodUsage.mockReturnValue({ data: [] });
+    open();
+
+    expect(useFoodUsage).toHaveBeenCalledWith("2026-08-05", true);
+  });
+
+  it("orders the list by how often each Food was logged, then alphabetically", () => {
+    useFoodUsage.mockReturnValue({
+      data: [
+        usageOf("Rice", 9, "2026-11-01T08:00:00Z"),
+        usageOf("Sourdough toast", 4, "2026-11-02T08:00:00Z"),
+      ],
+    });
+    open();
+
+    const order = names();
+    expect(order[0]).toContain("Rice");
+    expect(order[1]).toContain("Sourdough toast");
+    expect(order[2]).toContain("Apple");
+    expect(order[3]).toContain("Café latte");
+  });
+
+  it("keeps that order while searching", async () => {
+    const tea = food("Tea");
+    const tomato = food("Tomato");
+    const toastPlain = food("Toast");
+    useFoods.mockReturnValue({
+      data: [tea, toastPlain, tomato],
+      isPending: false,
+      isError: false,
+    });
+    useFoodUsage.mockReturnValue({
+      data: [
+        usageOf("Tomato", 9, "2026-11-01T08:00:00Z"),
+        usageOf("Toast", 3, "2026-11-02T08:00:00Z"),
+      ],
+    });
+    open();
+
+    await userEvent.type(
+      screen.getByRole("searchbox", { name: "Search foods" }),
+      "t",
+    );
+
+    expect(names().map((n) => n.split("1 slice")[0])).toEqual([
+      expect.stringContaining("Tomato"),
+      expect.stringContaining("Toast"),
+      expect.stringContaining("Tea"),
+    ]);
+  });
+
+  it("shows a Recent row, newest first, as large tap targets", () => {
+    useFoodUsage.mockReturnValue({
+      data: [
+        usageOf("Apple", 1, "2026-11-01T08:00:00Z"),
+        usageOf("Rice", 1, "2026-11-03T08:00:00Z"),
+        usageOf("Sourdough toast", 1, "2026-11-02T08:00:00Z"),
+      ],
+    });
+    open();
+
+    const recent = screen.getByRole("group", { name: "Recent" });
+    expect(
+      within(recent)
+        .getAllByRole("button")
+        .map((b) => b.textContent),
+    ).toEqual(["Rice", "Sourdough toast", "Apple"]);
+  });
+
+  it("logs from a Recent Food in two taps", async () => {
+    useFoodUsage.mockReturnValue({
+      data: [usageOf("Rice", 1, "2026-11-03T08:00:00Z")],
+    });
+    const { onPick, onClose } = open();
+
+    await userEvent.click(
+      within(screen.getByRole("group", { name: "Recent" })).getByRole(
+        "button",
+        { name: "Rice" },
+      ),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Add 2" }));
+
+    expect(onPick).toHaveBeenCalledWith(rice, 2);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("hides Recent while searching, and when nothing has been logged", async () => {
+    useFoodUsage.mockReturnValue({
+      data: [usageOf("Rice", 1, "2026-11-03T08:00:00Z")],
+    });
+    const { unmount } = render(
+      <FoodPickerSheet
+        today="2026-11-03"
+        open
+        onPick={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("group", { name: "Recent" })).toBeInTheDocument();
+
+    await userEvent.type(
+      screen.getByRole("searchbox", { name: "Search foods" }),
+      "r",
+    );
+    expect(
+      screen.queryByRole("group", { name: "Recent" }),
+    ).not.toBeInTheDocument();
+    unmount();
+
+    useFoodUsage.mockReturnValue({ data: [] });
+    open();
+    expect(
+      screen.queryByRole("group", { name: "Recent" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("works while usage is still loading", () => {
+    useFoodUsage.mockReturnValue({ data: undefined });
+    open();
+
+    expect(names()).toHaveLength(4);
+    expect(
+      screen.queryByRole("group", { name: "Recent" }),
+    ).not.toBeInTheDocument();
   });
 });

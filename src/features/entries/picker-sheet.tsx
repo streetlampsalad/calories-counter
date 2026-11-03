@@ -15,10 +15,15 @@ import { FoodSearchBox } from "@/features/foods/food-search-box";
 import { useFoods } from "@/features/foods/queries";
 import type { Food } from "@/features/foods/types";
 import { cn } from "@/lib/utils";
+import { shiftDay } from "./days";
 import { QuantityPicker } from "./quantity-picker";
+import { useFoodUsage } from "./queries";
+import { rankFoodsByUsage, recentFoods, USAGE_WINDOW_DAYS } from "./usage";
 
 type Props = {
   open: boolean;
+  /** The device's date, to look back from when ranking Foods by use. */
+  today: string;
   /** The chosen Food and how many Portions of it. */
   onPick: (food: Food, quantity: number) => void;
   onClose: () => void;
@@ -32,20 +37,30 @@ function Message({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function FoodPickerSheet({ open, onPick, onClose }: Props) {
+export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
   const { data: foods, isPending, isError, refetch } = useFoods();
+  const { data: usage } = useFoodUsage(
+    shiftDay(today, -USAGE_WINDOW_DAYS),
+    open,
+  );
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [recentId, setRecentId] = useState<string | null>(null);
 
   // Every time the picker is opened it starts fresh, not on the last search and open Food.
   useEffect(() => {
     if (open) {
       setQuery("");
       setOpenId(null);
+      setRecentId(null);
     }
   }, [open]);
 
-  const visible = foods ? filterFoods(foods, query) : undefined;
+  // Most-logged Foods first; while no one is searching, the latest few are one tap away above.
+  const ranked = foods ? rankFoodsByUsage(foods, usage ?? []) : undefined;
+  const visible = ranked ? filterFoods(ranked, query) : undefined;
+  const recent = foods && !query.trim() ? recentFoods(foods, usage ?? []) : [];
+  const recentChoice = recent.find((food) => food.id === recentId);
 
   function pick(food: Food, quantity: number) {
     onPick(food, quantity);
@@ -69,11 +84,52 @@ export function FoodPickerSheet({ open, onPick, onClose }: Props) {
               onChange={(next) => {
                 setQuery(next);
                 setOpenId(null);
+                setRecentId(null);
               }}
             />
           ) : null}
 
           <div className="min-h-0 flex-1 overflow-y-auto">
+            {recent.length > 0 ? (
+              <fieldset className="m-0 mb-3 min-w-0 border-0 p-0">
+                <legend className="mb-2 font-medium text-muted-foreground text-sm">
+                  Recent
+                </legend>
+                <div className="flex flex-wrap gap-2">
+                  {recent.map((food) => {
+                    const selected = recentId === food.id;
+                    return (
+                      <button
+                        key={food.id}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => {
+                          setRecentId(selected ? null : food.id);
+                          setOpenId(null);
+                        }}
+                        className={cn(
+                          "min-h-11 rounded-full border px-4 text-sm",
+                          selected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "bg-background text-foreground",
+                        )}
+                      >
+                        {food.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {recentChoice ? (
+                  <div className="pt-3">
+                    <QuantityPicker
+                      key={recentChoice.id}
+                      onChoose={(quantity) => pick(recentChoice, quantity)}
+                    />
+                  </div>
+                ) : null}
+              </fieldset>
+            ) : null}
+
             {isPending ? (
               <div
                 aria-hidden="true"
@@ -126,7 +182,10 @@ export function FoodPickerSheet({ open, onPick, onClose }: Props) {
                       <button
                         type="button"
                         aria-expanded={expanded}
-                        onClick={() => setOpenId(expanded ? null : food.id)}
+                        onClick={() => {
+                          setOpenId(expanded ? null : food.id);
+                          setRecentId(null);
+                        }}
                         className={cn(
                           "flex min-h-14 w-full flex-col items-start justify-center gap-0.5 py-3 text-left",
                         )}

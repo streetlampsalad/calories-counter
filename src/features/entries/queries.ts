@@ -10,6 +10,7 @@ import { foodKeys } from "@/features/foods/queries";
 import { entryKeys, summaryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
 import type { Entry } from "./types";
+import type { FoodUsage } from "./usage";
 
 // An Entry plus the Food it refers to, joined so the calories are always the Food's current ones.
 export const ENTRY_SELECT =
@@ -152,5 +153,24 @@ export function useUpdateEntryQuantity() {
       queryClient.setQueryData(entryKeys.day(entry.day), context?.previous),
     onSettled: (_data, _error, { entry }) =>
       refreshAfterChange(queryClient, entry.day),
+  });
+}
+
+// How often and how recently each Food was logged since a date, for ordering the picker.
+// Under the foods "usage" key, so adding or removing an Entry refreshes it.
+export function useFoodUsage(since: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...foodKeys.usage(), since],
+    enabled,
+    queryFn: async (): Promise<FoodUsage[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("food_usage", { since });
+      if (error) throw error;
+      return data.map((row) => ({
+        foodId: row.food_id,
+        entryCount: Number(row.entry_count),
+        lastLoggedAt: row.last_logged_at,
+      }));
+    },
   });
 }

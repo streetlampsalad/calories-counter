@@ -40,3 +40,13 @@ export async function seedEntry(
   });
   if (error) throw new Error(`Could not seed entry: ${error.message}`);
 }
+
+// Empties a User's Log and Food List. Only for a User no other test touches (dan).
+export async function resetUser(client: Client) {
+  const entries = await client.from("entries").delete().not("id", "is", null);
+  if (entries.error)
+    throw new Error(`Could not reset entries: ${entries.error.message}`);
+  const foods = await client.from("foods").delete().not("id", "is", null);
+  if (foods.error)
+    throw new Error(`Could not reset foods: ${foods.error.message}`);
+}

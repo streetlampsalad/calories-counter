@@ -149,6 +149,7 @@ function DayView({ day, today }: { day: string; today: string }) {
 
       <FoodPickerSheet
         open={picking}
+        today={today}
         onPick={log}
         onClose={() => setPicking(false)}
       />
