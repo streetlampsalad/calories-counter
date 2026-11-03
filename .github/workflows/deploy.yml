@@ -54,6 +54,12 @@ jobs:
       - name: Build for production
         run: |
           pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token="$VERCEL_TOKEN"
+          # Vercel returns a [SENSITIVE] placeholder for variables marked sensitive. Public
+          # NEXT_PUBLIC_* values are inlined at build time, so a placeholder would ship broken.
+          if grep -qE '^NEXT_PUBLIC_[A-Z0-9_]+=.*\[SENSITIVE\]' .vercel/.env.production.local; then
+            echo "::error::A NEXT_PUBLIC_* variable is stored as Sensitive in Vercel. Re-add it as a normal variable."
+            exit 1
+          fi
           pnpm dlx "$VERCEL_CLI" build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy to production
