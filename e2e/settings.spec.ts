@@ -286,3 +286,20 @@ test("a failed week-start save goes back to the old choice", async ({
     "true",
   );
 });
+
+test("About names the version, credits the food data and is upfront about Gemini", async ({
+  page,
+}) => {
+  await startFresh();
+  await page.goto("/settings");
+
+  const about = page.getByRole("region", { name: "About" });
+  await expect(about).toContainText(/Version (development|[0-9a-f]{7})/);
+  await expect(about).toContainText("Australian Food Composition Database");
+  await expect(about).toContainText("Food Standards Australia New Zealand");
+  await expect(
+    about.getByRole("link", { name: "Open Food Facts" }),
+  ).toHaveAttribute("href", "https://world.openfoodfacts.org");
+  await expect(about).toContainText("free tier");
+  await expect(about).toContainText("improve Google's products");
+});

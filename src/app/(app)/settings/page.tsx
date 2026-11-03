@@ -1,9 +1,18 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { AboutSection } from "@/features/settings/about-section";
 import { GoalSection } from "@/features/settings/goal-section";
+import { formatVersion } from "@/features/settings/version";
 import { WeekStartSection } from "@/features/settings/week-start-section";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
+
+// COMMIT_SHA is passed in by the deploy, so it can only be read per request.
+async function About() {
+  await connection();
+  return <AboutSection version={formatVersion(process.env.COMMIT_SHA)} />;
+}
 
 async function Account() {
   const supabase = await createClient();
@@ -39,6 +48,9 @@ export default function SettingsPage() {
       <h1 className="font-semibold text-2xl tracking-tight">Settings</h1>
       <GoalSection />
       <WeekStartSection />
+      <Suspense fallback={<div className="h-32" />}>
+        <About />
+      </Suspense>
       <Suspense fallback={<div className="h-32" />}>
         <Account />
       </Suspense>
