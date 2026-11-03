@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToday } from "@/features/entries/use-today";
 import { DEFAULT_SETTINGS } from "@/features/settings/domain";
 import { useSettings } from "@/features/settings/queries";
+import { GoalCard, StreakCard } from "./consistency-cards";
 import { DayOfWeekCard } from "./day-of-week-card";
 import {
   formatRange,
@@ -17,6 +18,7 @@ import {
 } from "./period";
 import { PeriodChips } from "./period-chips";
 import { useDailyTotals } from "./queries";
+import { historyRange } from "./streaks";
 import { TopFoodsCard } from "./top-foods-card";
 import { TrendCard } from "./trend-card";
 
@@ -41,6 +43,8 @@ function InsightsContent({
 }) {
   const range = insightsRange(rangeId, today, weekStartsOn);
   const { data: totals, isPending, isError, refetch } = useDailyTotals(range);
+  // Streaks reach back past the Period, so they read their own, longer, window.
+  const history = useDailyTotals(historyRange(today));
 
   return (
     <>
@@ -69,6 +73,32 @@ function InsightsContent({
             range={range}
             weekStartsOn={weekStartsOn}
           />
+          {history.data ? (
+            <>
+              {goal !== null ? (
+                <GoalCard
+                  totals={totals}
+                  history={history.data}
+                  range={range}
+                  goal={goal}
+                  today={today}
+                />
+              ) : null}
+              <StreakCard history={history.data} today={today} />
+            </>
+          ) : history.isError ? (
+            <div
+              role="alert"
+              className="flex flex-col items-start gap-3 rounded-2xl border p-4"
+            >
+              <p>Couldn't load your streaks.</p>
+              <Button variant="outline" onClick={() => history.refetch()}>
+                Try again
+              </Button>
+            </div>
+          ) : (
+            <Skeleton />
+          )}
         </div>
       ) : null}
     </>

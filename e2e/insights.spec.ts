@@ -442,3 +442,103 @@ test("Day of week says what is needed when there is too little data", async ({
   await expect(weekdayCard(page)).toContainText("Not enough data yet");
   await expect(weekdayCard(page)).toContainText("3 of 14 days logged so far");
 });
+
+// Goal 1,700. Logged 30 Oct to 3 Nov at 2,000 / 1,500 / 1,700 / 1,600 / 1,400 kcal (one over the
+// Goal, one exactly on it), and an older run of 7 Days from 10 to 16 Oct.
+async function arrangeConsistency(goal?: number) {
+  const gus = await startFresh();
+  const food = await seedFood(gus, { name: "Hundred", calories: 100 });
+  const recent: Array<[string, number]> = [
+    ["2026-10-30", 20],
+    ["2026-10-31", 15],
+    ["2026-11-01", 17],
+    ["2026-11-02", 16],
+    ["2026-11-03", 14],
+  ];
+  const older = Array.from({ length: 7 }, (_, i): [string, number] => [
+    `2026-10-${String(10 + i).padStart(2, "0")}`,
+    10,
+  ]);
+  await seedEntries(
+    gus,
+    [...older, ...recent].map(([day, quantity]) => ({
+      foodId: food.id,
+      day,
+      quantity,
+    })),
+  );
+  if (goal !== undefined) {
+    await gus
+      .from("user_settings")
+      .upsert({ daily_goal_calories: goal }, { onConflict: "user_id" });
+  }
+}
+
+const goalCard = (page: Page) => page.getByRole("region", { name: "Goal" });
+const streakCard = (page: Page) =>
+  page.getByRole("region", { name: "Logging streak" });
+
+test("the Goal card counts Days over and under the Goal and the current run", async ({
+  page,
+}) => {
+  await arrangeConsistency(1700);
+
+  await page.goto("/summary/insights");
+
+  // 12 Logged Days: 30 Oct was over; the 7 older Days and the four since are under or on it.
+  await expect(goalCard(page)).toContainText("11 days under goal");
+  await expect(goalCard(page)).toContainText("1 day over goal");
+  await expect(goalCard(page)).toContainText("4 days in a row under goal");
+});
+
+test("there is no Goal card without a Goal", async ({ page }) => {
+  await arrangeConsistency();
+
+  await page.goto("/summary/insights");
+
+  await expect(streakCard(page)).toBeVisible();
+  await expect(goalCard(page)).toHaveCount(0);
+});
+
+test("the Logging streak card gives the current and the longest run", async ({
+  page,
+}) => {
+  await arrangeConsistency();
+
+  await page.goto("/summary/insights");
+
+  await expect(streakCard(page)).toContainText(
+    "Current streak 5 days, longest streak 7 days",
+  );
+});
+
+test("the Logging streak carries on from yesterday when today is not logged", async ({
+  page,
+}) => {
+  const gus = await startFresh();
+  const food = await seedFood(gus, { calories: 100 });
+  await seedEntries(
+    gus,
+    ["2026-11-01", "2026-11-02"].map((day) => ({
+      foodId: food.id,
+      day,
+      quantity: 5,
+    })),
+  );
+
+  await page.goto("/summary/insights");
+
+  await expect(streakCard(page)).toContainText(
+    "Current streak 2 days, longest streak 2 days",
+  );
+});
+
+test("the Logging streak says so when nothing has been logged", async ({
+  page,
+}) => {
+  await startFresh();
+
+  await page.goto("/summary/insights");
+
+  await expect(streakCard(page)).toContainText("No streak yet");
+});
