@@ -29,6 +29,46 @@ export function formatDeficit(value: number): string {
     : `${kcal(Math.abs(value))} surplus`;
 }
 
+// One Day as period_days reports it: either figure may be missing.
+export type PeriodDay = {
+  day: string;
+  /** The Daily Total, or null on a Day with only Calories Burned. */
+  calories: number | null;
+  entryCount: number;
+  caloriesBurned: number | null;
+};
+
+export type DeficitSummary = {
+  /** Mean Deficit over the counted Days, rounded; negative is a Surplus. Null if none counted. */
+  averageDeficit: number | null;
+  /** Counted Days that ended in a Deficit (more burned than eaten). */
+  daysInDeficit: number;
+  daysCounted: number;
+};
+
+// Only a Day up to today that was logged and has Calories Burned counts. A Day missing either
+// figure is left out, never counted as zero, and a planned Day has not been eaten or burned yet.
+export function summariseDeficit(
+  days: readonly PeriodDay[],
+  today: string,
+): DeficitSummary {
+  const deficits = days.flatMap((day) =>
+    day.day <= today &&
+    day.entryCount > 0 &&
+    day.calories !== null &&
+    day.caloriesBurned !== null
+      ? [deficit(day.calories, day.caloriesBurned)]
+      : [],
+  );
+  const sum = deficits.reduce((total, value) => total + value, 0);
+  return {
+    averageDeficit:
+      deficits.length > 0 ? Math.round(sum / deficits.length) + 0 : null,
+    daysInDeficit: deficits.filter((value) => value > 0).length,
+    daysCounted: deficits.length,
+  };
+}
+
 export type BurnedRowText = {
   /** What the row is about, with the figure when there is one. */
   heading: string;

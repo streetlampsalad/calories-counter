@@ -1,6 +1,6 @@
 # 017: Calories Burned and the Deficit
 
-- **Status**: In progress
+- **Status**: Done
 - **Depends on**: 008, 009, 010
 - **Tracking issue**: [#89](https://github.com/streetlampsalad/calories-counter/issues/89)
 - **ADRs**: 0001
@@ -63,7 +63,7 @@ calories_burned (
 ```
 
 - RLS on `user_id = auth.uid()` for select, insert, update and delete. Writes upsert on `(user_id, day)`.
-- Summary: add `period_days(range_from date, range_to date)` (security invoker). It returns `day, calories, entry_count, calories_burned` for each Day in range that has Entries or Calories Burned, as a full outer join of the `daily_totals` aggregate with `calories_burned`. The Summary switches to it, and `daily_totals` is dropped in a later migration once no deployed app calls it (ADR 0003).
+- Summary: add `period_days(range_from date, range_to date)` (security invoker). It returns `day, calories, entry_count, calories_burned` for each Day in range that has Entries or Calories Burned, as a full outer join of the `daily_totals` aggregate with `calories_burned`. The Summary switches to it. `daily_totals` stays, because Insights (spec 011) still reads it.
 
 **Pure logic** (`src/features/burned/domain.ts`)
 - `deficit(dailyTotal, caloriesBurned)` returns a signed number: positive is a Deficit and negative is a Surplus.

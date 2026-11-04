@@ -9,4 +9,6 @@ export const summaryKeys = {
   period: (from: string, to: string) =>
     ["summary", "period", from, to] as const,
   foods: (from: string, to: string) => ["summary", "foods", from, to] as const,
+  // Each Day's total and Calories Burned together (spec 017).
+  days: (from: string, to: string) => ["summary", "days", from, to] as const,
 };

@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { summariseDeficit } from "@/features/burned/domain";
 import { useToday } from "@/features/entries/use-today";
 import { DEFAULT_SETTINGS } from "@/features/settings/domain";
 import { useSettings } from "@/features/settings/queries";
@@ -16,8 +17,8 @@ import {
   periodRange,
 } from "./period";
 import { PeriodChips } from "./period-chips";
-import { useDailyTotals } from "./queries";
-import { summarise } from "./summarise";
+import { usePeriodDays } from "./queries";
+import { type DayTotal, summarise } from "./summarise";
 import { SummaryHeadline } from "./summary-headline";
 
 function Skeleton() {
@@ -33,14 +34,22 @@ function PeriodContent({
   today,
   weekStartsOn,
   goal,
+  trackCaloriesBurned,
 }: {
   period: PeriodId;
   today: string;
   weekStartsOn: 0 | 1;
   goal: number | null;
+  trackCaloriesBurned: boolean;
 }) {
   const range = periodRange(period, today, weekStartsOn);
-  const { data: totals, isPending, isError, refetch } = useDailyTotals(range);
+  const { data: days, isPending, isError, refetch } = usePeriodDays(range);
+  // The headline and chart count logged Days only; a Day with just Calories Burned is not one.
+  const totals = days?.flatMap((day): DayTotal[] =>
+    day.calories !== null && day.entryCount > 0
+      ? [{ day: day.day, calories: day.calories, entryCount: day.entryCount }]
+      : [],
+  );
 
   return (
     <>
@@ -65,6 +74,9 @@ function PeriodContent({
           <SummaryHeadline
             summary={summarise(totals, range, goal)}
             goal={goal}
+            deficit={
+              trackCaloriesBurned && days ? summariseDeficit(days, today) : null
+            }
           />
           {totals.some((total) => total.entryCount > 0) ? (
             <DailyChart
@@ -89,7 +101,8 @@ export function SummaryScreen() {
 
   // The Period's Days depend on the week start, so wait for it rather than show one range then another.
   const ready = today !== null && !settingsPending;
-  const { weekStartsOn, dailyGoal } = settings ?? DEFAULT_SETTINGS;
+  const { weekStartsOn, dailyGoal, trackCaloriesBurned } =
+    settings ?? DEFAULT_SETTINGS;
 
   return (
     <main className="flex flex-1 flex-col gap-4">
@@ -109,6 +122,7 @@ export function SummaryScreen() {
           today={today}
           weekStartsOn={weekStartsOn}
           goal={dailyGoal}
+          trackCaloriesBurned={trackCaloriesBurned}
         />
       ) : (
         <Skeleton />

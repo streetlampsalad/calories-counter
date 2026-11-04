@@ -313,3 +313,157 @@ test("switching it off hides everything but keeps the figures (AC-2)", async ({
     page.getByRole("button", { name: "Burned 2,450 kcal · 610 kcal deficit" }),
   ).toBeVisible();
 });
+
+// The Summary (spec 017 AC-6) on a frozen Tuesday, 3 Nov 2026, 1 pm in Sydney, so every number is
+// known in advance.
+test.describe("on the Summary", () => {
+  test.use({ timezoneId: "Australia/Sydney" });
+  const NOW = new Date("2026-11-03T02:00:00Z");
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.setFixedTime(NOW);
+  });
+
+  const headline = (page: Page) =>
+    page.getByRole("region", { name: "Summary totals" });
+
+  // 1 Nov: ate 2,600, burned 2,400 (a 200 surplus)  | 2 Nov: ate 1,500, burned 2,300 (800 deficit)
+  // 3 Nov: ate 1,000, burned 2,000 (1,000 deficit)  | 31 Oct: outside this month
+  async function arrangeMonth(tracking = true) {
+    const kit = await userClient("kit");
+    await resetBurned(kit);
+    if (tracking) {
+      const { error } = await kit
+        .from("user_settings")
+        .upsert({ track_calories_burned: true });
+      if (error) throw new Error(error.message);
+    }
+    const hundred = await seedFood(kit, { portion: "1 serve", calories: 100 });
+    // A Quantity tops out at 20, so a bigger Day is a few Entries.
+    for (const [day, quantity] of [
+      ["2026-10-31", 12],
+      ["2026-11-01", 26],
+      ["2026-11-02", 15],
+      ["2026-11-03", 10],
+    ] as const) {
+      for (let left = quantity; left > 0; left -= 20) {
+        await seedEntry(kit, {
+          foodId: hundred.id,
+          day,
+          quantity: Math.min(left, 20),
+        });
+      }
+    }
+    const { error } = await kit.from("calories_burned").upsert([
+      { day: "2026-10-31", calories: 9000 },
+      { day: "2026-11-01", calories: 2400 },
+      { day: "2026-11-02", calories: 2300 },
+      { day: "2026-11-03", calories: 2000 },
+    ]);
+    if (error) throw new Error(error.message);
+    return kit;
+  }
+
+  test("shows the average Deficit and how many Days were in Deficit (AC-6)", async ({
+    page,
+  }) => {
+    await arrangeMonth();
+
+    await page.goto("/summary?period=this-month");
+
+    await expect(headline(page)).toContainText("Average deficit 533 kcal");
+    await expect(headline(page)).toContainText("In deficit on 2 of 3 days");
+  });
+
+  test("counts only Days with both figures, never a missing one as zero (AC-6)", async ({
+    page,
+  }) => {
+    const kit = await arrangeMonth();
+    // 2 Nov loses its figure, so only 1 Nov (a surplus) and 3 Nov (a deficit) count.
+    const { error } = await kit
+      .from("calories_burned")
+      .delete()
+      .eq("day", "2026-11-02");
+    expect(error).toBeNull();
+
+    await page.goto("/summary?period=this-month");
+
+    await expect(headline(page)).toContainText("Average deficit 400 kcal");
+    await expect(headline(page)).toContainText("In deficit on 1 of 2 days");
+  });
+
+  test("an average Surplus reads as a surplus (AC-6)", async ({ page }) => {
+    const kit = await arrangeMonth();
+    const { error } = await kit.from("calories_burned").upsert([
+      { day: "2026-11-02", calories: 1400 },
+      { day: "2026-11-03", calories: 700 },
+    ]);
+    expect(error).toBeNull();
+
+    await page.goto("/summary?period=this-month");
+
+    // 200, 100 and 300 kcal surpluses: a 200 kcal surplus on average.
+    await expect(headline(page)).toContainText("Average surplus 200 kcal");
+    await expect(headline(page)).toContainText("In deficit on 0 of 3 days");
+  });
+
+  test("points to Today when no logged Day has Calories Burned (AC-6)", async ({
+    page,
+  }) => {
+    const kit = await arrangeMonth();
+    const { error } = await kit
+      .from("calories_burned")
+      .delete()
+      .not("user_id", "is", null);
+    expect(error).toBeNull();
+
+    await page.goto("/summary?period=this-month");
+
+    await expect(headline(page)).toContainText(
+      "Add calories burned on Today to see your deficit",
+    );
+  });
+
+  test("shows nothing about it unless the User tracks Calories Burned (AC-2)", async ({
+    page,
+  }) => {
+    await arrangeMonth(false);
+
+    await page.goto("/summary?period=this-month");
+
+    await expect(headline(page)).toContainText("5,100");
+    await expect(headline(page)).not.toContainText(/deficit|surplus|burned/i);
+  });
+
+  test("the totals and the average per logged day are unchanged by it (AC-7)", async ({
+    page,
+  }) => {
+    await arrangeMonth();
+
+    await page.goto("/summary?period=this-month");
+
+    await expect(headline(page)).toContainText("5,100");
+    await expect(headline(page)).toContainText(
+      "Average 1,700 kcal per logged day",
+    );
+    await expect(headline(page)).toContainText("3 of 3 days logged");
+  });
+
+  test("asks the database for the whole Period once (AC-7)", async ({
+    page,
+  }) => {
+    await arrangeMonth();
+    const calls: string[] = [];
+    page.on("request", (request) => {
+      const match = /\/rest\/v1\/rpc\/(period_days|daily_totals)/.exec(
+        request.url(),
+      );
+      if (match) calls.push(match[1]);
+    });
+
+    await page.goto("/summary?period=this-month");
+    await expect(headline(page)).toContainText("Average deficit");
+
+    expect(calls).toEqual(["period_days"]);
+  });
+});

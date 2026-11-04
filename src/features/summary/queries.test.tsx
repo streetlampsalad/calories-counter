@@ -10,7 +10,7 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
-import { useDailyTotals } from "./queries";
+import { useDailyTotals, usePeriodDays } from "./queries";
 
 function setup() {
   const queryClient = new QueryClient({
@@ -89,6 +89,102 @@ describe("useDailyTotals", () => {
       {
         wrapper,
       },
+    );
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe("usePeriodDays", () => {
+  beforeEach(() => rpc.mockReset());
+
+  it("fetches a whole Period's totals and Calories Burned in a single call (AC-7)", async () => {
+    rpc.mockResolvedValue({ data: [], error: null });
+    const { wrapper } = setup();
+
+    renderHook(() => usePeriodDays({ from: "2026-11-01", to: "2026-11-04" }), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(rpc).toHaveBeenCalledTimes(1));
+    expect(rpc).toHaveBeenCalledWith("period_days", {
+      range_from: "2026-11-01",
+      range_to: "2026-11-04",
+    });
+  });
+
+  it("keeps a missing figure null, never zero, with counts as numbers", async () => {
+    rpc.mockResolvedValue({
+      data: [
+        {
+          day: "2026-11-01",
+          calories: 2000,
+          entry_count: "3",
+          calories_burned: 2450,
+        },
+        {
+          day: "2026-11-02",
+          calories: 1500,
+          entry_count: 2,
+          calories_burned: null,
+        },
+        {
+          day: "2026-11-03",
+          calories: null,
+          entry_count: 0,
+          calories_burned: 2300,
+        },
+      ],
+      error: null,
+    });
+    const { wrapper } = setup();
+    const { result } = renderHook(
+      () => usePeriodDays({ from: "2026-11-01", to: "2026-11-04" }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([
+      {
+        day: "2026-11-01",
+        calories: 2000,
+        entryCount: 3,
+        caloriesBurned: 2450,
+      },
+      {
+        day: "2026-11-02",
+        calories: 1500,
+        entryCount: 2,
+        caloriesBurned: null,
+      },
+      {
+        day: "2026-11-03",
+        calories: null,
+        entryCount: 0,
+        caloriesBurned: 2300,
+      },
+    ]);
+  });
+
+  it("is cached apart from the plain daily totals for the same range", async () => {
+    rpc.mockResolvedValue({ data: [], error: null });
+    const { queryClient, wrapper } = setup();
+    const range = { from: "2026-11-01", to: "2026-11-04" };
+    const totals = renderHook(() => useDailyTotals(range), { wrapper });
+    await waitFor(() => expect(totals.result.current.isSuccess).toBe(true));
+
+    renderHook(() => usePeriodDays(range), { wrapper });
+
+    await waitFor(() => expect(rpc).toHaveBeenCalledTimes(2));
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(2);
+  });
+
+  it("reports a failure", async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: "down" } });
+    const { wrapper } = setup();
+    const { result } = renderHook(
+      () => usePeriodDays({ from: "2026-11-01", to: "2026-11-04" }),
+      { wrapper },
     );
 
     await waitFor(() => expect(result.current.isError).toBe(true));

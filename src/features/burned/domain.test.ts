@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { burnedRowText, deficit, formatDeficit, parseBurned } from "./domain";
+import {
+  burnedRowText,
+  deficit,
+  formatDeficit,
+  type PeriodDay,
+  parseBurned,
+  summariseDeficit,
+} from "./domain";
 
 describe("parseBurned", () => {
   it.each(["500", "2450", "10000", " 2300 "])("accepts %j", (text) => {
@@ -109,5 +116,99 @@ describe("burnedRowText (AC-3)", () => {
     expect(
       burnedRowText({ ...base, isToday: true, caloriesBurned: null }),
     ).toEqual({ heading: "Burned so far", detail: "Add" });
+  });
+});
+
+describe("summariseDeficit (AC-6)", () => {
+  const TODAY = "2026-11-04";
+  const day = (
+    date: string,
+    calories: number | null,
+    caloriesBurned: number | null,
+    entryCount = calories === null ? 0 : 2,
+  ): PeriodDay => ({ day: date, calories, entryCount, caloriesBurned });
+
+  it("averages the Deficit over the Days that have both figures", () => {
+    expect(
+      summariseDeficit(
+        [
+          day("2026-11-01", 2600, 2400), // -200
+          day("2026-11-02", 1500, 2300), // 800
+          day("2026-11-03", 1000, 2000), // 1000
+        ],
+        TODAY,
+      ),
+    ).toEqual({ averageDeficit: 533, daysInDeficit: 2, daysCounted: 3 });
+  });
+
+  it("is a Surplus when the average is negative", () => {
+    expect(
+      summariseDeficit(
+        [day("2026-11-01", 2700, 2400), day("2026-11-02", 2550, 2400)],
+        TODAY,
+      ),
+    ).toEqual({ averageDeficit: -225, daysInDeficit: 0, daysCounted: 2 });
+  });
+
+  it("leaves out a Day with Entries but no Calories Burned, rather than counting it as zero", () => {
+    expect(
+      summariseDeficit(
+        [day("2026-11-01", 1800, null), day("2026-11-02", 1500, 2300)],
+        TODAY,
+      ),
+    ).toEqual({ averageDeficit: 800, daysInDeficit: 1, daysCounted: 1 });
+  });
+
+  it("leaves out a Day with Calories Burned but nothing logged", () => {
+    expect(
+      summariseDeficit(
+        [day("2026-11-01", null, 2400), day("2026-11-02", 1500, 2300)],
+        TODAY,
+      ),
+    ).toEqual({ averageDeficit: 800, daysInDeficit: 1, daysCounted: 1 });
+  });
+
+  it("counts a logged Day of zero-calorie Entries", () => {
+    expect(summariseDeficit([day("2026-11-01", 0, 2400, 1)], TODAY)).toEqual({
+      averageDeficit: 2400,
+      daysInDeficit: 1,
+      daysCounted: 1,
+    });
+  });
+
+  it("counts today but never a Day after it", () => {
+    expect(
+      summariseDeficit(
+        [day(TODAY, 1000, 2000), day("2026-11-05", 500, 2500)],
+        TODAY,
+      ),
+    ).toEqual({ averageDeficit: 1000, daysInDeficit: 1, daysCounted: 1 });
+  });
+
+  it("does not call a tie a Deficit", () => {
+    expect(summariseDeficit([day("2026-11-01", 2000, 2000)], TODAY)).toEqual({
+      averageDeficit: 0,
+      daysInDeficit: 0,
+      daysCounted: 1,
+    });
+  });
+
+  it("never returns negative zero", () => {
+    const { averageDeficit } = summariseDeficit(
+      [day("2026-11-01", 2001, 2000, 1), day("2026-11-02", 2000, 2000, 1)],
+      TODAY,
+    );
+    expect(Object.is(averageDeficit, -0)).toBe(false);
+  });
+
+  it("says nothing was counted when no Day has both", () => {
+    expect(summariseDeficit([], TODAY)).toEqual({
+      averageDeficit: null,
+      daysInDeficit: 0,
+      daysCounted: 0,
+    });
+    expect(
+      summariseDeficit([day("2026-11-01", 1800, null)], TODAY).averageDeficit,
+    ).toBeNull();
   });
 });

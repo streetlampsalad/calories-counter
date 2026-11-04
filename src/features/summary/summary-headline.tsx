@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import type { DeficitSummary } from "@/features/burned/domain";
 import type { Summary } from "./summarise";
 
 const number = (value: number) => value.toLocaleString("en-AU");
@@ -14,14 +15,24 @@ function goalLine(averageVsGoal: number) {
     : `${amount} kcal over goal on average`;
 }
 
+function deficitLine(averageDeficit: number) {
+  const amount = number(Math.abs(averageDeficit));
+  return averageDeficit >= 0
+    ? `Average deficit ${amount} kcal`
+    : `Average surplus ${amount} kcal`;
+}
+
 // The main information up front: the total, the average over days actually logged, and how many
 // days that was. With a Goal, how the average compares and how many days went over.
 export function SummaryHeadline({
   summary,
   goal,
+  deficit = null,
 }: {
   summary: Summary;
   goal: number | null;
+  /** The Deficit over the Period, or null when the User does not track Calories Burned. */
+  deficit?: DeficitSummary | null;
 }) {
   if (summary.loggedDays === 0) {
     return (
@@ -74,6 +85,26 @@ export function SummaryHeadline({
             Over goal on {summary.overGoalDays} of {summary.loggedDays} logged{" "}
             {plural(summary.loggedDays, "day")}
           </p>
+        </div>
+      ) : null}
+
+      {deficit !== null ? (
+        <div className="mt-1 flex flex-col gap-0.5 border-t pt-3 text-sm">
+          {deficit.averageDeficit !== null ? (
+            <>
+              <p className="font-medium">
+                {deficitLine(deficit.averageDeficit)}
+              </p>
+              <p className="text-muted-foreground">
+                In deficit on {deficit.daysInDeficit} of {deficit.daysCounted}{" "}
+                {plural(deficit.daysCounted, "day")}
+              </p>
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              Add calories burned on Today to see your deficit
+            </p>
+          )}
         </div>
       ) : null}
     </section>

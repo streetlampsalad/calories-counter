@@ -124,6 +124,96 @@ describe("SummaryHeadline", () => {
     expect(region()).toHaveTextContent("Over goal on 1 of 1 logged day");
   });
 
+  describe("Deficit (AC-2, AC-6)", () => {
+    const deficit = (overrides = {}) => ({
+      averageDeficit: 420,
+      daysInDeficit: 2,
+      daysCounted: 3,
+      ...overrides,
+    });
+
+    it("says nothing about a Deficit unless the User tracks Calories Burned (AC-2)", () => {
+      render(<SummaryHeadline summary={summary()} goal={null} />);
+
+      expect(region()).not.toHaveTextContent(/deficit|surplus|burned/i);
+    });
+
+    it("shows the average Deficit and how many Days were in Deficit (AC-6)", () => {
+      render(
+        <SummaryHeadline summary={summary()} goal={null} deficit={deficit()} />,
+      );
+
+      expect(region()).toHaveTextContent("Average deficit 420 kcal");
+      expect(region()).toHaveTextContent("In deficit on 2 of 3 days");
+    });
+
+    it("shows an average Surplus as a surplus", () => {
+      render(
+        <SummaryHeadline
+          summary={summary()}
+          goal={null}
+          deficit={deficit({ averageDeficit: -150, daysInDeficit: 0 })}
+        />,
+      );
+
+      expect(region()).toHaveTextContent("Average surplus 150 kcal");
+      expect(region()).toHaveTextContent("In deficit on 0 of 3 days");
+    });
+
+    it("uses the singular for a single counted Day", () => {
+      render(
+        <SummaryHeadline
+          summary={summary()}
+          goal={null}
+          deficit={deficit({ daysInDeficit: 1, daysCounted: 1 })}
+        />,
+      );
+
+      expect(region()).toHaveTextContent("In deficit on 1 of 1 day");
+      expect(region()).not.toHaveTextContent("1 of 1 days");
+    });
+
+    it("points to Today when no Day has both figures (AC-6)", () => {
+      render(
+        <SummaryHeadline
+          summary={summary()}
+          goal={null}
+          deficit={{ averageDeficit: null, daysInDeficit: 0, daysCounted: 0 }}
+        />,
+      );
+
+      expect(region()).toHaveTextContent(
+        "Add calories burned on Today to see your deficit",
+      );
+      expect(region()).not.toHaveTextContent("Average deficit");
+    });
+
+    it("sits alongside the Goal lines", () => {
+      render(
+        <SummaryHeadline
+          summary={summary({ averageVsGoal: -180 })}
+          goal={2200}
+          deficit={deficit()}
+        />,
+      );
+
+      expect(region()).toHaveTextContent("180 kcal under goal on average");
+      expect(region()).toHaveTextContent("Average deficit 420 kcal");
+    });
+
+    it("is not shown for an empty Period", () => {
+      render(
+        <SummaryHeadline
+          summary={summary({ loggedDays: 0, averagePerLoggedDay: null })}
+          goal={null}
+          deficit={deficit()}
+        />,
+      );
+
+      expect(screen.queryByText(/deficit/i)).not.toBeInTheDocument();
+    });
+  });
+
   it("explains an empty Period and points to Today", () => {
     render(
       <SummaryHeadline
