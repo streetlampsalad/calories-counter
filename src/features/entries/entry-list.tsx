@@ -24,15 +24,17 @@ export function DailyTotal({
   return (
     <section
       aria-labelledby="daily-total-heading"
-      className="flex flex-col items-center gap-3 rounded-2xl bg-muted px-4 py-6"
+      className="relative flex flex-col items-center gap-3 rounded-2xl bg-muted px-4 py-6"
     >
       <h2 id="daily-total-heading" className="sr-only">
         {planned ? "Planned total" : "Daily total"}
       </h2>
+      {/* In the card's top padding rather than the flow, so a planned Day's total sits exactly where
+          any other Day's does (spec 019). */}
       {planned ? (
         <p
           aria-hidden="true"
-          className="font-medium text-muted-foreground text-sm uppercase tracking-wide"
+          className="absolute top-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
         >
           Planned
         </p>

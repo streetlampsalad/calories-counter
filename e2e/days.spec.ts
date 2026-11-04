@@ -296,3 +296,127 @@ test("the Day header is easy to use on a phone", async ({ page }) => {
   );
   expect(overflows).toBe(false);
 });
+
+// Spec 019: moving between Days never shifts what is on screen, because the way home to today is a
+// pill beside Add rather than a button that appears in the header.
+const total = (page: Page) =>
+  page.locator('section[aria-labelledby="daily-total-heading"]');
+
+async function layout(page: Page) {
+  await expect(total(page)).toBeVisible();
+  const box = async (locator: ReturnType<Page["locator"]>) => {
+    const found = await locator.boundingBox();
+    if (!found) throw new Error("not on screen");
+    return found;
+  };
+  return {
+    previous: await box(page.getByRole("button", { name: "Previous day" })),
+    next: await box(page.getByRole("button", { name: "Next day" })),
+    heading: await box(heading(page)),
+    total: await box(total(page)),
+  };
+}
+
+test("moving between today and any other Day never moves the arrows, the date or the total (spec 019 AC-1)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const onToday = await layout(page);
+
+  for (const url of [
+    `/?day=${daysAgo(1)}`,
+    "/?day=2001-07-05",
+    `/?day=${daysAhead(1)}`,
+    `/?day=${daysAhead(14)}`,
+    "/",
+  ]) {
+    await page.goto(url);
+    const elsewhere = await layout(page);
+
+    for (const part of ["previous", "next"] as const) {
+      expect(elsewhere[part].x, `${part} arrow, ${url}`).toBeCloseTo(
+        onToday[part].x,
+        0,
+      );
+      expect(elsewhere[part].y, `${part} arrow, ${url}`).toBeCloseTo(
+        onToday[part].y,
+        0,
+      );
+    }
+    expect(elsewhere.heading.y, `date, ${url}`).toBeCloseTo(
+      onToday.heading.y,
+      0,
+    );
+    expect(elsewhere.heading.height, `date, ${url}`).toBeCloseTo(
+      onToday.heading.height,
+      0,
+    );
+    expect(elsewhere.total.y, `total, ${url}`).toBeCloseTo(onToday.total.y, 0);
+    expect(elsewhere.total.height, `total, ${url}`).toBeCloseTo(
+      onToday.total.height,
+      0,
+    );
+  }
+});
+
+test("stepping with the arrows, one Day at a time, leaves them under the thumb (spec 019 AC-1)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const before = await layout(page);
+
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(heading(page)).toHaveText("Yesterday");
+  const yesterday = await layout(page);
+  await page.getByRole("button", { name: "Next day" }).click();
+  await expect(heading(page)).toHaveText("Today");
+  const after = await layout(page);
+
+  for (const state of [yesterday, after]) {
+    expect(state.previous.y).toBeCloseTo(before.previous.y, 0);
+    expect(state.total.y).toBeCloseTo(before.total.y, 0);
+  }
+});
+
+test("the Today pill floats opposite Add, clear of the bottom navigation, only away from today (spec 019 AC-2)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(total(page)).toBeVisible();
+  const pill = page.getByRole("button", { name: "Today" });
+  await expect(pill).toBeHidden();
+
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(pill).toBeVisible();
+
+  const pillBox = await pill.boundingBox();
+  const addBox = await page
+    .getByRole("button", { name: "Add", exact: true })
+    .boundingBox();
+  const navBox = await page.locator("nav").last().boundingBox();
+  if (!pillBox || !addBox || !navBox) throw new Error("not on screen");
+  expect(pillBox.height).toBeGreaterThanOrEqual(44);
+  expect(pillBox.x + pillBox.width).toBeLessThan(addBox.x);
+  expect(pillBox.x).toBeLessThan(addBox.x);
+  expect(pillBox.y + pillBox.height).toBeLessThanOrEqual(navBox.y);
+  // Level with Add: their middles line up.
+  expect(pillBox.y + pillBox.height / 2).toBeCloseTo(
+    addBox.y + addBox.height / 2,
+    0,
+  );
+});
+
+test("the Today pill fades, unless the phone asks for reduced motion (spec 019 AC-2, AC-8)", async ({
+  page,
+}) => {
+  const transition = (pill: ReturnType<Page["locator"]>) =>
+    pill.evaluate((element) => getComputedStyle(element).transitionProperty);
+
+  await page.goto("/?day=2001-07-05");
+  const pill = page.getByRole("button", { name: "Today" });
+  await expect(pill).toBeVisible();
+  expect(await transition(pill)).toContain("opacity");
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await transition(pill)).toBe("none");
+});

@@ -135,26 +135,19 @@ describe("DayHeader", () => {
     }
   });
 
-  it("has no Today button on today", () => {
-    open(TODAY);
-
-    expect(
-      screen.queryByRole("button", { name: "Today" }),
-    ).not.toBeInTheDocument();
-  });
-
   it.each([
+    ["today", TODAY],
     ["a past Day", "2026-10-20"],
     ["yesterday", "2026-11-02"],
     ["tomorrow", "2026-11-04"],
     ["a planned Day", LAST_PLANNABLE],
-  ])("offers a Today button on %s that goes back to today", async (_name, day) => {
-    const { onChange } = open(day);
+  ])("has no Today button of its own on %s, so it never changes (spec 019 AC-1)", (_name, day) => {
+    open(day);
 
-    const button = screen.getByRole("button", { name: "Today" });
-    expect(button).toHaveClass("h-11");
-    await userEvent.click(button);
-
-    expect(onChange).toHaveBeenCalledWith(TODAY);
+    expect(
+      screen.queryByRole("button", { name: "Today" }),
+    ).not.toBeInTheDocument();
+    // The same two arrows on every Day, and nothing that comes and goes.
+    expect(screen.getAllByRole("button")).toHaveLength(2);
   });
 });

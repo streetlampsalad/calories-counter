@@ -26,6 +26,7 @@ import {
   useRemoveEntry,
   useUpdateEntryQuantity,
 } from "./queries";
+import { TodayPill } from "./today-pill";
 import type { Entry } from "./types";
 import { useDaySwipe } from "./use-day-swipe";
 import { useToday } from "./use-today";
@@ -258,9 +259,11 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
         ) : null}
       </div>
 
-      {/* Within thumb reach, just above the bottom navigation. Out of the way while picking. */}
+      {/* Within thumb reach, just above the bottom navigation. Out of the way while picking. The
+          way home to today sits opposite Add, so showing it moves nothing on the Day (spec 019). */}
       {selection.selecting ? null : (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+0.75rem)] z-30 mx-auto flex max-w-md justify-end px-4">
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+0.75rem)] z-30 mx-auto flex max-w-md items-center justify-between px-4">
+          <TodayPill visible={day !== today} onClick={() => goToDay(today)} />
           <Button
             onClick={() => setPicking(true)}
             className="pointer-events-auto h-14 gap-2 rounded-full px-6 text-base shadow-lg"

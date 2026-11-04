@@ -17,7 +17,7 @@ The Day view should feel steady and alive. Moving between Days never shifts the 
 
 ## Acceptance criteria
 
-- **AC-1**: Moving between today and any other Day (arrows, swipe, date picker or **Today**) never moves the Previous and Next arrows, the date label, the Daily Total or the top of the Entry list. Their positions on screen are identical on today and on any other Day.
+- **AC-1**: Moving between today and any other Day (arrows, swipe, date picker or **Today**) never moves the Previous and Next arrows, the date label, the Daily Total or the top of the Entry list. Their positions on screen are identical on today and on any other Day. (The optional Burned row of spec 017 is the one exception: it is absent on Days after today, so the Entry list starts higher there for a User who tracks Calories Burned.)
 - **AC-2**: Given I'm viewing a Day other than today, then a **Today** pill floats at the bottom-left, level with **Add**:
   - It's at least 44 px tall and sits above the bottom navigation, clear of the gesture area.
   - Tapping it goes to today as a new history entry, so back returns to the Day I came from (spec 013 AC-8).

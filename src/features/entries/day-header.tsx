@@ -11,7 +11,9 @@ type Props = {
 };
 
 // The Day being viewed, with arrows to step a Day at a time and the phone's own date picker
-// behind the label. Days can be planned up to two weeks ahead (spec 013), and no further.
+// behind the label. Days can be planned up to two weeks ahead (spec 013), and no further. Nothing
+// here appears or disappears from Day to Day, so nothing below it moves (the way home to today is
+// the Today pill beside Add, spec 019).
 export function DayHeader({ day, today, onChange }: Props) {
   const last = lastPlannableDay(today);
 
@@ -50,17 +52,6 @@ export function DayHeader({ day, today, onChange }: Props) {
             className="absolute inset-0 size-full cursor-pointer opacity-0"
           />
         </div>
-        {/* A quick way home after wandering into the past or the plan. */}
-        {day !== today ? (
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-11 px-5"
-            onClick={() => onChange(today)}
-          >
-            Today
-          </Button>
-        ) : null}
       </div>
 
       <Button
