@@ -29,7 +29,7 @@ A User who plans meals can log them ahead of time. Any Day up to 14 Days after t
 - **AC-5**: Planned Entries are never counted by the Summary (every Period, the headline and the chart) or by Insights (Trend, Top foods, Day of week, Goal and Logging streak). For example, an Entry planned for tomorrow leaves "This week"'s total, "N of M days logged" and the logging streak unchanged.
 - **AC-6**: The picker's **Recent** row and its frequency ordering count only Entries on Days up to and including today. A Food that has only been planned does not appear in **Recent**.
 - **AC-7**: Given a Food has Entries, when I open its edit sheet, then I see "Changing this updates N Entries", where N includes Planned Entries, because editing a Food changes them too (ADR 0001). *(Supersedes the wording "N past Entries" in spec 003 AC-4.)*
-- **AC-8**: Given I'm viewing any Day other than today, then a **Today** button shows in the Day header. Tapping it goes to today as a new history entry, so back returns to the Day I came from. On today it is hidden.
+- **AC-8**: Given I'm viewing any Day other than today, then a **Today** button shows in the Day header. Tapping it goes to today as a new history entry, so back returns to the Day I came from. On today it is hidden. *(Spec 019 AC-2 moves it out of the header into a floating pill beside **Add**.)*
 
 ## Out of scope
 

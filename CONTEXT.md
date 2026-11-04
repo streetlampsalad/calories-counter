@@ -33,7 +33,7 @@ A Food that no longer appears in the Food List but is kept because past Entries 
 _Avoid_: deleted, hidden, inactive
 
 **Calories**:
-Food energy, always in kilocalories (kcal). Values that arrive in kilojoules are converted on the way in.
+Energy, always in kilocalories (kcal): eaten in a Food, or burned (Calories Burned). Values that arrive in kilojoules are converted on the way in.
 _Avoid_: kJ, energy, cals
 
 **Reference Food**:
@@ -74,6 +74,10 @@ _Avoid_: active day, tracked day
 All of a User's Entries across every Day.
 _Avoid_: diary, journal, history
 
+**Reminder**:
+A notification at a time of day the User chooses, sent only if today has no Entries yet (a Planned Entry for today counts), prompting them to log their food.
+_Avoid_: alert, nudge, push
+
 ### Summaries
 
 **Daily Total**:
@@ -83,6 +87,14 @@ _Avoid_: daily calories, intake
 **Goal**:
 An optional number of calories a User aims to eat per Day.
 _Avoid_: target, budget, limit
+
+**Calories Burned**:
+The total Calories a User's body used on one Day, resting plus activity, as their watch reports it. Optional: a User who doesn't track it never sees it.
+_Avoid_: exercise calories, active calories, TDEE, burn
+
+**Deficit**:
+Calories Burned minus the Daily Total, for a Day that has both. A negative Deficit is shown as a **Surplus**.
+_Avoid_: net calories, balance, remaining
 
 **Period**:
 A named range of Days that a summary covers, such as week to date, month to date, last week, or last month.

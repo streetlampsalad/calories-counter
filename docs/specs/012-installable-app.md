@@ -25,7 +25,7 @@ Friends install the app on their Android home screen, and it opens full-screen l
 ## Out of scope
 
 - Offline logging and background sync.
-- Push notifications.
+- Push notifications. *(Now added by spec 016's daily Reminder, ADR 0005.)*
 - App store distribution (a Trusted Web Activity).
 
 ## Design
