@@ -475,10 +475,18 @@ test.describe("the picker learns what you eat", () => {
     await expect(picker(page)).toBeVisible();
     await expect(picker(page)).toBeInViewport();
 
-    // Only from the top of the list does the same drag take the sheet down with it.
-    await scroller.evaluate((el) => {
-      el.scrollTop = 0;
-    });
+    // Only from the top of the list does the same drag take the sheet down with it. A fling from
+    // the drags above can still be coasting on a slow machine, so wait for the list to come to
+    // rest at the top first.
+    await expect
+      .poll(async () => {
+        await scroller.evaluate((el) => {
+          el.scrollTop = 0;
+        });
+        await page.waitForTimeout(150);
+        return scrollTop();
+      })
+      .toBe(0);
     await touchDrag(
       page,
       { x: middle.x, y: middle.y - 100 },

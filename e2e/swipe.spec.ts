@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import { userClient } from "./support/db";
 import { hold } from "./support/gestures";
+import { openDay } from "./support/ready";
 import { clearDay, seedEntry, seedFood } from "./support/seed";
 
 const heading = (page: Page) => page.getByRole("heading", { level: 1 });
@@ -66,7 +67,7 @@ const swipeRight = (page: Page) => swipe(page, 80, width(page) - 80);
 test("swiping left goes to the next Day and swiping right comes back", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openDay(page, "/");
 
   await swipeLeft(page);
   await expect(heading(page)).toHaveText("Tomorrow");
@@ -84,7 +85,7 @@ test("swiping left goes to the next Day and swiping right comes back", async ({
 test("each swiped Day is a step for the back button, one at a time", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openDay(page, "/");
   await swipeLeft(page);
   await expect(page).toHaveURL(`/?day=${daysFromToday(1)}`);
   await swipeLeft(page);
@@ -102,7 +103,7 @@ test("each swiped Day is a step for the back button, one at a time", async ({
 test("a short, slow swipe snaps back, but a quick flick counts", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openDay(page, "/");
 
   await swipe(page, 300, 260, { ms: 500 });
   await expect(heading(page)).toHaveText("Today");
@@ -114,7 +115,7 @@ test("a short, slow swipe snaps back, but a quick flick counts", async ({
 });
 
 test("a mostly vertical gesture does not change the Day", async ({ page }) => {
-  await page.goto("/");
+  await openDay(page, "/");
 
   await swipe(page, 220, 160, { dy: -300 });
 
@@ -125,12 +126,12 @@ test("a mostly vertical gesture does not change the Day", async ({ page }) => {
 test("a swipe from either screen edge is left to Android's back gesture", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openDay(page, "/");
 
   await swipe(page, 6, width(page) - 60);
   await expect(heading(page)).toHaveText("Today");
 
-  await page.goto(`/?day=${daysFromToday(-3)}`);
+  await openDay(page, `/?day=${daysFromToday(-3)}`);
   await swipe(page, width(page) - 6, 60);
   await expect(page).toHaveURL(`/?day=${daysFromToday(-3)}`);
 });
@@ -139,7 +140,7 @@ test("at the last Day that can be planned a swipe left snaps back, and right sti
   page,
 }) => {
   const last = daysFromToday(14);
-  await page.goto(`/?day=${last}`);
+  await openDay(page, `/?day=${last}`);
   await expect(page.getByRole("button", { name: "Next day" })).toBeDisabled();
 
   await swipeLeft(page);
@@ -152,7 +153,7 @@ test("at the last Day that can be planned a swipe left snaps back, and right sti
 test("it slides the new Day in, unless the phone asks for reduced motion", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openDay(page, "/");
   await swipeLeft(page);
   await expect(heading(page)).toHaveText("Tomorrow");
   await expect(page.locator("[data-slide='next']")).toHaveCount(1);
@@ -164,7 +165,7 @@ test("it slides the new Day in, unless the phone asks for reduced motion", async
 });
 
 test("arrows change the Day without the slide", async ({ page }) => {
-  await page.goto("/");
+  await openDay(page, "/");
 
   await page.getByRole("button", { name: "Next day" }).click();
 
@@ -175,7 +176,7 @@ test("arrows change the Day without the slide", async ({ page }) => {
 test("a swipe across the picker does not change the Day behind it", async ({
   page,
 }) => {
-  await page.goto("/");
+  await openDay(page, "/");
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await expect(
     page.getByRole("dialog", { name: "Add to your day" }),
@@ -204,7 +205,7 @@ test.describe("with Entries on the Day", () => {
   }) => {
     const day = "2001-08-02";
     const foodName = await arrangeEntry(day);
-    await page.goto(`/?day=${day}`);
+    await openDay(page, `/?day=${day}`);
     const row = await page
       .getByRole("button", { name: new RegExp(foodName) })
       .boundingBox();
@@ -221,7 +222,7 @@ test.describe("with Entries on the Day", () => {
   }) => {
     const day = "2001-08-04";
     const foodName = await arrangeEntry(day);
-    await page.goto(`/?day=${day}`);
+    await openDay(page, `/?day=${day}`);
     await hold(page, page.getByRole("button", { name: new RegExp(foodName) }));
     await expect(page.getByText("1 selected")).toBeVisible();
 
@@ -272,7 +273,7 @@ test.describe("the bottom navigation stays on screen", () => {
   test("while Days are swiped and slide in, in either direction", async ({
     page,
   }) => {
-    await page.goto("/");
+    await openDay(page, "/");
     await expect(heading(page)).toHaveText("Today");
     await watchLayout(page);
 

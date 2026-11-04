@@ -1,7 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
 import { authFile } from "./support/auth";
 import { userClient } from "./support/db";
+import { hydrated } from "./support/ready";
 import { seedFood, unique } from "./support/seed";
+
+// Waits for hydration, so a chosen file reaches the screen's handler (see support/ready.ts).
+async function openImport(page: Page) {
+  await page.goto("/foods/import");
+  await hydrated(page.getByLabel("Photo from camera"));
+}
 
 // The import screen only reads and copies, so it can share a User with other specs.
 test.use({ storageState: authFile("bea") });
@@ -32,7 +39,7 @@ test("Copy prompt puts the exact prompt on the clipboard", async ({
   context,
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/foods/import");
+  await openImport(page);
   const shown = (await page.getByTestId("prompt").textContent()) ?? "";
 
   await page.getByRole("button", { name: "Copy prompt" }).click();
@@ -52,7 +59,7 @@ test("when copying is refused the prompt is selected for copying by hand", async
       configurable: true,
     });
   });
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await page.getByRole("button", { name: "Copy prompt" }).click();
 
@@ -64,7 +71,7 @@ test("when copying is refused the prompt is selected for copying by hand", async
 });
 
 test("the screen leads back to the Food List", async ({ page }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await page.getByRole("link", { name: /Foods/ }).first().click();
 
@@ -93,7 +100,7 @@ const reviewRows = (page: Page) =>
 test("a pasted result is reviewed row by row, and a flagged row is fixed inline", async ({
   page,
 }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await pasteResult(page, CSV);
 
@@ -118,7 +125,7 @@ test("a pasted result is reviewed row by row, and a flagged row is fixed inline"
 test("kilojoules are converted and the original value is shown", async ({
   page,
 }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await pasteResult(page, "name,portion,kilojoules\nChocolate,1 bar,1000");
 
@@ -130,7 +137,7 @@ test("kilojoules are converted and the original value is shown", async ({
 test("text that is neither CSV nor JSON is turned away with the formats spelled out", async ({
   page,
 }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await pasteResult(page, "Remember to buy milk");
 
@@ -139,7 +146,7 @@ test("text that is neither CSV nor JSON is turned away with the formats spelled 
 });
 
 test("a chosen file is read the same way", async ({ page }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await page.getByLabel("CSV or JSON file").setInputFiles({
     name: "foods.csv",
@@ -153,7 +160,7 @@ test("a chosen file is read the same way", async ({ page }) => {
 test("a file that is not CSV or JSON is rejected before it is read", async ({
   page,
 }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await page.getByLabel("CSV or JSON file").setInputFiles({
     name: "notes.pdf",
@@ -168,7 +175,7 @@ test("a file that is not CSV or JSON is rejected before it is read", async ({
 test("the rows survive a reload, so switching apps does not lose them", async ({
   page,
 }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
   await pasteResult(page, CSV);
   await reviewRows(page).nth(1).getByLabel("Calories").fill("180");
 
@@ -183,7 +190,7 @@ test("the rows survive a reload, so switching apps does not lose them", async ({
 test("leaving with unsaved rows asks first, and Discard lets go of them", async ({
   page,
 }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
   await pasteResult(page, CSV);
 
   await page.getByRole("link", { name: /Foods/ }).first().click();
@@ -200,12 +207,12 @@ test("leaving with unsaved rows asks first, and Discard lets go of them", async 
     .click();
 
   await expect(page).toHaveURL("/foods");
-  await page.goto("/foods/import");
+  await openImport(page);
   await expect(page.getByLabel("Paste the result")).toBeVisible();
 });
 
 test("the bottom navigation asks before leaving too", async ({ page }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
   await pasteResult(page, CSV);
 
   await page
@@ -223,7 +230,7 @@ test("a row already in the Food List is flagged, skipped by default, and can upd
   const bea = await userClient("bea");
   const name = unique("Dup banana");
   await seedFood(bea, { name, portion: "1 medium", calories: 90 });
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await pasteResult(
     page,
@@ -249,7 +256,7 @@ test("a row already in the Food List is flagged, skipped by default, and can upd
 });
 
 test("identical rows in one import are merged into one", async ({ page }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
 
   await pasteResult(
     page,
@@ -273,7 +280,7 @@ test("saving adds the new foods, updates the chosen duplicate and returns to the
   const fresh = unique("Fresh pie");
   const fixme = unique("Fixme soup");
   await seedFood(bea, { name: dup, portion: "100 g", calories: 90 });
-  await page.goto("/foods/import");
+  await openImport(page);
   await pasteResult(
     page,
     `name,portion,calories\n${fresh},1 slice,300\n${fixme},1 bowl,\n${dup},100 g,130`,
@@ -302,7 +309,7 @@ test("saving adds the new foods, updates the chosen duplicate and returns to the
   expect(data).toEqual([{ calories: 130 }]);
 
   // The review is gone: coming back starts clean.
-  await page.goto("/foods/import");
+  await openImport(page);
   await expect(page.getByLabel("Paste the result")).toBeVisible();
 });
 
@@ -311,7 +318,7 @@ test("when saving fails nothing is saved and every edit is kept for a retry", as
 }) => {
   const bea = await userClient("bea");
   const name = unique("Retry toast");
-  await page.goto("/foods/import");
+  await openImport(page);
   await pasteResult(page, `name,portion,calories\n${name},1 slice,`);
   await reviewRows(page).first().getByLabel("Calories").fill("120");
   await page.route("**/rpc/import_foods", (route) =>
@@ -384,7 +391,7 @@ function jpegSize(bytes: Buffer) {
 test("a scanned photo is shrunk on the device, then read into Import Review", async ({
   page,
 }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
   const photo = await bigPhoto(page);
   await page.route("**/api/import/photo", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -412,7 +419,7 @@ test("a scanned photo is shrunk on the device, then read into Import Review", as
 });
 
 test("another photo adds its rows to the same import", async ({ page }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
   const photo = await bigPhoto(page, 800, 600);
   await page.getByLabel("Photo from camera").setInputFiles(photo);
   await expect(reviewRows(page)).toHaveCount(3);
@@ -443,7 +450,7 @@ test("another photo adds its rows to the same import", async ({ page }) => {
 });
 
 test("a photo with no foods says so and can be retaken", async ({ page }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
   const photo = await bigPhoto(page, 800, 600);
   await page.route("**/api/import/photo", (route) =>
     route.fulfill({ json: { rows: [] } }),
@@ -462,7 +469,7 @@ test("a photo with no foods says so and can be retaken", async ({ page }) => {
 test("when the photo reader is unavailable the User is offered an AI app instead", async ({
   page,
 }) => {
-  await page.goto("/foods/import");
+  await openImport(page);
   const photo = await bigPhoto(page, 800, 600);
   await page.route("**/api/import/photo", (route) =>
     route.fulfill({ status: 503, json: { code: "reader_unavailable" } }),
@@ -486,6 +493,7 @@ test("Scan notes in the Add food sheet reads the photo on the import screen", as
   const photo = await bigPhoto(page, 800, 600);
 
   await page.getByRole("button", { name: "Add food" }).first().click();
+  await hydrated(page.getByLabel(/Scan notes/));
   await page.getByLabel(/Scan notes/).setInputFiles(photo);
 
   await expect(page).toHaveURL("/foods/import");

@@ -1,5 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
+// These test the service worker itself, which the other specs block (playwright.config.ts).
+test.use({ serviceWorkers: "allow" });
+
 // PNG header: width and height are the two big-endian numbers after the "IHDR" tag.
 function pngSize(bytes: Buffer) {
   expect(bytes.subarray(1, 4).toString()).toBe("PNG");

@@ -20,6 +20,11 @@ export default defineConfig({
     trace: "retain-on-failure",
     // Tests run signed in as ada; use test.use({ storageState: ... }) to change that.
     storageState: authFile("ada"),
+    // The app's service worker would otherwise take over pages mid-test. Requests made while it is
+    // activating are invisible to page.route and page.waitForRequest, which on a slow CI runner
+    // made the photo upload test miss its request. Only installable.spec.ts, which tests the
+    // worker, turns it back on.
+    serviceWorkers: "block",
   },
   // Every current User is on Android, so the phone is the primary target.
   projects: [{ name: "android", use: { ...devices["Pixel 7"] } }],
