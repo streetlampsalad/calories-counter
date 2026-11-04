@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -47,6 +47,7 @@ export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [recentId, setRecentId] = useState<string | null>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   // Every time the picker is opened it starts fresh, not on the last search and open Food.
   useEffect(() => {
@@ -71,9 +72,17 @@ export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
       {/* Same variant as the sheet's own `h-auto`, so cn replaces it: a plain h-[85dvh] loses to it. */}
-      <SheetContent side="bottom" className="data-[side=bottom]:h-[85dvh]">
+      {/* Focus starts on the title, not the search box: a keyboard that pops up on its own
+          covers the Foods that are one tap away. Tapping the search box brings it up. */}
+      <SheetContent
+        side="bottom"
+        initialFocus={titleRef}
+        className="data-[side=bottom]:h-[85dvh]"
+      >
         <SheetHeader>
-          <SheetTitle>Add to your day</SheetTitle>
+          <SheetTitle ref={titleRef} tabIndex={-1} className="outline-none">
+            Add to your day
+          </SheetTitle>
           <SheetDescription>
             Pick a food, then how much you had.
           </SheetDescription>

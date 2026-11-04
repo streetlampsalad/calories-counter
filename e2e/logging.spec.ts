@@ -36,6 +36,30 @@ async function arrange(day: string, calories: number, portion = "1 slice") {
   return { ada, food };
 }
 
+test("the picker opens with nothing typeable focused, so the keyboard stays down", async ({
+  page,
+}) => {
+  const day = "2001-05-20";
+  const { food } = await arrange(day, 100);
+  await page.goto(`/?day=${day}`);
+
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+
+  const search = picker(page).getByRole("searchbox", { name: "Search foods" });
+  await expect(picker(page)).toBeVisible();
+  await expect(
+    picker(page).getByRole("heading", { name: "Add to your day" }),
+  ).toBeFocused();
+  await expect(search).not.toBeFocused();
+
+  // The Foods are right there to tap, and tapping the search box still brings the keyboard.
+  await expect(
+    picker(page).getByRole("button", { name: new RegExp(food.name) }),
+  ).toBeVisible();
+  await search.click();
+  await expect(search).toBeFocused();
+});
+
 test("two taps log a Food: it appears with the total, and is still there after a reload", async ({
   page,
 }) => {

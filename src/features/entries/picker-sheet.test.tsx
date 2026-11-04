@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Food } from "@/features/foods/types";
@@ -62,6 +62,32 @@ describe("FoodPickerSheet", () => {
       isPending: false,
       isError: false,
     });
+  });
+
+  it("opens without focus in the search box, so the keyboard stays down", async () => {
+    open();
+
+    // Focus lands on the sheet's title, which screen readers read, and not on anything typeable.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Add to your day" }),
+      ).toHaveFocus(),
+    );
+    expect(
+      screen.getByRole("searchbox", { name: "Search foods" }),
+    ).not.toHaveFocus();
+  });
+
+  it("still lets the search box be focused by tapping it", async () => {
+    open();
+
+    await userEvent.click(
+      screen.getByRole("searchbox", { name: "Search foods" }),
+    );
+
+    expect(
+      screen.getByRole("searchbox", { name: "Search foods" }),
+    ).toHaveFocus();
   });
 
   it("lists the Food List, each with its Portion and calories", () => {
