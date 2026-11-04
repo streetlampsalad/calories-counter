@@ -1,5 +1,6 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { userClient } from "./support/db";
+import { hold } from "./support/gestures";
 import { clearDay, seedEntry, seedFood } from "./support/seed";
 
 // Each test uses a fixed Day long ago that only it uses, emptied first so re-runs start clean.
@@ -9,16 +10,6 @@ const row = (page: Page, name: string) =>
   page.getByRole("button", { name: new RegExp(name) });
 const bar = (page: Page) => page.getByRole("toolbar", { name: "Selection" });
 const total = (page: Page) => page.getByRole("region", { name: "Daily total" });
-
-// Holds a pointer still on the item for longer than the long-press delay.
-async function hold(page: Page, item: Locator) {
-  const box = await item.boundingBox();
-  if (!box) throw new Error("Nothing to hold");
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.waitForTimeout(650);
-  await page.mouse.up();
-}
 
 const savedEntry = (page: Page, method: "POST" | "DELETE") =>
   page.waitForResponse(

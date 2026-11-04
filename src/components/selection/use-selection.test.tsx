@@ -1,12 +1,16 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { haptic } from "@/lib/haptics";
 import { useSelection } from "./use-selection";
+
+vi.mock("@/lib/haptics", () => ({ haptic: vi.fn() }));
 
 describe("useSelection", () => {
   let pushState: ReturnType<typeof vi.spyOn>;
   let back: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    vi.mocked(haptic).mockClear();
     pushState = vi.spyOn(window.history, "pushState");
     // jsdom's back() is asynchronous; the tests send the popstate themselves.
     back = vi.spyOn(window.history, "back").mockImplementation(() => {});
@@ -30,6 +34,19 @@ describe("useSelection", () => {
     expect(result.current.count).toBe(1);
     expect(result.current.isSelected("a")).toBe(true);
     expect(result.current.isSelected("b")).toBe(false);
+  });
+
+  it("gives a brief buzz when selection starts, and not for each tap after", () => {
+    const { result } = renderHook(() => useSelection());
+
+    act(() => result.current.start("a"));
+    expect(haptic).toHaveBeenCalledTimes(1);
+    expect(haptic).toHaveBeenCalledWith("tap");
+
+    act(() => result.current.toggle("b"));
+    act(() => result.current.selectAll(["a", "b", "c"]));
+    act(() => result.current.clear());
+    expect(haptic).toHaveBeenCalledTimes(1);
   });
 
   it("toggles items, and selects all", () => {

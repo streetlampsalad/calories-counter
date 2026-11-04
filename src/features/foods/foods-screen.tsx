@@ -13,6 +13,7 @@ import {
   useSelection,
 } from "@/components/selection/use-selection";
 import { Button } from "@/components/ui/button";
+import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { AddFoodSheet } from "./add-food-sheet";
 import { filterFoods, formatFoodDetail } from "./domain";
@@ -204,6 +205,7 @@ export function FoodsScreen() {
 
   function confirmRemoval() {
     const targets = picked;
+    haptic("confirm");
     setConfirming(false);
     selection.clear();
     if (targets.length > 0) removePicked(targets);

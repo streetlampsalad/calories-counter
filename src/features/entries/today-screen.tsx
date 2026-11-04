@@ -98,6 +98,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
       selection.isSelected(entry.id),
     );
     if (picked.length === 0) return;
+    haptic("confirm");
     selection.clear();
     const removed = toast(removedEntriesMessage(picked.length), {
       duration: 5000,

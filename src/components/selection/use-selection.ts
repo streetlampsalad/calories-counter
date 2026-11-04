@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { haptic } from "@/lib/haptics";
 import {
   isSelecting,
   noSelection,
@@ -48,10 +49,11 @@ export function useSelection() {
     };
   }, [selecting]);
 
-  const start = useCallback(
-    (id: string) => setSelected(startSelection(id)),
-    [],
-  );
+  // Starting is the hold that has just been felt out; picking more after that is just taps.
+  const start = useCallback((id: string) => {
+    haptic("tap");
+    setSelected(startSelection(id));
+  }, []);
   const toggle = useCallback(
     (id: string) => setSelected((current) => toggleSelected(current, id)),
     [],
