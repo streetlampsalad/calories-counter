@@ -26,7 +26,7 @@ type Props = {
 
 function entriesWarning(count: number) {
   const noun = count === 1 ? "Entry" : "Entries";
-  return `Changing this updates ${count.toLocaleString("en-AU")} past ${noun}`;
+  return `Changing this updates ${count.toLocaleString("en-AU")} ${noun}`;
 }
 
 function RemoveSection({

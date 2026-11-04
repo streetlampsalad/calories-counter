@@ -75,6 +75,24 @@ test("opens on This week with the headline numbers", async ({ page }) => {
   await expect(totals(page)).toContainText("2 of 2 days logged");
 });
 
+test("Entries planned for later Days are in no Period", async ({ page }) => {
+  const { fay, hundred } = await arrange();
+  await seedEntry(fay, { foodId: hundred.id, day: "2026-11-04", quantity: 30 });
+  await seedEntry(fay, { foodId: hundred.id, day: "2026-11-10", quantity: 30 });
+
+  await page.goto("/summary");
+  await expect(totals(page)).toContainText("2,500");
+  await expect(totals(page)).toContainText("2 of 2 days logged");
+
+  await chip(page, "This month").click();
+  await expect(totals(page)).toContainText("2,500");
+  await expect(totals(page)).toContainText("2 of 3 days logged");
+
+  await chip(page, "Last 30 days").click();
+  await expect(totals(page)).toContainText("8,500");
+  await expect(totals(page)).toContainText("5 of 30 days logged");
+});
+
 const PERIOD_CASES = [
   {
     chip: "This week",

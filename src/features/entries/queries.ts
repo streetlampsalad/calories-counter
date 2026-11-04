@@ -156,15 +156,19 @@ export function useUpdateEntryQuantity() {
   });
 }
 
-// How often and how recently each Food was logged since a date, for ordering the picker.
+// How often and how recently each Food was eaten from `since` to `until` (today), for ordering the
+// picker. Planned Entries, on Days after today, are left out.
 // Under the foods "usage" key, so adding or removing an Entry refreshes it.
-export function useFoodUsage(since: string, enabled: boolean) {
+export function useFoodUsage(since: string, until: string, enabled: boolean) {
   return useQuery({
-    queryKey: [...foodKeys.usage(), since],
+    queryKey: [...foodKeys.usage(), since, until],
     enabled,
     queryFn: async (): Promise<FoodUsage[]> => {
       const supabase = createClient();
-      const { data, error } = await supabase.rpc("food_usage", { since });
+      const { data, error } = await supabase.rpc("food_usage", {
+        since,
+        until,
+      });
       if (error) throw error;
       return data.map((row) => ({
         foodId: row.food_id,

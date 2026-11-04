@@ -532,6 +532,27 @@ test("the Logging streak carries on from yesterday when today is not logged", as
   );
 });
 
+test("Entries planned for later Days leave the Logging streak alone", async ({
+  page,
+}) => {
+  const gus = await startFresh();
+  const food = await seedFood(gus, { calories: 100 });
+  await seedEntries(
+    gus,
+    ["2026-11-01", "2026-11-02", "2026-11-04", "2026-11-05"].map((day) => ({
+      foodId: food.id,
+      day,
+      quantity: 5,
+    })),
+  );
+
+  await page.goto("/summary/insights");
+
+  await expect(streakCard(page)).toContainText(
+    "Current streak 2 days, longest streak 2 days",
+  );
+});
+
 test("the Logging streak says so when nothing has been logged", async ({
   page,
 }) => {

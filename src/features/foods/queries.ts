@@ -35,7 +35,7 @@ export function useFoods() {
   return useQuery({ queryKey: foodKeys.list(), queryFn: fetchFoods });
 }
 
-// How many past Entries each Food has, keyed by Food id. Only fetched when asked for.
+// How many Entries each Food has, planned ones included, keyed by Food id. Only fetched when asked for.
 export function useFoodEntryCounts(enabled: boolean) {
   return useQuery({
     queryKey: foodKeys.entryCounts(),

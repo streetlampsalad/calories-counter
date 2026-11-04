@@ -97,9 +97,9 @@ describe("EditFoodSheet", () => {
   });
 
   it.each([
-    [1, "Changing this updates 1 past Entry"],
-    [3, "Changing this updates 3 past Entries"],
-    [1204, "Changing this updates 1,204 past Entries"],
+    [1, "Changing this updates 1 Entry"],
+    [3, "Changing this updates 3 Entries"],
+    [1204, "Changing this updates 1,204 Entries"],
   ])("warns that history changes when the Food has %i Entries", (count, message) => {
     useFoodEntryCounts.mockReturnValue({ data: { toast: count } });
     open();
@@ -110,7 +110,9 @@ describe("EditFoodSheet", () => {
   it("says nothing about history when the Food has no Entries", () => {
     open();
 
-    expect(screen.queryByText(/past entr/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/changing this updates/i),
+    ).not.toBeInTheDocument();
   });
 
   it("only asks for counts while a Food is being edited", () => {
@@ -203,7 +205,7 @@ describe("EditFoodSheet: when the Entry count arrives after the sheet opens", ()
       screen.getAllByRole("button", { name: "Save changes" }),
     ).toHaveLength(1);
     expect(
-      screen.getByText("Changing this updates 2 past Entries"),
+      screen.getByText("Changing this updates 2 Entries"),
     ).toBeInTheDocument();
   });
 });

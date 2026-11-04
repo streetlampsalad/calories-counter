@@ -22,7 +22,7 @@ import { rankFoodsByUsage, recentFoods, USAGE_WINDOW_DAYS } from "./usage";
 
 type Props = {
   open: boolean;
-  /** The device's date, to look back from when ranking Foods by use. */
+  /** The device's date: Foods are ranked by what was eaten up to it, not what is planned after. */
   today: string;
   /** The chosen Food and how many Portions of it. */
   onPick: (food: Food, quantity: number) => void;
@@ -41,6 +41,7 @@ export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
   const { data: foods, isPending, isError, refetch } = useFoods();
   const { data: usage } = useFoodUsage(
     shiftDay(today, -USAGE_WINDOW_DAYS),
+    today,
     open,
   );
   const [query, setQuery] = useState("");

@@ -618,9 +618,7 @@ test.describe("a Food that has Entries", () => {
     await page
       .getByRole("button", { name: new RegExp(`^Edit ${name}`) })
       .click();
-    await expect(
-      page.getByText("Changing this updates 1 past Entry"),
-    ).toBeVisible();
+    await expect(page.getByText("Changing this updates 1 Entry")).toBeVisible();
     await expect(page.getByRole("button", { name: "Delete food" })).toHaveCount(
       0,
     );

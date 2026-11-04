@@ -345,6 +345,46 @@ test.describe("the picker learns what you eat", () => {
     await saved;
   });
 
+  test("a Food that is only planned does not count as Recent or reorder the list", async ({
+    page,
+  }) => {
+    const dan = await startFresh();
+    const eaten = await seedFood(dan, {
+      name: "Eaten",
+      portion: "1 cup",
+      calories: 80,
+    });
+    const planned = await seedFood(dan, {
+      name: "Planned",
+      portion: "1 cup",
+      calories: 90,
+    });
+    await seedEntry(dan, { foodId: eaten.id, day: daysAgo(1), quantity: 1 });
+    for (const ahead of [1, 2, 3]) {
+      await seedEntry(dan, {
+        foodId: planned.id,
+        day: daysAgo(-ahead),
+        quantity: 1,
+      });
+    }
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(
+      picker(page).getByRole("button", { name: /Planned/ }),
+    ).toBeVisible();
+
+    await expect(
+      picker(page).getByRole("group", { name: "Recent" }).getByRole("button"),
+    ).toHaveText(["Eaten"]);
+    // Planned three times but never eaten: it must not outrank the Food that was eaten.
+    const list = picker(page)
+      .getByRole("list", { name: "Your foods" })
+      .getByRole("listitem");
+    await expect(list.nth(0)).toContainText("Eaten");
+    await expect(list.nth(1)).toContainText("Planned");
+  });
+
   test("Foods logged long ago do not count as Recent", async ({ page }) => {
     const dan = await startFresh();
     const food = await seedFood(dan, {

@@ -7,8 +7,8 @@ const useFoods = vi.fn();
 vi.mock("@/features/foods/queries", () => ({ useFoods: () => useFoods() }));
 const useFoodUsage = vi.fn();
 vi.mock("./queries", () => ({
-  useFoodUsage: (since: string, enabled: boolean) =>
-    useFoodUsage(since, enabled),
+  useFoodUsage: (since: string, until: string, enabled: boolean) =>
+    useFoodUsage(since, until, enabled),
 }));
 vi.mock("next/link", () => ({
   default: ({
@@ -296,7 +296,7 @@ describe("FoodPickerSheet: most-logged first, and Recent", () => {
     useFoodUsage.mockReturnValue({ data: [] });
     open();
 
-    expect(useFoodUsage).toHaveBeenCalledWith("2026-08-05", true);
+    expect(useFoodUsage).toHaveBeenCalledWith("2026-08-05", "2026-11-03", true);
   });
 
   it("orders the list by how often each Food was logged, then alphabetically", () => {
