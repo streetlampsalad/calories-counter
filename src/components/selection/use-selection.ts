@@ -10,6 +10,8 @@ import {
   toggleSelected,
 } from "./selection";
 
+export type SelectionState = ReturnType<typeof useSelection>;
+
 // The picked items of one list. While anything is picked it owns a history entry, so the phone's
 // back button leaves selection mode rather than the screen (spec 014 AC-3).
 export function useSelection() {

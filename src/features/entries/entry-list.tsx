@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { SelectionCheck } from "@/components/selection/selection-check";
 import { useLongPress } from "@/components/selection/use-long-press";
 import { goalProgress } from "@/features/settings/domain";
 import { cn } from "@/lib/utils";
@@ -121,19 +121,7 @@ function EntryRow({
 
   const content = (
     <>
-      {selecting ? (
-        <span
-          aria-hidden="true"
-          className={cn(
-            "flex size-6 shrink-0 items-center justify-center rounded-full border-2",
-            picked
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-muted-foreground/50",
-          )}
-        >
-          {picked ? <Check className="size-4" /> : null}
-        </span>
-      ) : null}
+      {selecting ? <SelectionCheck picked={picked} /> : null}
       <span className="flex min-w-0 flex-col items-start gap-0.5">
         <span className="font-medium">{entry.food.name}</span>
         <span className="text-muted-foreground text-sm">

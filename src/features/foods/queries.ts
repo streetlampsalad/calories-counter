@@ -197,6 +197,103 @@ export function useRemoveFood() {
   });
 }
 
+/** What a bulk removal did, kept so Undo can reverse it. */
+export type RemovedFoods = { archived: Food[]; deleted: Food[] };
+
+// Several Foods at once (spec 014): all leave the list immediately, or all come back. The server
+// archives each Food that has Entries and deletes the rest, and says which.
+export function useRemoveFoods() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (foods: Food[]): Promise<RemovedFoods> => {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("remove_foods", {
+        ids: foods.map((food) => food.id),
+      });
+      if (error || !data)
+        throw new Error(
+          "Couldn't remove those foods. Check your connection and try again.",
+        );
+      const outcomes = new Map(data.map((row) => [row.food_id, row.outcome]));
+      return {
+        archived: foods.filter((food) => outcomes.get(food.id) === "archived"),
+        deleted: foods.filter((food) => outcomes.get(food.id) === "deleted"),
+      };
+    },
+    onMutate: (foods) => {
+      const gone = new Set(foods.map((food) => food.id));
+      return patchList(queryClient, (current) =>
+        current.filter((existing) => !gone.has(existing.id)),
+      );
+    },
+    onError: (_error, _foods, context) => restoreList(queryClient, context),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: foodKeys.all }),
+  });
+}
+
+const restoreFailure = (error: SaveError) =>
+  error?.code === UNIQUE_VIOLATION
+    ? new Error("You already have a food with the same name and portion.")
+    : new Error(
+        "Couldn't bring those foods back. Check your connection and try again.",
+      );
+
+// Undo for a bulk removal: Archived Foods are restored and deleted ones are re-created with their
+// original ids and values.
+export function useRestoreFoods() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ archived, deleted }: RemovedFoods) => {
+      const supabase = createClient();
+      if (archived.length > 0) {
+        const { error } = await supabase.rpc("restore_foods", {
+          ids: archived.map((food) => food.id),
+        });
+        if (error) throw restoreFailure(error);
+      }
+      if (deleted.length > 0) {
+        const { error } = await supabase.from("foods").insert(
+          deleted.map(({ id, name, portion, calories }) => ({
+            id,
+            name,
+            portion,
+            calories,
+          })),
+        );
+        if (error) throw restoreFailure(error);
+      }
+    },
+    onMutate: async ({ archived, deleted }) => {
+      await queryClient.cancelQueries({ queryKey: foodKeys.all });
+      const previousList = queryClient.getQueryData<Food[]>(foodKeys.list());
+      const previousArchived = queryClient.getQueryData<Food[]>(
+        foodKeys.archived(),
+      );
+      const back = new Set(archived.map((food) => food.id));
+      queryClient.setQueryData<Food[]>(foodKeys.archived(), (current = []) =>
+        current.filter((existing) => !back.has(existing.id)),
+      );
+      queryClient.setQueryData<Food[]>(foodKeys.list(), (current = []) =>
+        sortFoods([
+          ...current,
+          ...[...archived, ...deleted].map((food) => ({
+            ...food,
+            archivedAt: null,
+          })),
+        ]),
+      );
+      return { previousList, previousArchived };
+    },
+    onError: (_error, _removed, context) => {
+      queryClient.setQueryData(foodKeys.list(), context?.previousList);
+      queryClient.setQueryData(foodKeys.archived(), context?.previousArchived);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: foodKeys.all }),
+  });
+}
+
 // Brings an Archived Food back into the list. Refused if a live Food now has its name and Portion.
 export function useRestoreFood() {
   const queryClient = useQueryClient();

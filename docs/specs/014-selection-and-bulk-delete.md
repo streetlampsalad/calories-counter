@@ -1,6 +1,6 @@
 # 014: Selection and bulk delete
 
-- **Status**: In progress
+- **Status**: Done
 - **Depends on**: 003, 008
 - **Tracking issue**: [#72](https://github.com/streetlampsalad/calories-counter/issues/72)
 - **ADRs**: 0001

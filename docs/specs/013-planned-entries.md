@@ -1,6 +1,6 @@
 # 013: Planned Entries
 
-- **Status**: In progress
+- **Status**: Done
 - **Depends on**: 008, 010, 011
 - **Tracking issue**: [#68](https://github.com/streetlampsalad/calories-counter/issues/68)
 - **ADRs**: 0001, 0004

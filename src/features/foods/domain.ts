@@ -22,6 +22,50 @@ export function sortFoods(foods: readonly Food[]): Food[] {
   );
 }
 
+const foodsCount = (count: number) =>
+  `${count} ${count === 1 ? "food" : "foods"}`;
+
+// What removing several Foods at once will do, so the confirmation can say so (spec 014 AC-6).
+// A Food with Entries is archived and one without is deleted (ADR 0001). Before the counts are
+// known the split is not guessed; the server decides either way.
+export function removalSummary(
+  foods: readonly Food[],
+  entryCounts: Readonly<Record<string, number>> | undefined,
+): { title: string; description: string; confirmLabel: string } {
+  const all = foodsCount(foods.length);
+  if (!entryCounts) {
+    return {
+      title: `Remove ${all}?`,
+      description: "Foods you've logged are archived. The rest are deleted.",
+      confirmLabel: `Remove ${all}`,
+    };
+  }
+  const archived = foods.filter(
+    (food) => (entryCounts[food.id] ?? 0) > 0,
+  ).length;
+  const deleted = foods.length - archived;
+  if (archived > 0 && deleted > 0) {
+    return {
+      title: `Remove ${all}?`,
+      description: `${archived} you've logged will be archived, ${deleted} will be deleted.`,
+      confirmLabel: `Remove ${all}`,
+    };
+  }
+  if (archived > 0) {
+    return {
+      title: `Archive ${all}?`,
+      description:
+        "Archived foods leave your list, but past entries keep their calories. You can restore them from Archived foods.",
+      confirmLabel: `Archive ${all}`,
+    };
+  }
+  return {
+    title: `Delete ${all}?`,
+    description: `${foods.length === 1 ? "It has" : "They have"} no entries, so ${foods.length === 1 ? "it" : "they"} will be deleted for good.`,
+    confirmLabel: `Delete ${all}`,
+  };
+}
+
 export const foodKey = (name: string, portion: string) =>
   `${normalizeText(name).toLowerCase()}|${normalizeText(portion).toLowerCase()}`;
 
