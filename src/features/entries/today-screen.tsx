@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import type { Food } from "@/features/foods/types";
 import { useSettings } from "@/features/settings/queries";
 import { haptic } from "@/lib/haptics";
+import { cn } from "@/lib/utils";
 import { DayHeader } from "./day-header";
-import { isPlanned, parseDay } from "./days";
+import { isPlanned, lastPlannableDay, parseDay, shiftDay } from "./days";
 import { addedMessage, formatQuantity, removedEntriesMessage } from "./domain";
 import { EditEntrySheet } from "./edit-entry-sheet";
 import { DailyTotal, EntryList } from "./entry-list";
@@ -25,6 +26,7 @@ import {
   useUpdateEntryQuantity,
 } from "./queries";
 import type { Entry } from "./types";
+import { useDaySwipe } from "./use-day-swipe";
 import { useToday } from "./use-today";
 
 function Skeleton() {
@@ -59,6 +61,17 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
   const selection = useSelection();
   const [picking, setPicking] = useState(false);
   const [editing, setEditing] = useState<Entry | null>(null);
+  // Which way the Day just swiped in from, so its content can slide in. Arrows do not slide.
+  const [slide, setSlide] = useState<"next" | "previous" | null>(null);
+  const swipe = useDaySwipe({
+    // Not while a sheet is open or items are being picked: those gestures are theirs.
+    enabled: !picking && editing === null && !selection.selecting,
+    canGoNext: day < lastPlannableDay(today),
+    onSwipe: (direction, animate) => {
+      setSlide(animate ? direction : null);
+      goToDay(shiftDay(day, direction === "next" ? 1 : -1));
+    },
+  });
 
   function changeQuantity(entry: Entry, quantity: number) {
     updateQuantity.mutate(
@@ -158,7 +171,10 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4">
+    <main
+      {...swipe.gestureProps}
+      className="flex flex-1 touch-pan-y touch-pinch-zoom select-none flex-col gap-4"
+    >
       {selection.selecting ? (
         <SelectionBar
           count={selection.count}
@@ -169,42 +185,66 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
           onClear={selection.clear}
         />
       ) : (
-        <DayHeader day={day} today={today} onChange={goToDay} />
+        <DayHeader
+          day={day}
+          today={today}
+          onChange={(next) => {
+            setSlide(null);
+            goToDay(next);
+          }}
+        />
       )}
 
-      {isPending ? <Skeleton /> : null}
+      {/* Follows the finger while swiping, and a new Day's content slides in from its side. */}
+      <div
+        key={day}
+        data-slide={slide ?? undefined}
+        style={{
+          transform: swipe.offset ? `translateX(${swipe.offset}px)` : undefined,
+          transition: swipe.dragging ? "none" : "transform 150ms ease-out",
+        }}
+        className={cn(
+          "flex flex-1 flex-col gap-4",
+          slide === "next" &&
+            "motion-safe:fade-in motion-safe:slide-in-from-right-8 motion-safe:animate-in motion-safe:duration-200",
+          slide === "previous" &&
+            "motion-safe:fade-in motion-safe:slide-in-from-left-8 motion-safe:animate-in motion-safe:duration-200",
+        )}
+      >
+        {isPending ? <Skeleton /> : null}
 
-      {isError ? (
-        <div
-          role="alert"
-          className="flex flex-col items-start gap-3 rounded-lg border p-4"
-        >
-          <p>Couldn't load this day.</p>
-          <Button variant="outline" onClick={() => refetch()}>
-            Try again
-          </Button>
-        </div>
-      ) : null}
+        {isError ? (
+          <div
+            role="alert"
+            className="flex flex-col items-start gap-3 rounded-lg border p-4"
+          >
+            <p>Couldn't load this day.</p>
+            <Button variant="outline" onClick={() => refetch()}>
+              Try again
+            </Button>
+          </div>
+        ) : null}
 
-      {entries ? (
-        <>
-          <DailyTotal
-            entries={entries}
-            goal={settings?.dailyGoal ?? null}
-            planned={isPlanned(day, today)}
-          />
-          <EntryList
-            entries={entries}
-            onSelect={setEditing}
-            selection={{
-              selecting: selection.selecting,
-              isSelected: selection.isSelected,
-              onStart: (entry) => selection.start(entry.id),
-              onToggle: (entry) => selection.toggle(entry.id),
-            }}
-          />
-        </>
-      ) : null}
+        {entries ? (
+          <>
+            <DailyTotal
+              entries={entries}
+              goal={settings?.dailyGoal ?? null}
+              planned={isPlanned(day, today)}
+            />
+            <EntryList
+              entries={entries}
+              onSelect={setEditing}
+              selection={{
+                selecting: selection.selecting,
+                isSelected: selection.isSelected,
+                onStart: (entry) => selection.start(entry.id),
+                onToggle: (entry) => selection.toggle(entry.id),
+              }}
+            />
+          </>
+        ) : null}
+      </div>
 
       {/* Within thumb reach, just above the bottom navigation. Out of the way while picking. */}
       {selection.selecting ? null : (
