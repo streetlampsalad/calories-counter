@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import { authFile } from "./support/auth";
 import { userClient } from "./support/db";
+import { centreOf, touchDrag } from "./support/gestures";
 import { clearDay, resetUser, seedEntry, seedFood } from "./support/seed";
 
 // Each test logs to a fixed Day long ago that only it uses, emptied first so re-runs start clean.
@@ -427,6 +428,63 @@ test.describe("the picker learns what you eat", () => {
     await expect(
       picker(page).getByRole("group", { name: "Recent" }),
     ).toHaveCount(0);
+  });
+
+  test("dragging down in the scrolled Food list scrolls it first, and only closes the sheet from the top", async ({
+    page,
+  }) => {
+    const dan = await startFresh();
+    for (let n = 1; n <= 35; n++) {
+      await seedFood(dan, {
+        name: `Food ${pad(n)}`,
+        portion: "1 serve",
+        calories: 100 + n,
+      });
+    }
+    await page.goto("/");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(picker(page)).toBeVisible();
+    // Let the sheet finish sliding up before measuring where to put a finger.
+    await page.waitForTimeout(500);
+    // The list's parent is what scrolls inside the sheet.
+    const scroller = picker(page)
+      .getByRole("list", { name: "Your foods" })
+      .locator("xpath=..");
+    const scrollTop = () => scroller.evaluate((el) => el.scrollTop);
+    const middle = await centreOf(scroller);
+
+    // A finger dragged up scrolls the list down, and the sheet stays where it is.
+    await touchDrag(
+      page,
+      { x: middle.x, y: middle.y + 150 },
+      { x: middle.x, y: middle.y - 150 },
+    );
+    await expect.poll(scrollTop).toBeGreaterThan(50);
+    await expect(picker(page)).toBeVisible();
+
+    // Part-way down the list, a finger dragged down scrolls back up and the sheet still stays.
+    await scroller.evaluate((el) => {
+      el.scrollTop = 600;
+    });
+    await touchDrag(
+      page,
+      { x: middle.x, y: middle.y - 100 },
+      { x: middle.x, y: middle.y + 40 },
+    );
+    await expect.poll(scrollTop).toBeLessThan(600);
+    await expect(picker(page)).toBeVisible();
+    await expect(picker(page)).toBeInViewport();
+
+    // Only from the top of the list does the same drag take the sheet down with it.
+    await scroller.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    await touchDrag(
+      page,
+      { x: middle.x, y: middle.y - 100 },
+      { x: middle.x, y: middle.y + 400 },
+    );
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
   test("with 35 Foods the picker keeps its header, search and Recent on screen, and the list scrolls", async ({

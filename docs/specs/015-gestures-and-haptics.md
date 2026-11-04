@@ -1,6 +1,6 @@
 # 015: Gestures, haptics and the picker keyboard
 
-- **Status**: In progress
+- **Status**: Done
 - **Depends on**: 008, 013, 014
 - **Tracking issue**: [#76](https://github.com/streetlampsalad/calories-counter/issues/76)
 - **ADRs**: —

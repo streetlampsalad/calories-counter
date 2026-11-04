@@ -130,7 +130,7 @@ test("a swipe from either screen edge is left to Android's back gesture", async 
   await swipe(page, 6, width(page) - 60);
   await expect(heading(page)).toHaveText("Today");
 
-  await page.goto("/?day=" + daysFromToday(-3));
+  await page.goto(`/?day=${daysFromToday(-3)}`);
   await swipe(page, width(page) - 6, 60);
   await expect(page).toHaveURL(`/?day=${daysFromToday(-3)}`);
 });
