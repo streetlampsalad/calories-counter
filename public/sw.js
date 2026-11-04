@@ -1,7 +1,8 @@
-// Calories Counter's service worker. It does one job: when the app is opened with no connection,
-// show the offline page instead of the browser's error. Logging needs a connection, so nothing
-// else is kept. It never caches pages, API responses or Supabase requests (spec 012, AC-5): only
-// the offline page and the app's own static build files, which never change once built.
+// Calories Counter's service worker. It does two jobs. When the app is opened with no connection,
+// it shows the offline page instead of the browser's error. Logging needs a connection, so nothing
+// else is kept: it never caches pages, API responses or Supabase requests (spec 012, AC-5), only
+// the offline page and the app's own static build files, which never change once built. And it
+// shows the daily Reminder when the server pushes one, and opens Today when it is tapped (spec 016).
 
 const OFFLINE_URL = "/offline";
 const CACHE = "calories-offline-v1";
@@ -110,4 +111,70 @@ self.addEventListener("fetch", (event) => {
     );
   }
   // Everything else (API calls, data, images) goes straight to the network.
+});
+
+// The Reminder (spec 016). Chrome requires every push to show a notification, so a message we
+// cannot read still shows the default text rather than being dropped.
+const DEFAULT_REMINDER = {
+  title: "Nothing logged today",
+  body: "Tap to log what you've eaten.",
+  url: "/",
+};
+
+function reminderFrom(event) {
+  try {
+    const data = event.data ? event.data.json() : {};
+    return {
+      title:
+        typeof data.title === "string" ? data.title : DEFAULT_REMINDER.title,
+      body: typeof data.body === "string" ? data.body : DEFAULT_REMINDER.body,
+      url: typeof data.url === "string" ? data.url : DEFAULT_REMINDER.url,
+    };
+  } catch {
+    return DEFAULT_REMINDER;
+  }
+}
+
+self.addEventListener("push", (event) => {
+  const { title, body, url } = reminderFrom(event);
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: "/icons/icon-192.png",
+      // One Reminder at a time: a newer one replaces an old one nobody tapped.
+      tag: "daily-reminder",
+      data: { url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  // Only ever somewhere in this app, whatever the message said.
+  const requested = new URL(
+    (event.notification.data && event.notification.data.url) || "/",
+    self.location.origin,
+  );
+  const target =
+    requested.origin === self.location.origin
+      ? requested.href
+      : self.location.origin + "/";
+
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const open = windows.find(
+        (client) => new URL(client.url).origin === self.location.origin,
+      );
+      if (open) {
+        await open.focus();
+        if ("navigate" in open) await open.navigate(target);
+        return;
+      }
+      await self.clients.openWindow(target);
+    })(),
+  );
 });

@@ -12,6 +12,10 @@ const FORBIDDEN = [
     what: "the name SUPABASE_SERVICE_ROLE_KEY",
     pattern: /SUPABASE_SERVICE_ROLE_KEY/,
   },
+  // The Reminder scheduler's secrets (spec 016). The VAPID *public* key is meant to ship.
+  { what: "the name SUPABASE_SECRET_KEY", pattern: /SUPABASE_SECRET_KEY/ },
+  { what: "the name VAPID_PRIVATE_KEY", pattern: /VAPID_PRIVATE_KEY/ },
+  { what: "the name REMINDER_SECRET", pattern: /REMINDER_SECRET/ },
 ];
 
 function* files(directory) {

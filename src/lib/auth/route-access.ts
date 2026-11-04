@@ -4,6 +4,9 @@ const PUBLIC_PATHS = [
   "/sign-in",
   "/auth/callback",
   "/api/health",
+  // Called by the database's scheduler, which has no session. It proves itself with a shared
+  // secret instead (spec 016, ADR 0005).
+  "/api/reminders/send",
   "/manifest.webmanifest",
   "/sw.js",
   "/offline",

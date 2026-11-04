@@ -24,6 +24,7 @@ describe("decideAccess", () => {
     "/sign-in",
     "/auth/callback",
     "/api/health",
+    "/api/reminders/send",
     "/manifest.webmanifest",
     "/sw.js",
     "/offline",
