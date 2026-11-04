@@ -33,6 +33,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"calories_burned": {
+                  Row: {
+                    "calories": number,"day": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "calories": number,"day": string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "calories"?: number,"day"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"entries": {
                   Row: {
                     "created_at": string,"day": string,"food_id": string,"id": string,"quantity": number,"user_id": string
@@ -97,14 +111,14 @@ isOneToOne: false
                   ]
                 },"user_settings": {
                   Row: {
-                    "daily_goal_calories": number | null,"reminder_enabled": boolean,"reminder_last_sent_on": string | null,"reminder_time": string,"time_zone": string | null,"updated_at": string,"user_id": string,"week_starts_on": number
+                    "daily_goal_calories": number | null,"reminder_enabled": boolean,"reminder_last_sent_on": string | null,"reminder_time": string,"time_zone": string | null,"track_calories_burned": boolean,"updated_at": string,"user_id": string,"week_starts_on": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "daily_goal_calories"?: number | null,"reminder_enabled"?: boolean,"reminder_last_sent_on"?: string | null,"reminder_time"?: string,"time_zone"?: string | null,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
+                    "daily_goal_calories"?: number | null,"reminder_enabled"?: boolean,"reminder_last_sent_on"?: string | null,"reminder_time"?: string,"time_zone"?: string | null,"track_calories_burned"?: boolean,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
                   }
                   Update: {
-                    "daily_goal_calories"?: number | null,"reminder_enabled"?: boolean,"reminder_last_sent_on"?: string | null,"reminder_time"?: string,"time_zone"?: string | null,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
+                    "daily_goal_calories"?: number | null,"reminder_enabled"?: boolean,"reminder_last_sent_on"?: string | null,"reminder_time"?: string,"time_zone"?: string | null,"track_calories_burned"?: boolean,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
                   }
                   Relationships: [
                     
@@ -154,6 +168,11 @@ isOneToOne: false
                            },
 "increment_ai_usage":
 { Args: { "max_per_day": number,"usage_kind": string }; Returns: boolean
+                           },
+"period_days":
+{ Args: { "range_from": string,"range_to": string }; Returns: {
+              "calories": number,"calories_burned": number,"day": string,"entry_count": number
+            }[]
                            },
 "remove_foods":
 { Args: { "ids": (string)[] }; Returns: {
