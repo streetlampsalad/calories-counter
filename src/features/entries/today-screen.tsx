@@ -9,6 +9,7 @@ import { useSelection } from "@/components/selection/use-selection";
 import { Button } from "@/components/ui/button";
 import type { Food } from "@/features/foods/types";
 import { useSettings } from "@/features/settings/queries";
+import { haptic } from "@/lib/haptics";
 import { DayHeader } from "./day-header";
 import { isPlanned, parseDay } from "./days";
 import { addedMessage, formatQuantity, removedEntriesMessage } from "./domain";
@@ -123,6 +124,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
 
   // The Entry shows up at once; the toast offers Undo, and a failed save takes it back off.
   function log(food: Food, quantity: number) {
+    haptic("tap");
     const entry: Entry = {
       id: crypto.randomUUID(),
       day,
