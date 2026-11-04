@@ -1,6 +1,6 @@
 # 019: Day view stability and motion
 
-- **Status**: In progress
+- **Status**: Done
 - **Depends on**: 008, 013, 015
 - **Tracking issue**: [#95](https://github.com/streetlampsalad/calories-counter/issues/95)
 - **ADRs**: —

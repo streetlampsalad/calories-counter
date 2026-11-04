@@ -417,3 +417,117 @@ describe("DailyTotal counting (spec 019)", () => {
     );
   });
 });
+
+describe("EntryList rows coming and going (spec 019 AC-7, AC-8)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: false,
+      media: query,
+    }));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const items = () =>
+    within(
+      screen.getByRole("list", { name: "Entries", hidden: true }),
+    ).getAllByRole("listitem", { hidden: true });
+  const itemFor = (name: string) =>
+    items().find((item) => item.textContent?.includes(name)) as HTMLElement;
+
+  it("does not animate the Entries a Day opens with", () => {
+    render(
+      <EntryList entries={[entry("Toast", 1, 110), entry("Rice", 1, 130)]} />,
+    );
+
+    for (const item of items()) {
+      expect(item.className).not.toContain("starting:");
+    }
+  });
+
+  it("slides a newly added Entry in from collapsed", () => {
+    const toast = entry("Toast", 1, 110);
+    const { rerender } = render(<EntryList entries={[toast]} />);
+
+    rerender(<EntryList entries={[entry("Rice", 1, 130), toast]} />);
+
+    expect(itemFor("Rice")).toHaveClass(
+      "starting:grid-rows-[0fr]",
+      "starting:opacity-0",
+    );
+    expect(itemFor("Toast").className).not.toContain("starting:");
+  });
+
+  it("collapses a removed Entry, takes it out of reach, then drops it", () => {
+    const toast = entry("Toast", 1, 110);
+    const rice = entry("Rice", 1, 130);
+    const { rerender } = render(
+      <EntryList entries={[toast, rice]} onSelect={() => {}} />,
+    );
+
+    rerender(<EntryList entries={[toast]} onSelect={() => {}} />);
+
+    const leaving = itemFor("Rice");
+    expect(leaving).toHaveAttribute("data-leaving");
+    expect(leaving).toHaveClass("grid-rows-[0fr]", "opacity-0");
+    expect(leaving).toHaveAttribute("inert");
+    expect(leaving).toHaveAttribute("aria-hidden", "true");
+    // Not a button while it goes, so it cannot be opened or picked.
+    expect(within(leaving).queryByRole("button", { hidden: true })).toBeNull();
+
+    act(() => void vi.advanceTimersByTime(250));
+    expect(screen.queryByText("Rice")).not.toBeInTheDocument();
+    expect(items()).toHaveLength(1);
+  });
+
+  it("keeps the other Entries in place while one leaves", () => {
+    const [a, b, c] = [entry("A", 1, 1), entry("B", 1, 2), entry("C", 1, 3)];
+    const { rerender } = render(<EntryList entries={[a, b, c]} />);
+
+    rerender(<EntryList entries={[a, c]} />);
+
+    expect(items().map((item) => item.textContent?.slice(0, 1))).toEqual([
+      "A",
+      "B",
+      "C",
+    ]);
+    expect(itemFor("A")).not.toHaveAttribute("data-leaving");
+    expect(itemFor("C")).not.toHaveAttribute("data-leaving");
+  });
+
+  it("shows the empty message once the last Entry has gone, not before", () => {
+    const toast = entry("Toast", 1, 110);
+    const { rerender } = render(<EntryList entries={[toast]} />);
+
+    rerender(<EntryList entries={[]} />);
+    expect(screen.queryByText("Nothing logged yet")).not.toBeInTheDocument();
+
+    act(() => void vi.advanceTimersByTime(250));
+    expect(screen.getByText("Nothing logged yet")).toBeInTheDocument();
+  });
+
+  it("removes an Entry at once for a device that asks for reduced motion (AC-8)", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+    }));
+    const toast = entry("Toast", 1, 110);
+    const { rerender } = render(<EntryList entries={[toast]} />);
+
+    rerender(<EntryList entries={[]} />);
+
+    expect(screen.getByText("Nothing logged yet")).toBeInTheDocument();
+  });
+
+  it("turns every row transition off for reduced motion (AC-8)", () => {
+    render(<EntryList entries={[entry("Toast", 1, 110)]} />);
+
+    expect(items()[0]).toHaveClass("motion-reduce:transition-none");
+    expect(items()[0].firstElementChild).toHaveClass(
+      "motion-reduce:transition-none",
+    );
+  });
+});

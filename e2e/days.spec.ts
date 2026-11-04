@@ -549,3 +549,126 @@ test("with reduced motion the total jumps rather than counts (spec 019 AC-8)", a
   await page.waitForTimeout(600);
   expect(await seen(page)).toEqual([1000, 1600]);
 });
+
+// Spec 019 AC-7: Entry rows animate in and out. A frame-by-frame recorder notes each row's height,
+// so growing and collapsing can be told from jumping.
+type RecordedRows = Window & { __rows: Record<string, number[]> };
+
+async function recordRows(page: Page) {
+  await page.addInitScript(() => {
+    const recorded = window as unknown as RecordedRows;
+    recorded.__rows = {};
+    const tick = () => {
+      for (const item of document.querySelectorAll(
+        'ul[aria-label="Entries"] > li',
+      )) {
+        const name = item.querySelector("span.font-medium")?.textContent ?? "";
+        const height = Math.round(item.getBoundingClientRect().height);
+        recorded.__rows[name] ??= [];
+        const series = recorded.__rows[name];
+        if (series.at(-1) !== height) series.push(height);
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+const rowHeights = async (page: Page, name: string) =>
+  (await page.evaluate(
+    (key) => (window as unknown as RecordedRows).__rows[key] ?? [],
+    name,
+  )) as number[];
+
+test("a newly logged Entry grows into the list while the rest stay put (spec 019 AC-7)", async ({
+  page,
+}) => {
+  const day = "2001-09-01";
+  const added = await arrangeCount(day, 100, 10);
+  await recordRows(page);
+  await page.goto(`/?day=${day}`);
+  await expect(total(page)).toContainText("1,000");
+
+  await logOnCurrentDay(page, added.name, "Add 1");
+
+  await expect(entries(page).filter({ hasText: added.name })).toBeVisible();
+  await page.waitForTimeout(500);
+  const heights = await rowHeights(page, added.name);
+  const settled = heights.at(-1) ?? 0;
+  expect(settled).toBeGreaterThanOrEqual(56);
+  expect(heights.length, `saw ${heights.join(", ")}`).toBeGreaterThan(2);
+  expect(heights[0]).toBeLessThan(settled);
+  expect(heights).toEqual([...heights].sort((a, b) => a - b));
+});
+
+test("a removed Entry collapses out before it goes (spec 019 AC-7)", async ({
+  page,
+}) => {
+  const day = "2001-09-02";
+  const added = await arrangeCount(day, 100, 10);
+  const ada = await userClient("ada");
+  await seedEntry(ada, { foodId: added.id, day, quantity: 1 });
+  await recordRows(page);
+  await page.goto(`/?day=${day}`);
+  await expect(total(page)).toContainText("1,600");
+
+  await entries(page)
+    .filter({ hasText: added.name })
+    .getByRole("button")
+    .click();
+  await page
+    .getByRole("dialog", { name: "Edit entry" })
+    .getByRole("button", { name: "Remove entry" })
+    .click();
+
+  // A leaving row is hidden from screen readers at once, so wait for the collapse itself to end.
+  await expect(entries(page).filter({ hasText: added.name })).toHaveCount(0);
+  await page.waitForTimeout(500);
+  const heights = await rowHeights(page, added.name);
+  const full = heights[0];
+  expect(full).toBeGreaterThanOrEqual(56);
+  expect(heights.length, `saw ${heights.join(", ")}`).toBeGreaterThan(2);
+  expect(Math.min(...heights)).toBeLessThan(full);
+  expect(heights).toEqual([...heights].sort((a, b) => b - a));
+});
+
+test("a Day's Entries are simply there when it opens, and when you move to it (spec 019 AC-7)", async ({
+  page,
+}) => {
+  const first = "2001-09-03";
+  const second = "2001-09-04";
+  const ada = await userClient("ada");
+  const added = await arrangeCount(first, 100, 10);
+  await clearDay(ada, second);
+  await seedEntry(ada, { foodId: added.id, day: second, quantity: 2 });
+  await recordRows(page);
+
+  await page.goto(`/?day=${first}`);
+  await expect(total(page)).toContainText("1,000");
+  await page.getByRole("button", { name: "Next day" }).click();
+  await expect(total(page)).toContainText("1,200");
+  await page.waitForTimeout(500);
+
+  const arrived = await rowHeights(page, added.name);
+  // One figure only: the row was never anything but its full height.
+  expect(new Set(arrived).size, `saw ${arrived.join(", ")}`).toBe(1);
+  expect(arrived[0]).toBeGreaterThanOrEqual(56);
+});
+
+test("with reduced motion Entries appear and vanish without animating (spec 019 AC-8)", async ({
+  page,
+}) => {
+  const day = "2001-09-05";
+  const added = await arrangeCount(day, 100, 10);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await recordRows(page);
+  await page.goto(`/?day=${day}`);
+  await expect(total(page)).toContainText("1,000");
+
+  await logOnCurrentDay(page, added.name, "Add 1");
+  await expect(entries(page).filter({ hasText: added.name })).toBeVisible();
+  await page.waitForTimeout(500);
+
+  const heights = await rowHeights(page, added.name);
+  expect(new Set(heights).size, `saw ${heights.join(", ")}`).toBe(1);
+});

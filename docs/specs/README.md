@@ -36,6 +36,6 @@ Create one issue per row in the spec's **Issue breakdown** using the *Spec slice
 | 016 | [Daily Reminder](016-daily-reminder.md) | 009, 012 | In progress | [#84](https://github.com/streetlampsalad/calories-counter/issues/84) |
 | 017 | [Calories Burned and the Deficit](017-calories-burned-and-deficit.md) | 008, 009, 010 | Done | [#89](https://github.com/streetlampsalad/calories-counter/issues/89) |
 | 018 | [Calories Burned from Google Health](018-google-health-sync.md) | 017 | Draft | [#93](https://github.com/streetlampsalad/calories-counter/issues/93) |
-| 019 | [Day view stability and motion](019-day-view-stability-and-motion.md) | 008, 013, 015 | In progress | [#95](https://github.com/streetlampsalad/calories-counter/issues/95) |
+| 019 | [Day view stability and motion](019-day-view-stability-and-motion.md) | 008, 013, 015 | Done | [#95](https://github.com/streetlampsalad/calories-counter/issues/95) |
 
 The critical path is 001 → 002 → 003 → 004 → 008 → 010. Specs 005–007, 009, 011 and 012 can run alongside it once their dependencies land. Specs 013 and 014 are independent of each other, and spec 015's slices 1, 2 and 5 can start at any time; only its slices 3 and 4 wait on 014 and 013. Specs 016, 017 and 019 are independent of each other. Spec 018 waits on 017 and on its own spike.

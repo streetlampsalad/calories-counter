@@ -6,6 +6,7 @@ import { goalProgress } from "@/features/settings/domain";
 import { cn } from "@/lib/utils";
 import { useAnimatedNumber } from "./animated-number";
 import { dailyTotal, formatEntryDetail } from "./domain";
+import { useEntryRows } from "./entry-rows";
 import type { Entry } from "./types";
 
 const kcal = (value: number) => value.toLocaleString("en-AU");
@@ -182,7 +183,9 @@ function EntryRow({
 }
 
 export function EntryList({ entries, onSelect, selection }: Props) {
-  if (entries.length === 0) {
+  const rows = useEntryRows(entries);
+
+  if (rows.length === 0) {
     return (
       <p className="py-10 text-center text-muted-foreground">
         Nothing logged yet
@@ -192,9 +195,40 @@ export function EntryList({ entries, onSelect, selection }: Props) {
 
   return (
     <ul aria-label="Entries">
-      {entries.map((entry) => (
-        <li key={entry.id} className="border-b last:border-b-0">
-          <EntryRow entry={entry} onSelect={onSelect} selection={selection} />
+      {rows.map(({ entry, leaving, animate }) => (
+        // A new Entry grows and fades in (it starts collapsed, from `starting:`), and a removed one
+        // collapses and fades out, so the rows around it glide into place (spec 019). Rows already
+        // on the page when it opened never animate, and a device that asks for reduced motion
+        // gets none of it.
+        <li
+          key={entry.id}
+          data-leaving={leaving ? "" : undefined}
+          inert={leaving}
+          aria-hidden={leaving ? true : undefined}
+          className={cn(
+            "grid border-b transition-[grid-template-rows,opacity] duration-200 ease-out last:border-b-0 motion-reduce:transition-none",
+            leaving
+              ? "grid-rows-[0fr] opacity-0"
+              : "grid-rows-[1fr] opacity-100",
+            animate && "starting:grid-rows-[0fr] starting:opacity-0",
+          )}
+        >
+          <div
+            className={cn(
+              "min-h-0 overflow-hidden transition-transform duration-200 ease-out motion-reduce:transition-none",
+              animate && "starting:-translate-y-2",
+            )}
+          >
+            {leaving ? (
+              <EntryRow entry={entry} />
+            ) : (
+              <EntryRow
+                entry={entry}
+                onSelect={onSelect}
+                selection={selection}
+              />
+            )}
+          </div>
         </li>
       ))}
     </ul>
