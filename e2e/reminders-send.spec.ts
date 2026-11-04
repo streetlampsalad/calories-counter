@@ -39,6 +39,6 @@ test.describe("POST /api/reminders/send", () => {
   test("cannot be opened with GET", async ({ request }) => {
     const response = await request.get("/api/reminders/send");
 
-    expect(response.status()).toBe(401);
+    expect(response.status()).toBe(405);
   });
 });

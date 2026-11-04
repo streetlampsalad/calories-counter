@@ -152,13 +152,13 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   // Only ever somewhere in this app, whatever the message said.
   const requested = new URL(
-    (event.notification.data && event.notification.data.url) || "/",
+    event.notification.data?.url || "/",
     self.location.origin,
   );
   const target =
     requested.origin === self.location.origin
       ? requested.href
-      : self.location.origin + "/";
+      : `${self.location.origin}/`;
 
   event.waitUntil(
     (async () => {
