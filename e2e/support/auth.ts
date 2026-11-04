@@ -45,6 +45,12 @@ export const TEST_USERS = {
     id: "99999999-9999-9999-9999-999999999999",
     email: "jo@example.test",
   },
+  // For the Calories Burned tests (spec 017), which change settings and a whole Log: they run in
+  // series and reset kit's first.
+  kit: {
+    id: "10101010-1010-1010-1010-101010101010",
+    email: "kit@example.test",
+  },
   // Always empty: tests must never leave data behind for cleo.
   cleo: {
     id: "33333333-3333-3333-3333-333333333333",

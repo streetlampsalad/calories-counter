@@ -13,6 +13,7 @@ const row = {
   reminder_enabled: false,
   reminder_time: "19:00:00",
   time_zone: null,
+  track_calories_burned: false,
 };
 
 describe("toSettings", () => {
@@ -23,6 +24,7 @@ describe("toSettings", () => {
       reminderEnabled: false,
       reminderTime: "19:00",
       timeZone: null,
+      trackCaloriesBurned: false,
     });
     expect(toSettings(null)).toEqual(DEFAULT_SETTINGS);
   });
@@ -36,6 +38,7 @@ describe("toSettings", () => {
       reminderEnabled: false,
       reminderTime: "19:00",
       timeZone: null,
+      trackCaloriesBurned: false,
     });
   });
 
@@ -59,6 +62,18 @@ describe("toSettings", () => {
       reminderTime: "07:45",
       timeZone: "Australia/Sydney",
     });
+  });
+});
+
+describe("tracking Calories Burned", () => {
+  it("is off for a User with no row", () => {
+    expect(toSettings(null).trackCaloriesBurned).toBe(false);
+  });
+
+  it("reads the saved choice", () => {
+    expect(
+      toSettings({ ...row, track_calories_burned: true }).trackCaloriesBurned,
+    ).toBe(true);
   });
 });
 

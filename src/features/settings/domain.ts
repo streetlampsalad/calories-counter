@@ -12,6 +12,8 @@ export type Settings = {
   reminderTime: string;
   /** The IANA name of the device's time zone when the Reminder was last set, or null. */
   timeZone: string | null;
+  /** The User keeps Calories Burned and sees their Deficit (spec 017). Off unless they say so. */
+  trackCaloriesBurned: boolean;
 };
 
 export const DEFAULT_REMINDER_TIME = "19:00";
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reminderEnabled: false,
   reminderTime: DEFAULT_REMINDER_TIME,
   timeZone: null,
+  trackCaloriesBurned: false,
 };
 
 export const MIN_GOAL = 500;
@@ -34,6 +37,7 @@ type SettingsRow = {
   /** Postgres writes a time as "19:00:00". */
   reminder_time: string;
   time_zone: string | null;
+  track_calories_burned: boolean;
 };
 
 export const toSettings = (row: SettingsRow | null): Settings =>
@@ -44,6 +48,7 @@ export const toSettings = (row: SettingsRow | null): Settings =>
         reminderEnabled: row.reminder_enabled,
         reminderTime: row.reminder_time.slice(0, 5),
         timeZone: row.time_zone,
+        trackCaloriesBurned: row.track_calories_burned,
       }
     : DEFAULT_SETTINGS;
 

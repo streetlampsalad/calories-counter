@@ -73,6 +73,18 @@ export async function resetReminder(client: Client) {
   await resetSettings(client);
 }
 
+// An empty Log, no Calories Burned and default settings. Only for a User no other test touches (kit).
+export async function resetBurned(client: Client) {
+  const burned = await client
+    .from("calories_burned")
+    .delete()
+    .not("user_id", "is", null);
+  if (burned.error)
+    throw new Error(`Could not reset calories burned: ${burned.error.message}`);
+  await resetUser(client);
+  await resetSettings(client);
+}
+
 // Many Entries in one call, for tests that need months of history.
 export async function seedEntries(
   client: Client,

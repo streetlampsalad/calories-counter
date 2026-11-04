@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { SelectionBar } from "@/components/selection/selection-bar";
 import { useSelection } from "@/components/selection/use-selection";
 import { Button } from "@/components/ui/button";
+import { BurnedRow } from "@/features/burned/burned-row";
 import type { Food } from "@/features/foods/types";
 import { useSettings } from "@/features/settings/queries";
 import { haptic } from "@/lib/haptics";
@@ -242,6 +243,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
               goal={settings?.dailyGoal ?? null}
               planned={isPlanned(day, today)}
             />
+            <BurnedRow day={day} today={today} entries={entries} />
             <EntryList
               entries={entries}
               onSelect={setEditing}

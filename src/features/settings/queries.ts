@@ -19,7 +19,7 @@ export function useSettings() {
       const { data, error } = await supabase
         .from("user_settings")
         .select(
-          "daily_goal_calories, week_starts_on, reminder_enabled, reminder_time, time_zone",
+          "daily_goal_calories, week_starts_on, reminder_enabled, reminder_time, time_zone, track_calories_burned",
         )
         .maybeSingle();
       if (error) throw error;
@@ -41,6 +41,7 @@ export function useUpdateSettings() {
         reminder_enabled?: boolean;
         reminder_time?: string;
         time_zone?: string | null;
+        track_calories_burned?: boolean;
       } = {};
       if (patch.dailyGoal !== undefined)
         row.daily_goal_calories = patch.dailyGoal;
@@ -51,6 +52,8 @@ export function useUpdateSettings() {
       if (patch.reminderTime !== undefined)
         row.reminder_time = patch.reminderTime;
       if (patch.timeZone !== undefined) row.time_zone = patch.timeZone;
+      if (patch.trackCaloriesBurned !== undefined)
+        row.track_calories_burned = patch.trackCaloriesBurned;
       const { error } = await supabase
         .from("user_settings")
         .upsert(row, { onConflict: "user_id" });

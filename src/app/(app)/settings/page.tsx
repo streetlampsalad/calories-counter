@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AboutSection } from "@/features/settings/about-section";
+import { BurnedSection } from "@/features/settings/burned-section";
 import { GoalSection } from "@/features/settings/goal-section";
 import { ReminderSection } from "@/features/settings/reminder-section";
 import { SignOutForm } from "@/features/settings/sign-out-form";
@@ -41,6 +42,7 @@ export default function SettingsPage() {
     <main className="flex flex-1 flex-col gap-6">
       <h1 className="font-semibold text-2xl tracking-tight">Settings</h1>
       <GoalSection />
+      <BurnedSection />
       <WeekStartSection />
       <ReminderSection />
       <VibrationSection />

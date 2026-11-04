@@ -48,6 +48,7 @@ describe("useSettings", () => {
         reminder_enabled: true,
         reminder_time: "07:45:00",
         time_zone: "Australia/Sydney",
+        track_calories_burned: true,
       },
       error: null,
     });
@@ -61,6 +62,7 @@ describe("useSettings", () => {
       reminderEnabled: true,
       reminderTime: "07:45",
       timeZone: "Australia/Sydney",
+      trackCaloriesBurned: true,
     });
   });
 
@@ -136,6 +138,20 @@ describe("useUpdateSettings", () => {
         reminder_time: "07:45",
         time_zone: "Australia/Sydney",
       },
+      { onConflict: "user_id" },
+    );
+  });
+
+  it("saves the Calories Burned switch under its column name", async () => {
+    upsert.mockResolvedValue({ error: null });
+    const { wrapper } = setup();
+    const { result } = renderHook(() => useUpdateSettings(), { wrapper });
+
+    act(() => result.current.mutate({ trackCaloriesBurned: true }));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(upsert).toHaveBeenCalledWith(
+      { track_calories_burned: true },
       { onConflict: "user_id" },
     );
   });
