@@ -60,6 +60,19 @@ export async function resetSettings(client: Client) {
   if (error) throw new Error(`Could not reset settings: ${error.message}`);
 }
 
+// No Reminder and no subscribed phones. Only for a User no other test touches (jo).
+export async function resetReminder(client: Client) {
+  const subscriptions = await client
+    .from("push_subscriptions")
+    .delete()
+    .not("user_id", "is", null);
+  if (subscriptions.error)
+    throw new Error(
+      `Could not reset subscriptions: ${subscriptions.error.message}`,
+    );
+  await resetSettings(client);
+}
+
 // Many Entries in one call, for tests that need months of history.
 export async function seedEntries(
   client: Client,

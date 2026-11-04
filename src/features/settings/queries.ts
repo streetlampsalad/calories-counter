@@ -18,7 +18,9 @@ export function useSettings() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("user_settings")
-        .select("daily_goal_calories, week_starts_on")
+        .select(
+          "daily_goal_calories, week_starts_on, reminder_enabled, reminder_time, time_zone",
+        )
         .maybeSingle();
       if (error) throw error;
       return toSettings(data);
@@ -36,11 +38,19 @@ export function useUpdateSettings() {
       const row: {
         daily_goal_calories?: number | null;
         week_starts_on?: number;
+        reminder_enabled?: boolean;
+        reminder_time?: string;
+        time_zone?: string | null;
       } = {};
       if (patch.dailyGoal !== undefined)
         row.daily_goal_calories = patch.dailyGoal;
       if (patch.weekStartsOn !== undefined)
         row.week_starts_on = patch.weekStartsOn;
+      if (patch.reminderEnabled !== undefined)
+        row.reminder_enabled = patch.reminderEnabled;
+      if (patch.reminderTime !== undefined)
+        row.reminder_time = patch.reminderTime;
+      if (patch.timeZone !== undefined) row.time_zone = patch.timeZone;
       const { error } = await supabase
         .from("user_settings")
         .upsert(row, { onConflict: "user_id" });

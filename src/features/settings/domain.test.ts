@@ -3,28 +3,88 @@ import {
   DEFAULT_SETTINGS,
   goalProgress,
   parseGoal,
+  toQuarterHour,
   toSettings,
 } from "./domain";
 
+const row = {
+  daily_goal_calories: null,
+  week_starts_on: 1,
+  reminder_enabled: false,
+  reminder_time: "19:00:00",
+  time_zone: null,
+};
+
 describe("toSettings", () => {
   it("falls back to the defaults for a User with no row", () => {
-    expect(toSettings(null)).toEqual({ dailyGoal: null, weekStartsOn: 1 });
+    expect(toSettings(null)).toEqual({
+      dailyGoal: null,
+      weekStartsOn: 1,
+      reminderEnabled: false,
+      reminderTime: "19:00",
+      timeZone: null,
+    });
     expect(toSettings(null)).toEqual(DEFAULT_SETTINGS);
   });
 
   it("reads a saved row", () => {
     expect(
-      toSettings({ daily_goal_calories: 2200, week_starts_on: 0 }),
+      toSettings({ ...row, daily_goal_calories: 2200, week_starts_on: 0 }),
     ).toEqual({
       dailyGoal: 2200,
       weekStartsOn: 0,
+      reminderEnabled: false,
+      reminderTime: "19:00",
+      timeZone: null,
     });
   });
 
   it("keeps a cleared Goal as no Goal", () => {
     expect(
-      toSettings({ daily_goal_calories: null, week_starts_on: 1 }).dailyGoal,
+      toSettings({ ...row, daily_goal_calories: null, week_starts_on: 1 })
+        .dailyGoal,
     ).toBeNull();
+  });
+
+  it("reads a saved Reminder, dropping the seconds Postgres adds to the time", () => {
+    expect(
+      toSettings({
+        ...row,
+        reminder_enabled: true,
+        reminder_time: "07:45:00",
+        time_zone: "Australia/Sydney",
+      }),
+    ).toMatchObject({
+      reminderEnabled: true,
+      reminderTime: "07:45",
+      timeZone: "Australia/Sydney",
+    });
+  });
+});
+
+describe("toQuarterHour", () => {
+  it.each([
+    ["19:00", "19:00"],
+    ["07:45", "07:45"],
+    ["07:50", "07:45"],
+    ["07:59", "07:45"],
+    ["08:14", "08:00"],
+    ["23:59", "23:45"],
+    ["00:01", "00:00"],
+    ["06:30:20", "06:30"],
+  ])("takes %s to %s", (input, expected) => {
+    expect(toQuarterHour(input)).toBe(expected);
+  });
+
+  it.each([
+    "",
+    "7:00",
+    "24:00",
+    "12:60",
+    "abc",
+    "12-30",
+  ])("refuses %j", (input) => {
+    expect(toQuarterHour(input)).toBeNull();
   });
 });
 

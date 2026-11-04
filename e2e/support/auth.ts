@@ -39,6 +39,12 @@ export const TEST_USERS = {
     id: "88888888-8888-8888-8888-888888888888",
     email: "ivy@example.test",
   },
+  // For the Reminder tests (spec 016), which change settings and push subscriptions: they run in
+  // series and reset jo's first.
+  jo: {
+    id: "99999999-9999-9999-9999-999999999999",
+    email: "jo@example.test",
+  },
   // Always empty: tests must never leave data behind for cleo.
   cleo: {
     id: "33333333-3333-3333-3333-333333333333",

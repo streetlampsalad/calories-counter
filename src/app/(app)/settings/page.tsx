@@ -1,8 +1,9 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
 import { AboutSection } from "@/features/settings/about-section";
 import { GoalSection } from "@/features/settings/goal-section";
+import { ReminderSection } from "@/features/settings/reminder-section";
+import { SignOutForm } from "@/features/settings/sign-out-form";
 import { formatVersion } from "@/features/settings/version";
 import { VibrationSection } from "@/features/settings/vibration-section";
 import { WeekStartSection } from "@/features/settings/week-start-section";
@@ -30,15 +31,7 @@ async function Account() {
           {data?.claims.email}
         </span>
       </p>
-      <form action={signOut}>
-        <Button
-          type="submit"
-          variant="outline"
-          className="h-12 w-full text-base"
-        >
-          Sign out
-        </Button>
-      </form>
+      <SignOutForm action={signOut} />
     </section>
   );
 }
@@ -49,6 +42,7 @@ export default function SettingsPage() {
       <h1 className="font-semibold text-2xl tracking-tight">Settings</h1>
       <GoalSection />
       <WeekStartSection />
+      <ReminderSection />
       <VibrationSection />
       <Suspense fallback={<div className="h-32" />}>
         <About />

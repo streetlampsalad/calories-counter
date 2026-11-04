@@ -15,6 +15,7 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
+import { DEFAULT_SETTINGS } from "./domain";
 import { settingsKeys, useSettings, useUpdateSettings } from "./queries";
 
 function setup() {
@@ -36,19 +37,31 @@ describe("useSettings", () => {
     const { result } = renderHook(() => useSettings(), { wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual({ dailyGoal: null, weekStartsOn: 1 });
+    expect(result.current.data).toEqual(DEFAULT_SETTINGS);
   });
 
   it("reads the saved row", async () => {
     maybeSingle.mockResolvedValue({
-      data: { daily_goal_calories: 2200, week_starts_on: 0 },
+      data: {
+        daily_goal_calories: 2200,
+        week_starts_on: 0,
+        reminder_enabled: true,
+        reminder_time: "07:45:00",
+        time_zone: "Australia/Sydney",
+      },
       error: null,
     });
     const { wrapper } = setup();
     const { result } = renderHook(() => useSettings(), { wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual({ dailyGoal: 2200, weekStartsOn: 0 });
+    expect(result.current.data).toEqual({
+      dailyGoal: 2200,
+      weekStartsOn: 0,
+      reminderEnabled: true,
+      reminderTime: "07:45",
+      timeZone: "Australia/Sydney",
+    });
   });
 
   it("reports a failure to load", async () => {
@@ -74,18 +87,15 @@ describe("useUpdateSettings", () => {
       }),
     );
     const { queryClient, wrapper } = setup();
-    queryClient.setQueryData(settingsKeys.current(), {
-      dailyGoal: null,
-      weekStartsOn: 1,
-    });
+    queryClient.setQueryData(settingsKeys.current(), DEFAULT_SETTINGS);
     const { result } = renderHook(() => useUpdateSettings(), { wrapper });
 
     act(() => result.current.mutate({ dailyGoal: 2200 }));
 
     await waitFor(() =>
       expect(current(queryClient)).toEqual({
+        ...DEFAULT_SETTINGS,
         dailyGoal: 2200,
-        weekStartsOn: 1,
       }),
     );
     finish({ error: null });
@@ -102,6 +112,30 @@ describe("useUpdateSettings", () => {
 
     expect(upsert).toHaveBeenCalledWith(
       { week_starts_on: 0 },
+      { onConflict: "user_id" },
+    );
+  });
+
+  it("saves a Reminder's switch, time and time zone under their column names", async () => {
+    upsert.mockResolvedValue({ error: null });
+    const { wrapper } = setup();
+    const { result } = renderHook(() => useUpdateSettings(), { wrapper });
+
+    act(() =>
+      result.current.mutate({
+        reminderEnabled: true,
+        reminderTime: "07:45",
+        timeZone: "Australia/Sydney",
+      }),
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(upsert).toHaveBeenCalledWith(
+      {
+        reminder_enabled: true,
+        reminder_time: "07:45",
+        time_zone: "Australia/Sydney",
+      },
       { onConflict: "user_id" },
     );
   });
@@ -124,8 +158,8 @@ describe("useUpdateSettings", () => {
     upsert.mockResolvedValue({ error: { code: "08006", message: "down" } });
     const { queryClient, wrapper } = setup();
     queryClient.setQueryData(settingsKeys.current(), {
+      ...DEFAULT_SETTINGS,
       dailyGoal: 2000,
-      weekStartsOn: 1,
     });
     const { result } = renderHook(() => useUpdateSettings(), { wrapper });
 
@@ -135,7 +169,10 @@ describe("useUpdateSettings", () => {
     expect(result.current.error?.message).toBe(
       "Couldn't save your settings. Check your connection and try again.",
     );
-    expect(current(queryClient)).toEqual({ dailyGoal: 2000, weekStartsOn: 1 });
+    expect(current(queryClient)).toEqual({
+      ...DEFAULT_SETTINGS,
+      dailyGoal: 2000,
+    });
   });
 
   it("starts from the defaults when nothing was loaded yet", async () => {
@@ -147,8 +184,8 @@ describe("useUpdateSettings", () => {
 
     await waitFor(() =>
       expect(current(queryClient)).toEqual({
+        ...DEFAULT_SETTINGS,
         dailyGoal: 1800,
-        weekStartsOn: 1,
       }),
     );
   });
