@@ -266,3 +266,154 @@ describe("DailyTotal with a Goal", () => {
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 });
+
+describe("DailyTotal counting (spec 019)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"],
+    });
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: false,
+      media: query,
+    }));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const region = () => screen.getByRole("region", { name: "Daily total" });
+  const counting = () => region().querySelector("[aria-hidden=true] > span");
+  const feast = (calories: number) => [entry("Feast", 1, calories)];
+
+  it("shows a Day's total at once when it first appears (AC-4)", () => {
+    render(<DailyTotal entries={feast(1840)} />);
+
+    expect(counting()).toHaveTextContent("1,840");
+  });
+
+  it("counts to the new total when an Entry is added, and stops exactly on it (AC-3)", () => {
+    const { rerender } = render(
+      <DailyTotal entries={feast(1000)} dayKey="a" />,
+    );
+
+    rerender(<DailyTotal entries={feast(1500)} dayKey="a" />);
+    act(() => void vi.advanceTimersByTime(160));
+    const midway = Number(counting()?.textContent?.replace(/,/g, ""));
+    expect(midway).toBeGreaterThan(1000);
+    expect(midway).toBeLessThan(1500);
+
+    act(() => void vi.advanceTimersByTime(400));
+    expect(counting()).toHaveTextContent("1,500");
+  });
+
+  it("counts down when an Entry is removed (AC-3)", () => {
+    const { rerender } = render(
+      <DailyTotal entries={feast(1500)} dayKey="a" />,
+    );
+
+    rerender(<DailyTotal entries={feast(1000)} dayKey="a" />);
+    act(() => void vi.advanceTimersByTime(160));
+    const midway = Number(counting()?.textContent?.replace(/,/g, ""));
+    expect(midway).toBeLessThan(1500);
+    expect(midway).toBeGreaterThan(1000);
+
+    act(() => void vi.advanceTimersByTime(400));
+    expect(counting()).toHaveTextContent("1,000");
+  });
+
+  it("jumps straight to another Day's total (AC-4)", () => {
+    const { rerender } = render(
+      <DailyTotal entries={feast(1000)} dayKey="a" />,
+    );
+
+    rerender(<DailyTotal entries={feast(2400)} dayKey="b" />);
+
+    expect(counting()).toHaveTextContent("2,400");
+  });
+
+  it("jumps for a device that asks for reduced motion (AC-8)", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+    }));
+    const { rerender } = render(
+      <DailyTotal entries={feast(1000)} dayKey="a" />,
+    );
+
+    rerender(<DailyTotal entries={feast(1500)} dayKey="a" />);
+
+    expect(counting()).toHaveTextContent("1,500");
+  });
+
+  it("tells screen readers only the final total, in one live region, never the count (AC-5)", () => {
+    const { rerender } = render(
+      <DailyTotal entries={feast(1000)} goal={2200} dayKey="a" />,
+    );
+    const live = region().querySelector("[aria-live]");
+    expect(live).toHaveTextContent("1,000 of 2,200 kcal");
+    expect(region().querySelectorAll("[aria-live]")).toHaveLength(1);
+
+    rerender(<DailyTotal entries={feast(1500)} goal={2200} dayKey="a" />);
+
+    // The very first frame of the count, and the live text already says where it ends up.
+    expect(region().querySelector("[aria-live]")).toHaveTextContent(
+      "1,500 of 2,200 kcal",
+    );
+    act(() => void vi.advanceTimersByTime(160));
+    expect(region().querySelector("[aria-live]")).toHaveTextContent(
+      "1,500 of 2,200 kcal",
+    );
+    // The counting figure is hidden from screen readers.
+    expect(counting()?.closest("[aria-hidden=true]")).not.toBeNull();
+  });
+
+  it("says just the kcal with no Goal", () => {
+    render(<DailyTotal entries={feast(1840)} />);
+
+    expect(region().querySelector("[aria-live]")).toHaveTextContent(
+      /^1,840 kcal$/,
+    );
+  });
+
+  it("is as wide as the final figure from the start, so the Goal beside it stays put (AC-3)", () => {
+    const { rerender } = render(
+      <DailyTotal entries={feast(95)} goal={2200} dayKey="a" />,
+    );
+    expect((counting() as HTMLElement).style.minWidth).toBe("2ch");
+
+    rerender(<DailyTotal entries={feast(1840)} goal={2200} dayKey="a" />);
+
+    // 1,840 is five characters, from the first frame, while it is still counting from 95.
+    expect((counting() as HTMLElement).style.minWidth).toBe("5ch");
+    expect(counting()).toHaveTextContent("95");
+  });
+
+  it("eases the Goal bar to its new width at the same pace as the count (AC-6)", () => {
+    render(<DailyTotal entries={feast(1100)} goal={2200} />);
+
+    const fill = screen.getByRole("progressbar").firstElementChild;
+    expect(fill).toHaveClass(
+      "transition-[width]",
+      "duration-[400ms]",
+      "ease-out",
+      "motion-reduce:transition-none",
+    );
+    expect((fill as HTMLElement).style.width).toBe("50%");
+  });
+
+  it("changes the bar's colour when the total crosses the Goal (AC-6)", () => {
+    const { rerender } = render(
+      <DailyTotal entries={feast(2000)} goal={2200} />,
+    );
+    expect(screen.getByRole("progressbar").firstElementChild).toHaveClass(
+      "bg-primary",
+    );
+
+    rerender(<DailyTotal entries={feast(2500)} goal={2200} />);
+
+    expect(screen.getByRole("progressbar").firstElementChild).toHaveClass(
+      "bg-destructive",
+    );
+  });
+});

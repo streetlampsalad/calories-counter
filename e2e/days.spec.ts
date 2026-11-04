@@ -420,3 +420,132 @@ test("the Today pill fades, unless the phone asks for reduced motion (spec 019 A
   await page.emulateMedia({ reducedMotion: "reduce" });
   expect(await transition(pill)).toBe("none");
 });
+
+// Spec 019: the Daily Total counts to a new value instead of jumping. A frame-by-frame recorder
+// notes every figure the big number shows, so a test can tell counting from jumping.
+type Recorded = Window & { __seen: string[] };
+
+async function recordTotal(page: Page) {
+  await page.addInitScript(() => {
+    const recorded = window as unknown as Recorded;
+    recorded.__seen = [];
+    const read = () =>
+      document.querySelector(
+        'section[aria-labelledby="daily-total-heading"] [aria-hidden="true"] > span',
+      )?.textContent ?? null;
+    const tick = () => {
+      const figure = read();
+      if (figure && recorded.__seen.at(-1) !== figure)
+        recorded.__seen.push(figure);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+const seen = async (page: Page) =>
+  (await page.evaluate(() => (window as unknown as Recorded).__seen)).map(
+    (figure) => Number(figure.replace(/,/g, "")),
+  );
+
+async function arrangeCount(day: string, calories: number, quantity: number) {
+  const ada = await userClient("ada");
+  await clearDay(ada, day);
+  const kept = await seedFood(ada, { portion: "1 slice", calories });
+  await seedEntry(ada, { foodId: kept.id, day, quantity });
+  const added = await seedFood(ada, { portion: "1 slice", calories: 600 });
+  return added;
+}
+
+test("adding an Entry counts the total up to its new value (spec 019 AC-3)", async ({
+  page,
+}) => {
+  const day = "2001-08-01";
+  const added = await arrangeCount(day, 100, 10); // 1,000 kcal
+  await recordTotal(page);
+  await page.goto(`/?day=${day}`);
+  await expect(total(page)).toContainText("1,000");
+
+  await logOnCurrentDay(page, added.name, "Add 1"); // + 600
+
+  await expect(total(page)).toContainText("1,600");
+  await expect.poll(async () => (await seen(page)).at(-1)).toBe(1600);
+  const figures = await seen(page);
+  const between = figures.filter((figure) => figure > 1000 && figure < 1600);
+  expect(between.length, `saw ${figures.join(", ")}`).toBeGreaterThan(0);
+  // Counting up only: every figure is at least the one before it.
+  expect(figures).toEqual([...figures].sort((a, b) => a - b));
+});
+
+test("removing an Entry counts the total back down (spec 019 AC-3)", async ({
+  page,
+}) => {
+  const day = "2001-08-02";
+  const added = await arrangeCount(day, 100, 10);
+  const ada = await userClient("ada");
+  await seedEntry(ada, { foodId: added.id, day, quantity: 1 }); // 1,600 kcal
+  await recordTotal(page);
+  await page.goto(`/?day=${day}`);
+  await expect(total(page)).toContainText("1,600");
+
+  await page
+    .getByRole("list", { name: "Entries" })
+    .getByRole("listitem")
+    .filter({ hasText: added.name })
+    .getByRole("button")
+    .click();
+  await page
+    .getByRole("dialog", { name: "Edit entry" })
+    .getByRole("button", { name: "Remove entry" })
+    .click();
+
+  await expect.poll(async () => (await seen(page)).at(-1)).toBe(1000);
+  const figures = await seen(page);
+  expect(figures.some((figure) => figure > 1000 && figure < 1600)).toBe(true);
+  expect(figures).toEqual([...figures].sort((a, b) => b - a));
+});
+
+test("moving to another Day shows its total at once, with no counting (spec 019 AC-4)", async ({
+  page,
+}) => {
+  const first = "2001-08-03";
+  const second = "2001-08-04";
+  const ada = await userClient("ada");
+  await arrangeCount(first, 100, 10); // 1,000
+  await clearDay(ada, second);
+  const food = await seedFood(ada, { portion: "1 slice", calories: 100 });
+  await seedEntry(ada, { foodId: food.id, day: second, quantity: 18 }); // 1,800
+  await recordTotal(page);
+  await page.goto(`/?day=${first}`);
+  await expect(total(page)).toContainText("1,000");
+  await page.evaluate(() => {
+    (window as unknown as Recorded).__seen = [];
+  });
+
+  await page.getByRole("button", { name: "Next day" }).click();
+
+  await expect(total(page)).toContainText("1,800");
+  await page.waitForTimeout(600);
+  const figures = await seen(page);
+  expect(
+    figures.filter((figure) => figure !== 1800 && figure !== 1000),
+  ).toEqual([]);
+  expect(figures.at(-1)).toBe(1800);
+});
+
+test("with reduced motion the total jumps rather than counts (spec 019 AC-8)", async ({
+  page,
+}) => {
+  const day = "2001-08-05";
+  const added = await arrangeCount(day, 100, 10);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await recordTotal(page);
+  await page.goto(`/?day=${day}`);
+  await expect(total(page)).toContainText("1,000");
+
+  await logOnCurrentDay(page, added.name, "Add 1");
+
+  await expect.poll(async () => (await seen(page)).at(-1)).toBe(1600);
+  await page.waitForTimeout(600);
+  expect(await seen(page)).toEqual([1000, 1600]);
+});

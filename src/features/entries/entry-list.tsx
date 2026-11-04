@@ -4,22 +4,32 @@ import { SelectionCheck } from "@/components/selection/selection-check";
 import { useLongPress } from "@/components/selection/use-long-press";
 import { goalProgress } from "@/features/settings/domain";
 import { cn } from "@/lib/utils";
+import { useAnimatedNumber } from "./animated-number";
 import { dailyTotal, formatEntryDetail } from "./domain";
 import type { Entry } from "./types";
 
+const kcal = (value: number) => value.toLocaleString("en-AU");
+
+// The Day's total in large type. It counts to a new value when an Entry is added, changed or
+// removed, but shows another Day's value straight away (spec 019).
 export function DailyTotal({
   entries,
   goal = null,
   planned = false,
+  dayKey = "",
 }: {
   entries: readonly Entry[];
   /** The User's daily Goal in kcal, or none. */
   goal?: number | null;
   /** The Day is ahead of today, so this is what is planned, not what was eaten. */
   planned?: boolean;
+  /** Which Day this is: changing it shows the new total at once instead of counting to it. */
+  dayKey?: string;
 }) {
   const total = dailyTotal(entries);
   const progress = goalProgress(total, goal);
+  const counted = useAnimatedNumber(total, { resetKey: dayKey });
+  const finalText = kcal(total);
 
   return (
     <section
@@ -39,13 +49,24 @@ export function DailyTotal({
           Planned
         </p>
       ) : null}
-      <p className="flex items-baseline gap-2" aria-live="polite">
-        <span className="font-semibold text-5xl tabular-nums tracking-tight">
-          {total.toLocaleString("en-AU")}
+      {/* Screen readers hear only where the number ends up, once, never the count to it. */}
+      <p className="sr-only" aria-live="polite">
+        {goal !== null
+          ? `${finalText} of ${kcal(goal)} kcal`
+          : `${finalText} kcal`}
+      </p>
+      <p aria-hidden="true" className="flex items-baseline gap-2">
+        {/* As wide as the final figure from the first frame, so the Goal and "kcal" beside it stay
+            put while the digits count. */}
+        <span
+          className="text-right font-semibold text-5xl tabular-nums tracking-tight"
+          style={{ minWidth: `${finalText.length}ch` }}
+        >
+          {kcal(counted)}
         </span>{" "}
         {goal !== null ? (
           <span className="text-muted-foreground text-xl tabular-nums">
-            / {goal.toLocaleString("en-AU")}
+            / {kcal(goal)}
           </span>
         ) : null}{" "}
         <span className="text-lg text-muted-foreground">kcal</span>
@@ -65,7 +86,7 @@ export function DailyTotal({
               data-over={progress.over ? "" : undefined}
               style={{ width: `${progress.fraction * 100}%` }}
               className={cn(
-                "h-full rounded-full transition-[width]",
+                "h-full rounded-full transition-[width] duration-[400ms] ease-out motion-reduce:transition-none",
                 progress.over ? "bg-destructive" : "bg-primary",
               )}
             />

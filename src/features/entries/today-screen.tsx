@@ -243,6 +243,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
               entries={entries}
               goal={settings?.dailyGoal ?? null}
               planned={isPlanned(day, today)}
+              dayKey={day}
             />
             <BurnedRow day={day} today={today} entries={entries} />
             <EntryList

@@ -1,6 +1,7 @@
 "use client";
 
 import { type PointerEvent, useEffect, useRef, useState } from "react";
+import { prefersReducedMotion } from "@/lib/motion";
 import { type SwipeAxis, swipeAxis, swipeOutcome } from "./swipe";
 
 type Options = {
@@ -24,10 +25,6 @@ type Gesture = {
   dy: number;
   axis?: SwipeAxis;
 };
-
-const prefersReducedMotion = () =>
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Pulling past the last plannable Day moves the content only a quarter as far.
 const RUBBER_BAND = 0.25;
