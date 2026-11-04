@@ -51,8 +51,12 @@ _Avoid_: upload, bulk add, batch
 ### Logging
 
 **Entry**:
-A record that a User ate some number of Portions of one Food on one Day.
+A record that a User ate, or plans to eat, some number of Portions of one Food on one Day.
 _Avoid_: log item, meal, consumption, record
+
+**Planned Entry**:
+An Entry on a Day after today. It becomes an ordinary Entry when its Day arrives, with no confirming step, and until then no summary counts it.
+_Avoid_: future log, meal plan, scheduled entry
 
 **Quantity**:
 The number of Portions in an Entry (e.g. 1.5).
@@ -63,7 +67,7 @@ A calendar date as the User experiences it, with no time-of-day or time zone att
 _Avoid_: date-time, timestamp
 
 **Logged Day**:
-A Day with at least one Entry. Averages and Goal comparisons count Logged Days only, so a Day with no Entries is "not logged", never "zero".
+A Day up to and including today with at least one Entry. Averages and Goal comparisons count Logged Days only, so a Day with no Entries is "not logged", never "zero".
 _Avoid_: active day, tracked day
 
 **Log**:

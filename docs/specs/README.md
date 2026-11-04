@@ -30,5 +30,8 @@ Create one issue per row in the spec's **Issue breakdown** using the *Spec slice
 | 010 | [Summaries](010-summaries.md) | 008, 009 | Done | [#50](https://github.com/streetlampsalad/calories-counter/issues/50) |
 | 011 | [Insights](011-insights.md) | 010 | Done | [#55](https://github.com/streetlampsalad/calories-counter/issues/55) |
 | 012 | [Installable app](012-installable-app.md) | 002 | Done | [#62](https://github.com/streetlampsalad/calories-counter/issues/62) |
+| 013 | [Planned Entries](013-planned-entries.md) | 008, 010, 011 | In progress | [#68](https://github.com/streetlampsalad/calories-counter/issues/68) |
+| 014 | [Selection and bulk delete](014-selection-and-bulk-delete.md) | 003, 008 | In progress | [#72](https://github.com/streetlampsalad/calories-counter/issues/72) |
+| 015 | [Gestures, haptics and the picker keyboard](015-gestures-and-haptics.md) | 008, 013, 014 | In progress | [#76](https://github.com/streetlampsalad/calories-counter/issues/76) |
 
-The critical path is 001 → 002 → 003 → 004 → 008 → 010. Specs 005–007, 009, 011 and 012 can run alongside it once their dependencies land.
+The critical path is 001 → 002 → 003 → 004 → 008 → 010. Specs 005–007, 009, 011 and 012 can run alongside it once their dependencies land. Specs 013 and 014 are independent of each other, and spec 015's slices 1, 2 and 5 can start at any time; only its slices 3 and 4 wait on 014 and 013.

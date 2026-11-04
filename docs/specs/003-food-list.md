@@ -20,7 +20,7 @@ Each User has a **Food List**: their own Foods, each with a name, a **Portion** 
 - **AC-1**: Given I have Foods, when I open **Foods**, then I see them sorted alphabetically, each showing name, Portion and Calories (for example "Sourdough toast · 1 slice · 110 kcal").
 - **AC-2**: Given I type in the search box, then the list filters on every keystroke without a network request. Matching ignores case and accents and matches the start of any word: "toa" finds "Sourdough toast", and "cafe" finds "Café latte".
 - **AC-3**: Given I edit a Food's name, Portion or Calories and save, then the list updates immediately (optimistically). If the save fails, the change rolls back and I see an error with **Retry**.
-- **AC-4**: Given a Food has Entries, when I open its edit sheet, then I see "Changing this updates N past Entries", and after saving, every Daily Total that includes it reflects the new Calories (ADR 0001).
+- **AC-4**: Given a Food has Entries, when I open its edit sheet, then I see "Changing this updates N past Entries", and after saving, every Daily Total that includes it reflects the new Calories (ADR 0001). *(Wording superseded by spec 013 AC-7: "N Entries", including Planned Entries.)*
 - **AC-5**: Given a Food has no Entries, when I delete it and confirm, then it is permanently removed.
 - **AC-6**: Given a Food has Entries, when I remove it, then it is Archived rather than deleted. It disappears from the Food List and from the logging picker, and past Entries and totals are unchanged.
 - **AC-7**: Given I open **Archived Foods** from the Foods screen, then I can see Archived Foods and restore any of them to the Food List.

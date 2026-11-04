@@ -23,11 +23,13 @@ Logging what you ate takes two taps: pick a Food, pick a Quantity. The **Today**
   - a search box using spec 003's matching,
   - a **Recent** row of up to 8 Foods I logged most recently, as large chips,
   - all my non-Archived Foods sorted by how often I logged them in the last 90 days, then alphabetically.
+
+  *(Spec 013 AC-6: Recent and the ordering count only Days up to today. Spec 015 AC-1: the search box is not focused on open.)*
 - **AC-3**: Given I tap a Food in the picker, then Quantity buttons **½ 1 1½ 2 3** appear inline for that Food, with a **−/+** stepper (steps of 0.5, from 0.5 to 20). Tapping a Quantity adds the Entry, closes the sheet, and shows "Added 1½ × Sourdough toast" with **Undo**.
 - **AC-4**: Given I add, change or remove an Entry, then the Entry list and Daily Total update immediately, before the server responds. If the server rejects the change, it rolls back and I see "Couldn't save. Retry?"
 - **AC-5**: Given I tap an Entry, then a sheet lets me change its Quantity (the same buttons and stepper) or **Remove** it. Removing shows **Undo** for 5 seconds.
 - **AC-6**: Given I add a Food that is already logged on that Day, then a separate Entry is created (see Open questions).
-- **AC-7**: Given I tap the date header, then I can pick any past Day, or step a Day back or forward with arrows. Future Days are not selectable. The URL reflects the Day (`/?day=2026-11-03`), so the back button works.
+- **AC-7**: Given I tap the date header, then I can pick any past Day, or step a Day back or forward with arrows. Future Days are not selectable *(superseded by spec 013 AC-1: up to 14 Days ahead)*. The URL reflects the Day (`/?day=2026-11-03`), so the back button works.
 - **AC-8**: An Entry's Day is a calendar date with no time zone conversion. An Entry added at 11:50 pm stays on that date wherever the server is.
 - **AC-9**: A User can never read or write another User's Entries, and cannot create an Entry for another User's Food (pgTAP).
 - **AC-10**: Given a Food has Entries, then deleting it through the API fails (`on delete restrict`), which backs spec 003's archive rule.
