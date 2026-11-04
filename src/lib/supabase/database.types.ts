@@ -169,6 +169,9 @@ isOneToOne: false
 { Args: { "max_results"?: number,"q": string }; Returns: {
               "calories_per_100": number,"energy_kj_per_100": number,"id": string,"name": string,"source": string,"source_id": string,"unit": string
             }[]
+                           },
+"send_due_reminders":
+{ Args: Record<PropertyKey, never>; Returns: boolean
                            }
           }
           Enums: {

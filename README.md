@@ -34,3 +34,9 @@ Pushes to `main` that pass CI deploy automatically: migrations first, then the a
 ```bash
 ./scripts/setup-production.sh
 ```
+
+The daily Reminder ([spec 016](docs/specs/016-daily-reminder.md)) needs a push key, a scheduler secret and two Supabase Vault secrets in production. A second guided script sets them up, after the first:
+
+```bash
+./scripts/setup-reminders.sh
+```
