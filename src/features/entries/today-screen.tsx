@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import type { Food } from "@/features/foods/types";
 import { useSettings } from "@/features/settings/queries";
 import { DayHeader } from "./day-header";
-import { parseDay } from "./days";
-import { formatQuantity } from "./domain";
+import { isPlanned, parseDay } from "./days";
+import { addedMessage, formatQuantity } from "./domain";
 import { EditEntrySheet } from "./edit-entry-sheet";
 import { DailyTotal, EntryList } from "./entry-list";
 import { FoodPickerSheet } from "./picker-sheet";
@@ -98,7 +98,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
         calories: food.calories,
       },
     };
-    const added = toast(`Added ${formatQuantity(quantity)} × ${food.name}`, {
+    const added = toast(addedMessage(food.name, quantity, day, today), {
       action: {
         label: "Undo",
         onClick: () =>
@@ -137,7 +137,11 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
 
       {entries ? (
         <>
-          <DailyTotal entries={entries} goal={settings?.dailyGoal ?? null} />
+          <DailyTotal
+            entries={entries}
+            goal={settings?.dailyGoal ?? null}
+            planned={isPlanned(day, today)}
+          />
           <EntryList entries={entries} onSelect={setEditing} />
         </>
       ) : null}

@@ -35,16 +35,8 @@ const isRealDay = (value: string) =>
   /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) &&
   fromUtcDate(toUtcDate(value)) === value;
 
-// The Day named by a URL parameter, or today when it is missing, malformed, impossible or in
-// the future (ISO dates sort the same as they read).
-export function parseDay(
-  param: string | string[] | undefined,
-  today: string,
-): string {
-  const value = Array.isArray(param) ? param[0] : param;
-  if (!value || !isRealDay(value) || value > today) return today;
-  return value;
-}
+// How far ahead a User can plan meals (spec 013).
+export const PLAN_AHEAD_DAYS = 14;
 
 export function shiftDay(day: string, delta: number): string {
   const date = toUtcDate(day);
@@ -52,9 +44,28 @@ export function shiftDay(day: string, delta: number): string {
   return fromUtcDate(date);
 }
 
+export const lastPlannableDay = (today: string) =>
+  shiftDay(today, PLAN_AHEAD_DAYS);
+
+// A Day after today holds Planned Entries: ordinary Entries whose Day has not arrived (ADR 0004).
+export const isPlanned = (day: string, today: string) => day > today;
+
+// The Day named by a URL parameter, or today when it is missing, malformed, impossible or beyond
+// the last Day that can be planned (ISO dates sort the same as they read).
+export function parseDay(
+  param: string | string[] | undefined,
+  today: string,
+): string {
+  const value = Array.isArray(param) ? param[0] : param;
+  if (!value || !isRealDay(value) || value > lastPlannableDay(today))
+    return today;
+  return value;
+}
+
 export function dayLabel(day: string, today: string): string {
   if (day === today) return "Today";
   if (day === shiftDay(today, -1)) return "Yesterday";
+  if (day === shiftDay(today, 1)) return "Tomorrow";
   const date = toUtcDate(day);
   const label = `${WEEKDAYS[date.getUTCDay()]} ${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]}`;
   return date.getUTCFullYear() === toUtcDate(today).getUTCFullYear()

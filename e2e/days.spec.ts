@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { userClient } from "./support/db";
-import { seedFood } from "./support/seed";
+import { clearDay, seedEntry, seedFood } from "./support/seed";
 
 // A date on this machine's calendar, which is the one the browser uses.
 const daysAgo = (count: number) => {
@@ -9,6 +9,8 @@ const daysAgo = (count: number) => {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
+
+const daysAhead = (count: number) => daysAgo(-count);
 
 const heading = (page: Page) => page.getByRole("heading", { level: 1 });
 const entries = (page: Page) =>
@@ -36,7 +38,7 @@ async function logOnCurrentDay(page: Page, foodName: string, label: string) {
 test("arrows step a Day at a time, and the URL follows", async ({ page }) => {
   await page.goto("/");
   await expect(heading(page)).toHaveText("Today");
-  await expect(page.getByRole("button", { name: "Next day" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Next day" })).toBeEnabled();
 
   await page.getByRole("button", { name: "Previous day" }).click();
   await expect(heading(page)).toHaveText("Yesterday");
@@ -84,17 +86,122 @@ test("the date picker jumps to any past Day", async ({ page }) => {
   await expect(page).toHaveURL("/?day=2001-07-04");
 });
 
-test("the date picker will not go to a future Day", async ({ page }) => {
+test("the date picker will not go beyond the last Day that can be planned", async ({
+  page,
+}) => {
   await page.goto("/");
   await expect(page.getByLabel("Pick a day")).toHaveAttribute(
     "max",
-    /^\d{4}-\d{2}-\d{2}$/,
+    daysAhead(14),
   );
 
-  await page.getByLabel("Pick a day").fill("2999-01-01");
+  await page.getByLabel("Pick a day").fill(daysAhead(15));
 
   await expect(heading(page)).toHaveText("Today");
   await expect(page).toHaveURL("/");
+});
+
+test("the date picker goes to a Day to plan", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByLabel("Pick a day").fill(daysAhead(14));
+
+  await expect(page).toHaveURL(`/?day=${daysAhead(14)}`);
+});
+
+test("Days can be planned up to 14 ahead, and no further", async ({ page }) => {
+  await page.goto(`/?day=${daysAhead(13)}`);
+  await page.getByRole("button", { name: "Next day" }).click();
+  await expect(page).toHaveURL(`/?day=${daysAhead(14)}`);
+  await expect(page.getByRole("button", { name: "Next day" })).toBeDisabled();
+
+  // A link past the limit lands on today.
+  await page.goto(`/?day=${daysAhead(15)}`);
+  await expect(heading(page)).toHaveText("Today");
+});
+
+test("planning tomorrow: the total says Planned, and the Entry is for tomorrow only", async ({
+  page,
+}) => {
+  const ada = await userClient("ada");
+  const food = await seedFood(ada, { portion: "1 slice", calories: 100 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Next day" }).click();
+  await expect(heading(page)).toHaveText("Tomorrow");
+  await expect(
+    page.getByRole("region", { name: "Planned total" }),
+  ).toBeVisible();
+
+  await logOnCurrentDay(page, food.name, "Add 1");
+
+  await expect(
+    page.getByText(`Planned 1 × ${food.name} for tomorrow`),
+  ).toBeVisible();
+  await expect(entries(page).filter({ hasText: food.name })).toHaveCount(1);
+  await expect(
+    page.getByRole("region", { name: "Planned total" }),
+  ).toContainText("100");
+
+  await page.getByRole("button", { name: "Previous day" }).click();
+  await expect(heading(page)).toHaveText("Today");
+  await expect(page.getByRole("region", { name: "Daily total" })).toBeVisible();
+  await expect(entries(page).filter({ hasText: food.name })).toHaveCount(0);
+
+  const { data } = await ada
+    .from("entries")
+    .select("day")
+    .eq("food_id", food.id);
+  expect(data).toEqual([{ day: daysAhead(1) }]);
+  await ada.from("entries").delete().eq("food_id", food.id);
+});
+
+test("a later planned Day names its date in the toast", async ({ page }) => {
+  const ada = await userClient("ada");
+  const food = await seedFood(ada, { portion: "1 slice", calories: 100 });
+  await page.goto(`/?day=${daysAhead(3)}`);
+  await expect(
+    page.getByRole("region", { name: "Planned total" }),
+  ).toBeVisible();
+
+  await logOnCurrentDay(page, food.name, "Add 1");
+
+  await expect(
+    page.getByText(
+      new RegExp(`^Planned 1 × ${food.name} for \\w{3} \\d{1,2} \\w{3}`),
+    ),
+  ).toBeVisible();
+  await ada.from("entries").delete().eq("food_id", food.id);
+});
+
+test.describe("when a planned Day arrives", () => {
+  test.use({ timezoneId: "Australia/Sydney" });
+
+  test("its Entries are ordinary Entries and count in the Daily total", async ({
+    page,
+  }) => {
+    const ada = await userClient("ada");
+    await clearDay(ada, "2026-11-04");
+    const food = await seedFood(ada, { portion: "1 slice", calories: 120 });
+    await seedEntry(ada, { foodId: food.id, day: "2026-11-04", quantity: 2 });
+
+    // The day before: it is planned.
+    await page.clock.setFixedTime(new Date("2026-11-03T02:00:00Z"));
+    await page.goto("/?day=2026-11-04");
+    await expect(heading(page)).toHaveText("Tomorrow");
+    await expect(
+      page.getByRole("region", { name: "Planned total" }),
+    ).toContainText("240");
+
+    // The day itself: the same Entry, with nothing done to it.
+    await page.clock.setFixedTime(new Date("2026-11-04T02:00:00Z"));
+    await page.goto("/");
+    await expect(heading(page)).toHaveText("Today");
+    await expect(
+      page.getByRole("region", { name: "Daily total" }),
+    ).toContainText("240");
+    await expect(entries(page).filter({ hasText: food.name })).toHaveCount(1);
+    await clearDay(ada, "2026-11-04");
+  });
 });
 
 test("a Day can be opened directly from a link", async ({ page }) => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addedMessage,
   dailyTotal,
   entryCalories,
   formatEntryDetail,
@@ -98,5 +99,27 @@ describe("stepQuantity", () => {
     expect(stepQuantity(0.5, -1)).toBe(0.5);
     expect(stepQuantity(20, 1)).toBe(20);
     expect(stepQuantity(19.5, 1)).toBe(20);
+  });
+});
+
+describe("addedMessage", () => {
+  const today = "2026-11-03";
+
+  it("says a Food was added when the Day is today or earlier", () => {
+    expect(addedMessage("Sourdough toast", 1.5, "2026-11-03", today)).toBe(
+      "Added 1½ × Sourdough toast",
+    );
+    expect(addedMessage("Sourdough toast", 1, "2026-11-02", today)).toBe(
+      "Added 1 × Sourdough toast",
+    );
+  });
+
+  it("says it was planned, and for when, when the Day is ahead", () => {
+    expect(addedMessage("Sourdough toast", 1.5, "2026-11-04", today)).toBe(
+      "Planned 1½ × Sourdough toast for tomorrow",
+    );
+    expect(addedMessage("Sourdough toast", 1.5, "2026-11-06", today)).toBe(
+      "Planned 1½ × Sourdough toast for Fri 6 Nov",
+    );
   });
 });

@@ -85,7 +85,9 @@ test("half portions add up without drifting", async ({ page }) => {
   await expect(total(page)).not.toContainText("56");
 });
 
-test("an unusable or future Day falls back to Today", async ({ page }) => {
+test("an unusable Day, or one too far ahead, falls back to Today", async ({
+  page,
+}) => {
   for (const param of ["2999-01-01", "nonsense", "2026-02-30"]) {
     await page.goto(`/?day=${param}`);
     await expect(

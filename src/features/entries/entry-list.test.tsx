@@ -98,6 +98,37 @@ describe("DailyTotal", () => {
   });
 });
 
+describe("DailyTotal on a planned Day", () => {
+  it("calls itself the planned total, to everyone", () => {
+    render(<DailyTotal entries={[entry("Toast", 2, 110)]} planned />);
+
+    const total = screen.getByRole("region", { name: "Planned total" });
+    expect(total).toHaveTextContent("220");
+    expect(total).toHaveTextContent("Planned");
+    expect(
+      screen.queryByRole("region", { name: "Daily total" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("still shows progress towards the Goal", () => {
+    render(
+      <DailyTotal entries={[entry("Feast", 1, 1840)]} goal={2200} planned />,
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Planned total" }),
+    ).toHaveTextContent("360 left");
+  });
+
+  it("is a plain Daily total otherwise", () => {
+    render(<DailyTotal entries={[entry("Toast", 2, 110)]} />);
+
+    expect(
+      screen.getByRole("region", { name: "Daily total" }),
+    ).not.toHaveTextContent("Planned");
+  });
+});
+
 describe("DailyTotal with a Goal", () => {
   const feast = (calories: number) => [entry("Feast", 1, calories)];
   const region = () => screen.getByRole("region", { name: "Daily total" });

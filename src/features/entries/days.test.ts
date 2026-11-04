@@ -3,6 +3,8 @@ import {
   dayHref,
   dayLabel,
   dayOfWeek,
+  isPlanned,
+  lastPlannableDay,
   listDays,
   localDateString,
   monthStart,
@@ -81,8 +83,13 @@ describe("parseDay", () => {
     expect(parseDay("2001-01-01", today)).toBe("2001-01-01");
   });
 
-  it("never allows a future Day", () => {
-    expect(parseDay("2026-11-04", today)).toBe(today);
+  it("allows Days up to 14 ahead, to plan meals", () => {
+    expect(parseDay("2026-11-04", today)).toBe("2026-11-04");
+    expect(parseDay("2026-11-17", today)).toBe("2026-11-17");
+  });
+
+  it("falls back to today beyond the last Day that can be planned", () => {
+    expect(parseDay("2026-11-18", today)).toBe(today);
     expect(parseDay("2027-01-01", today)).toBe(today);
   });
 
@@ -110,12 +117,33 @@ describe("shiftDay", () => {
   });
 });
 
+describe("lastPlannableDay", () => {
+  it("is 14 Days after today, across a month and a year", () => {
+    expect(lastPlannableDay("2026-11-03")).toBe("2026-11-17");
+    expect(lastPlannableDay("2026-12-25")).toBe("2027-01-08");
+  });
+});
+
+describe("isPlanned", () => {
+  it("is true only for Days after today", () => {
+    expect(isPlanned("2026-11-04", "2026-11-03")).toBe(true);
+    expect(isPlanned("2026-11-03", "2026-11-03")).toBe(false);
+    expect(isPlanned("2026-11-02", "2026-11-03")).toBe(false);
+  });
+});
+
 describe("dayLabel", () => {
   const today = "2026-11-03";
 
-  it("calls today and yesterday by name", () => {
+  it("calls yesterday, today and tomorrow by name", () => {
     expect(dayLabel("2026-11-03", today)).toBe("Today");
     expect(dayLabel("2026-11-02", today)).toBe("Yesterday");
+    expect(dayLabel("2026-11-04", today)).toBe("Tomorrow");
+  });
+
+  it("names planned Days further ahead by weekday, date and month", () => {
+    expect(dayLabel("2026-11-06", today)).toBe("Fri 6 Nov");
+    expect(dayLabel("2027-01-08", "2026-12-25")).toBe("Fri 8 Jan 2027");
   });
 
   it("names other Days by weekday, date and month", () => {

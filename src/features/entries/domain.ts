@@ -1,4 +1,5 @@
 import { formatCalories } from "@/features/foods/domain";
+import { dayLabel, isPlanned } from "./days";
 import type { Entry } from "./types";
 
 export const QUANTITY_STEP = 0.5;
@@ -26,6 +27,19 @@ export const dailyTotal = (entries: readonly Entry[]) =>
 
 export const formatEntryDetail = (entry: Entry) =>
   `${formatQuantity(entry.quantity)} × ${entry.food.portion} · ${formatCalories(entryCalories(entry))}`;
+
+// The toast after logging: a Planned Entry says so, and for which Day.
+export function addedMessage(
+  foodName: string,
+  quantity: number,
+  day: string,
+  today: string,
+): string {
+  const what = `${formatQuantity(quantity)} × ${foodName}`;
+  if (!isPlanned(day, today)) return `Added ${what}`;
+  const label = dayLabel(day, today);
+  return `Planned ${what} for ${label === "Tomorrow" ? "tomorrow" : label}`;
+}
 
 export function stepQuantity(quantity: number, direction: 1 | -1): number {
   const next = quantity + direction * QUANTITY_STEP;

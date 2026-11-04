@@ -8,10 +8,13 @@ import type { Entry } from "./types";
 export function DailyTotal({
   entries,
   goal = null,
+  planned = false,
 }: {
   entries: readonly Entry[];
   /** The User's daily Goal in kcal, or none. */
   goal?: number | null;
+  /** The Day is ahead of today, so this is what is planned, not what was eaten. */
+  planned?: boolean;
 }) {
   const total = dailyTotal(entries);
   const progress = goalProgress(total, goal);
@@ -22,8 +25,16 @@ export function DailyTotal({
       className="flex flex-col items-center gap-3 rounded-2xl bg-muted px-4 py-6"
     >
       <h2 id="daily-total-heading" className="sr-only">
-        Daily total
+        {planned ? "Planned total" : "Daily total"}
       </h2>
+      {planned ? (
+        <p
+          aria-hidden="true"
+          className="font-medium text-muted-foreground text-sm uppercase tracking-wide"
+        >
+          Planned
+        </p>
+      ) : null}
       <p className="flex items-baseline gap-2" aria-live="polite">
         <span className="font-semibold text-5xl tabular-nums tracking-tight">
           {total.toLocaleString("en-AU")}

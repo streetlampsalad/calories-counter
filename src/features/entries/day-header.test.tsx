@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DayHeader } from "./day-header";
 
 const TODAY = "2026-11-03";
+const LAST_PLANNABLE = "2026-11-17";
 
 function open(day: string) {
   const onChange = vi.fn();
@@ -36,13 +37,29 @@ describe("DayHeader", () => {
     expect(onChange).toHaveBeenCalledWith("2026-11-01");
   });
 
-  it("cannot step into the future", async () => {
+  it("steps forward from today, to plan", async () => {
     const { onChange } = open(TODAY);
+
+    await userEvent.click(screen.getByRole("button", { name: "Next day" }));
+
+    expect(onChange).toHaveBeenCalledWith("2026-11-04");
+  });
+
+  it("cannot step past the last Day that can be planned", async () => {
+    const { onChange } = open(LAST_PLANNABLE);
 
     const next = screen.getByRole("button", { name: "Next day" });
     expect(next).toBeDisabled();
     await userEvent.click(next);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("names tomorrow", () => {
+    open("2026-11-04");
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Tomorrow" }),
+    ).toBeInTheDocument();
   });
 
   it("can step forward onto today", async () => {
@@ -61,13 +78,13 @@ describe("DayHeader", () => {
     expect(onChange).toHaveBeenCalledWith("2025-12-31");
   });
 
-  it("offers the phone's date picker, showing the Day and stopping at today", () => {
+  it("offers the phone's date picker, showing the Day and stopping at the last plannable Day", () => {
     open("2026-10-20");
 
     const picker = screen.getByLabelText("Pick a day");
     expect(picker).toHaveAttribute("type", "date");
     expect(picker).toHaveValue("2026-10-20");
-    expect(picker).toHaveAttribute("max", TODAY);
+    expect(picker).toHaveAttribute("max", LAST_PLANNABLE);
   });
 
   it("goes to a Day chosen in the date picker", () => {
@@ -90,11 +107,21 @@ describe("DayHeader", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("refuses a future Day even if the picker allows one", () => {
+  it("goes to a planned Day chosen in the date picker", () => {
     const { onChange } = open(TODAY);
 
     fireEvent.change(screen.getByLabelText("Pick a day"), {
       target: { value: "2026-11-09" },
+    });
+
+    expect(onChange).toHaveBeenCalledWith("2026-11-09");
+  });
+
+  it("refuses a Day beyond the last one that can be planned", () => {
+    const { onChange } = open(TODAY);
+
+    fireEvent.change(screen.getByLabelText("Pick a day"), {
+      target: { value: "2026-11-18" },
     });
 
     expect(onChange).not.toHaveBeenCalled();
