@@ -436,3 +436,52 @@ test.describe("removing selected Foods", () => {
     await expect(foodList(page).getByRole("listitem")).toHaveCount(4);
   });
 });
+
+// Bug #83: starting selection must not shift any row's text; the tick goes at the right-hand end.
+test.describe("the selection tick", () => {
+  async function expectStill(
+    row: ReturnType<Page["getByRole"]>,
+    name: string,
+    start: () => Promise<void>,
+  ) {
+    const text = row.getByText(name, { exact: true });
+    const before = await text.boundingBox();
+
+    await start();
+
+    await expect(row).toHaveAttribute("aria-pressed", "true");
+    const after = await text.boundingBox();
+    expect(after?.x).toBeCloseTo(before?.x ?? Number.NaN, 0);
+    expect(after?.y).toBeCloseTo(before?.y ?? Number.NaN, 0);
+    const tick = await row
+      .locator('[data-slot="selection-check"]')
+      .boundingBox();
+    const box = await row.boundingBox();
+    if (!tick || !box || !after) throw new Error("Row not on screen");
+    expect(tick.x).toBeGreaterThan(after.x + after.width);
+    expect(tick.x + tick.width).toBeLessThanOrEqual(box.x + box.width + 0.5);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+
+  test("leaves an Entry's text where it was, with the tick on the right", async ({
+    page,
+  }) => {
+    const day = "2001-06-28";
+    const { names } = await arrange(day);
+    await page.goto(`/?day=${day}`);
+    const target = row(page, names[0]);
+
+    await expectStill(target, names[0], () => hold(page, target));
+  });
+
+  test("leaves a Food's text where it was, with the tick on the right", async ({
+    page,
+  }) => {
+    const { token, logged } = await arrangeFoods("2001-06-29");
+    await page.goto("/foods");
+    await searchBox(page).fill(token);
+    const target = foodRow(page, logged[0].word);
+
+    await expectStill(target, logged[0].name, () => hold(page, target));
+  });
+});

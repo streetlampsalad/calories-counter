@@ -64,13 +64,14 @@ function FoodRow({
           picked && "bg-muted",
         )}
       >
-        {selection.selecting ? <SelectionCheck picked={picked} /> : null}
-        <span className="flex min-w-0 flex-col items-start gap-0.5">
+        <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
           <span className="font-medium">{food.name}</span>
           <span className="text-muted-foreground text-sm">
             {formatFoodDetail(food)}
           </span>
         </span>
+        {/* At the end, so starting selection never shifts the text (bug #83). */}
+        {selection.selecting ? <SelectionCheck picked={picked} /> : null}
       </button>
     </li>
   );

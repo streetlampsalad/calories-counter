@@ -175,25 +175,35 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
       {...swipe.gestureProps}
       className="flex flex-1 touch-pan-y touch-pinch-zoom select-none flex-col gap-4"
     >
-      {selection.selecting ? (
-        <SelectionBar
-          count={selection.count}
-          onSelectAll={() =>
-            selection.selectAll((entries ?? []).map((e) => e.id))
-          }
-          onDelete={removePicked}
-          onClear={selection.clear}
-        />
-      ) : (
-        <DayHeader
-          day={day}
-          today={today}
-          onChange={(next) => {
-            setSlide(null);
-            goToDay(next);
-          }}
-        />
-      )}
+      {/* The selection bar sits over the Day header rather than replacing it, so the header's
+          height (taller with the Today button) is kept and the list never jumps (bug #83). */}
+      <div className="relative">
+        <div
+          inert={selection.selecting}
+          className={cn(selection.selecting && "invisible")}
+        >
+          <DayHeader
+            day={day}
+            today={today}
+            onChange={(next) => {
+              setSlide(null);
+              goToDay(next);
+            }}
+          />
+        </div>
+        {selection.selecting ? (
+          <div className="absolute inset-x-0 top-0">
+            <SelectionBar
+              count={selection.count}
+              onSelectAll={() =>
+                selection.selectAll((entries ?? []).map((e) => e.id))
+              }
+              onDelete={removePicked}
+              onClear={selection.clear}
+            />
+          </div>
+        ) : null}
+      </div>
 
       {/* Follows the finger while swiping, and a new Day's content slides in from its side. */}
       <div
