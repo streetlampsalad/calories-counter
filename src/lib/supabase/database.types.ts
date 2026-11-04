@@ -136,6 +136,16 @@ isOneToOne: false
 "increment_ai_usage":
 { Args: { "max_per_day": number,"usage_kind": string }; Returns: boolean
                            },
+"remove_foods":
+{ Args: { "ids": (string)[] }; Returns: {
+              "food_id": string,"outcome": string
+            }[]
+                           },
+"restore_foods":
+{ Args: { "ids": (string)[] }; Returns: {
+              "food_id": string
+            }[]
+                           },
 "search_reference_foods":
 { Args: { "max_results"?: number,"q": string }; Returns: {
               "calories_per_100": number,"energy_kj_per_100": number,"id": string,"name": string,"source": string,"source_id": string,"unit": string
