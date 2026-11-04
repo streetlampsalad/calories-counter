@@ -77,8 +77,8 @@ test("opens on This week with the headline numbers", async ({ page }) => {
 
 test("Entries planned for later Days are in no Period", async ({ page }) => {
   const { fay, hundred } = await arrange();
-  await seedEntry(fay, { foodId: hundred.id, day: "2026-11-04", quantity: 30 });
-  await seedEntry(fay, { foodId: hundred.id, day: "2026-11-10", quantity: 30 });
+  await seedEntry(fay, { foodId: hundred.id, day: "2026-11-04", quantity: 20 });
+  await seedEntry(fay, { foodId: hundred.id, day: "2026-11-10", quantity: 20 });
 
   await page.goto("/summary");
   await expect(totals(page)).toContainText("2,500");
