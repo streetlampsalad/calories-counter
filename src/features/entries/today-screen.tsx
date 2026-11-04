@@ -4,18 +4,22 @@ import { Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { SelectionBar } from "@/components/selection/selection-bar";
+import { useSelection } from "@/components/selection/use-selection";
 import { Button } from "@/components/ui/button";
 import type { Food } from "@/features/foods/types";
 import { useSettings } from "@/features/settings/queries";
 import { DayHeader } from "./day-header";
 import { isPlanned, parseDay } from "./days";
-import { addedMessage, formatQuantity } from "./domain";
+import { addedMessage, formatQuantity, removedEntriesMessage } from "./domain";
 import { EditEntrySheet } from "./edit-entry-sheet";
 import { DailyTotal, EntryList } from "./entry-list";
 import { FoodPickerSheet } from "./picker-sheet";
 import {
+  useAddEntries,
   useAddEntry,
   useDayEntries,
+  useRemoveEntries,
   useRemoveEntry,
   useUpdateEntryQuantity,
 } from "./queries";
@@ -48,7 +52,10 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
   };
   const addEntry = useAddEntry();
   const removeEntry = useRemoveEntry();
+  const addEntries = useAddEntries();
+  const removeEntries = useRemoveEntries();
   const updateQuantity = useUpdateEntryQuantity();
+  const selection = useSelection();
   const [picking, setPicking] = useState(false);
   const [editing, setEditing] = useState<Entry | null>(null);
 
@@ -80,6 +87,36 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
           addEntry.mutate(entry, {
             onError: (error) => toast.error(error.message),
           }),
+      },
+    });
+  }
+
+  // Everything picked goes at once, with no confirmation: Undo brings the same Entries back.
+  function removePicked() {
+    const picked = (entries ?? []).filter((entry) =>
+      selection.isSelected(entry.id),
+    );
+    if (picked.length === 0) return;
+    selection.clear();
+    const removed = toast(removedEntriesMessage(picked.length), {
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () =>
+          addEntries.mutate(picked, {
+            onError: (error) => toast.error(error.message),
+          }),
+      },
+    });
+    removeEntries.mutate(picked, {
+      onError: (error) => {
+        toast.dismiss(removed);
+        toast.error(error.message, {
+          action: {
+            label: "Retry",
+            onClick: () => removeEntries.mutate(picked),
+          },
+        });
       },
     });
   }
@@ -119,7 +156,18 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
 
   return (
     <main className="flex flex-1 flex-col gap-4">
-      <DayHeader day={day} today={today} onChange={goToDay} />
+      {selection.selecting ? (
+        <SelectionBar
+          count={selection.count}
+          onSelectAll={() =>
+            selection.selectAll((entries ?? []).map((e) => e.id))
+          }
+          onDelete={removePicked}
+          onClear={selection.clear}
+        />
+      ) : (
+        <DayHeader day={day} today={today} onChange={goToDay} />
+      )}
 
       {isPending ? <Skeleton /> : null}
 
@@ -142,19 +190,30 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
             goal={settings?.dailyGoal ?? null}
             planned={isPlanned(day, today)}
           />
-          <EntryList entries={entries} onSelect={setEditing} />
+          <EntryList
+            entries={entries}
+            onSelect={setEditing}
+            selection={{
+              selecting: selection.selecting,
+              isSelected: selection.isSelected,
+              onStart: (entry) => selection.start(entry.id),
+              onToggle: (entry) => selection.toggle(entry.id),
+            }}
+          />
         </>
       ) : null}
 
-      {/* Within thumb reach, just above the bottom navigation. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+0.75rem)] z-30 mx-auto flex max-w-md justify-end px-4">
-        <Button
-          onClick={() => setPicking(true)}
-          className="pointer-events-auto h-14 gap-2 rounded-full px-6 text-base shadow-lg"
-        >
-          <Plus aria-hidden="true" /> Add
-        </Button>
-      </div>
+      {/* Within thumb reach, just above the bottom navigation. Out of the way while picking. */}
+      {selection.selecting ? null : (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+0.75rem)] z-30 mx-auto flex max-w-md justify-end px-4">
+          <Button
+            onClick={() => setPicking(true)}
+            className="pointer-events-auto h-14 gap-2 rounded-full px-6 text-base shadow-lg"
+          >
+            <Plus aria-hidden="true" /> Add
+          </Button>
+        </div>
+      )}
 
       <EditEntrySheet
         entry={editing}

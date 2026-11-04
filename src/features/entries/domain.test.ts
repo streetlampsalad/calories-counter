@@ -6,6 +6,7 @@ import {
   formatEntryDetail,
   formatQuantity,
   QUANTITY_STEP,
+  removedEntriesMessage,
   stepQuantity,
 } from "./domain";
 import type { Entry } from "./types";
@@ -121,5 +122,12 @@ describe("addedMessage", () => {
     expect(addedMessage("Sourdough toast", 1.5, "2026-11-06", today)).toBe(
       "Planned 1½ × Sourdough toast for Fri 6 Nov",
     );
+  });
+});
+
+describe("removedEntriesMessage", () => {
+  it("counts the Entries removed", () => {
+    expect(removedEntriesMessage(4)).toBe("Removed 4 entries");
+    expect(removedEntriesMessage(1)).toBe("Removed 1 entry");
   });
 });

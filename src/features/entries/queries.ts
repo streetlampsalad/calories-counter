@@ -77,6 +77,19 @@ function refreshAfterChange(queryClient: QueryClient, day: string) {
 
 const SAVE_FAILED = "Couldn't save that. Check your connection and try again.";
 
+const toRow = (entry: Entry) => ({
+  id: entry.id,
+  food_id: entry.food.id,
+  day: entry.day,
+  quantity: entry.quantity,
+  created_at: entry.createdAt,
+});
+
+const newestFirst = (entries: Entry[]) =>
+  [...entries].sort(
+    (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+  );
+
 // Also used to bring a removed Entry back (Undo): the same id and time put it back in place.
 export function useAddEntry() {
   const queryClient = useQueryClient();
@@ -84,13 +97,7 @@ export function useAddEntry() {
   return useMutation({
     mutationFn: async (entry: Entry) => {
       const supabase = createClient();
-      const { error } = await supabase.from("entries").insert({
-        id: entry.id,
-        food_id: entry.food.id,
-        day: entry.day,
-        quantity: entry.quantity,
-        created_at: entry.createdAt,
-      });
+      const { error } = await supabase.from("entries").insert(toRow(entry));
       if (error) throw new Error(SAVE_FAILED);
     },
     onMutate: (entry) =>
@@ -99,6 +106,65 @@ export function useAddEntry() {
       queryClient.setQueryData(entryKeys.day(entry.day), context?.previous),
     onSettled: (_data, _error, entry) =>
       refreshAfterChange(queryClient, entry.day),
+  });
+}
+
+// Several Entries of one Day at once: Undo for a bulk delete (spec 014). One request, and each
+// Entry keeps its own id and time, so the list looks as it did.
+export function useAddEntries() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (entries: Entry[]) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("entries")
+        .insert(entries.map(toRow));
+      if (error) throw new Error(SAVE_FAILED);
+    },
+    onMutate: (entries) =>
+      patchDay(queryClient, entries[0].day, (current) =>
+        newestFirst([...entries, ...current]),
+      ),
+    onError: (_error, entries, context) =>
+      queryClient.setQueryData(
+        entryKeys.day(entries[0].day),
+        context?.previous,
+      ),
+    onSettled: (_data, _error, entries) =>
+      refreshAfterChange(queryClient, entries[0].day),
+  });
+}
+
+// Several Entries of one Day at once (spec 014): all go from the list immediately, or all come back.
+export function useRemoveEntries() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (entries: Entry[]) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("entries")
+        .delete()
+        .in(
+          "id",
+          entries.map((entry) => entry.id),
+        );
+      if (error) throw new Error(SAVE_FAILED);
+    },
+    onMutate: (entries) => {
+      const gone = new Set(entries.map((entry) => entry.id));
+      return patchDay(queryClient, entries[0].day, (current) =>
+        current.filter((entry) => !gone.has(entry.id)),
+      );
+    },
+    onError: (_error, entries, context) =>
+      queryClient.setQueryData(
+        entryKeys.day(entries[0].day),
+        context?.previous,
+      ),
+    onSettled: (_data, _error, entries) =>
+      refreshAfterChange(queryClient, entries[0].day),
   });
 }
 

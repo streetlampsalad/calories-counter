@@ -41,6 +41,9 @@ export function addedMessage(
   return `Planned ${what} for ${label === "Tomorrow" ? "tomorrow" : label}`;
 }
 
+export const removedEntriesMessage = (count: number) =>
+  `Removed ${count} ${count === 1 ? "entry" : "entries"}`;
+
 export function stepQuantity(quantity: number, direction: 1 | -1): number {
   const next = quantity + direction * QUANTITY_STEP;
   return Math.min(MAX_QUANTITY, Math.max(MIN_QUANTITY, next));

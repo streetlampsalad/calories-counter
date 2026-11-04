@@ -1,5 +1,7 @@
 "use client";
 
+import { Check } from "lucide-react";
+import { useLongPress } from "@/components/selection/use-long-press";
 import { goalProgress } from "@/features/settings/domain";
 import { cn } from "@/lib/utils";
 import { dailyTotal, formatEntryDetail } from "./domain";
@@ -82,13 +84,92 @@ export function DailyTotal({
   );
 }
 
+/** Selection mode (spec 014): holding an Entry starts it, and taps then pick instead of open. */
+export type EntrySelection = {
+  selecting: boolean;
+  isSelected: (id: string) => boolean;
+  onStart: (entry: Entry) => void;
+  onToggle: (entry: Entry) => void;
+};
+
 type Props = {
   entries: readonly Entry[];
   /** When given, each Entry is a button that opens it. */
   onSelect?: (entry: Entry) => void;
+  selection?: EntrySelection;
 };
 
-export function EntryList({ entries, onSelect }: Props) {
+function EntryRow({
+  entry,
+  onSelect,
+  selection,
+}: {
+  entry: Entry;
+  onSelect?: (entry: Entry) => void;
+  selection?: EntrySelection;
+}) {
+  const press = useLongPress({
+    onLongPress: () =>
+      selection?.selecting
+        ? selection.onToggle(entry)
+        : selection?.onStart(entry),
+    onPress: () =>
+      selection?.selecting ? selection.onToggle(entry) : onSelect?.(entry),
+  });
+  const selecting = selection?.selecting ?? false;
+  const picked = selecting && selection?.isSelected(entry.id) === true;
+
+  const content = (
+    <>
+      {selecting ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex size-6 shrink-0 items-center justify-center rounded-full border-2",
+            picked
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-muted-foreground/50",
+          )}
+        >
+          {picked ? <Check className="size-4" /> : null}
+        </span>
+      ) : null}
+      <span className="flex min-w-0 flex-col items-start gap-0.5">
+        <span className="font-medium">{entry.food.name}</span>
+        <span className="text-muted-foreground text-sm">
+          {formatEntryDetail(entry)}
+        </span>
+      </span>
+    </>
+  );
+
+  if (!onSelect && !selection) {
+    return (
+      <div className="flex min-h-14 flex-col justify-center gap-0.5 py-3">
+        <span className="font-medium">{entry.food.name}</span>
+        <span className="text-muted-foreground text-sm">
+          {formatEntryDetail(entry)}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      aria-pressed={selecting ? picked : undefined}
+      {...press}
+      className={cn(
+        "flex min-h-14 w-full select-none items-center gap-3 py-3 text-left [-webkit-touch-callout:none]",
+        picked && "bg-muted",
+      )}
+    >
+      {content}
+    </button>
+  );
+}
+
+export function EntryList({ entries, onSelect, selection }: Props) {
   if (entries.length === 0) {
     return (
       <p className="py-10 text-center text-muted-foreground">
@@ -99,33 +180,11 @@ export function EntryList({ entries, onSelect }: Props) {
 
   return (
     <ul aria-label="Entries">
-      {entries.map((entry) => {
-        const content = (
-          <>
-            <span className="font-medium">{entry.food.name}</span>
-            <span className="text-muted-foreground text-sm">
-              {formatEntryDetail(entry)}
-            </span>
-          </>
-        );
-        return (
-          <li key={entry.id} className="border-b last:border-b-0">
-            {onSelect ? (
-              <button
-                type="button"
-                onClick={() => onSelect(entry)}
-                className="flex min-h-14 w-full flex-col items-start justify-center gap-0.5 py-3 text-left"
-              >
-                {content}
-              </button>
-            ) : (
-              <div className="flex min-h-14 flex-col justify-center gap-0.5 py-3">
-                {content}
-              </div>
-            )}
-          </li>
-        );
-      })}
+      {entries.map((entry) => (
+        <li key={entry.id} className="border-b last:border-b-0">
+          <EntryRow entry={entry} onSelect={onSelect} selection={selection} />
+        </li>
+      ))}
     </ul>
   );
 }

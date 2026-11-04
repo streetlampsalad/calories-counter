@@ -1,6 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DailyTotal, EntryList } from "./entry-list";
 import type { Entry } from "./types";
 
@@ -65,6 +65,87 @@ describe("EntryList", () => {
     await userEvent.click(screen.getByRole("button", { name: /Toast/ }));
 
     expect(onSelect).toHaveBeenCalledWith(toast);
+  });
+});
+
+describe("EntryList selection", () => {
+  const toast = entry("Toast", 1, 110);
+  const rice = entry("Rice", 2, 130, "100 g");
+
+  function open(selected: string[] = []) {
+    const onSelect = vi.fn();
+    const onStart = vi.fn();
+    const onToggle = vi.fn();
+    render(
+      <EntryList
+        entries={[toast, rice]}
+        onSelect={onSelect}
+        selection={{
+          selecting: selected.length > 0,
+          isSelected: (id) => selected.includes(id),
+          onStart,
+          onToggle,
+        }}
+      />,
+    );
+    return { onSelect, onStart, onToggle };
+  }
+
+  describe("holding", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it("starts selection with the held Entry, and does not open it", () => {
+      const { onSelect, onStart } = open();
+      const row = screen.getByRole("button", { name: /Toast/ });
+
+      fireEvent.pointerDown(row, { clientX: 5, clientY: 5 });
+      act(() => vi.advanceTimersByTime(500));
+      fireEvent.pointerUp(row);
+      fireEvent.click(row);
+
+      expect(onStart).toHaveBeenCalledWith(toast);
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+  });
+
+  it("opens an Entry on a tap when nothing is selected", async () => {
+    const { onSelect, onToggle } = open();
+
+    await userEvent.click(screen.getByRole("button", { name: /Toast/ }));
+
+    expect(onSelect).toHaveBeenCalledWith(toast);
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it("toggles an Entry on a tap while selecting, instead of opening it", async () => {
+    const { onSelect, onToggle } = open(["Toast"]);
+
+    await userEvent.click(screen.getByRole("button", { name: /Rice/ }));
+
+    expect(onToggle).toHaveBeenCalledWith(rice);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("tells assistive technology which Entries are selected", () => {
+    open(["Toast"]);
+
+    expect(screen.getByRole("button", { name: /Toast/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: /Rice/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("says nothing about selection when it is not on", () => {
+    open();
+
+    expect(screen.getByRole("button", { name: /Toast/ })).not.toHaveAttribute(
+      "aria-pressed",
+    );
   });
 });
 
