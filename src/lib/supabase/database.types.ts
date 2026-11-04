@@ -67,6 +67,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"id": string,"p256dh": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"id"?: string,"p256dh": string,"user_id"?: string
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"id"?: string,"p256dh"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"reference_foods": {
                   Row: {
                     "calories_per_100": number,"energy_kj_per_100": number,"id": string,"name": string,"source": string,"source_id": string,"unit": string
@@ -83,14 +97,14 @@ isOneToOne: false
                   ]
                 },"user_settings": {
                   Row: {
-                    "daily_goal_calories": number | null,"updated_at": string,"user_id": string,"week_starts_on": number
+                    "daily_goal_calories": number | null,"reminder_enabled": boolean,"reminder_last_sent_on": string | null,"reminder_time": string,"time_zone": string | null,"updated_at": string,"user_id": string,"week_starts_on": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "daily_goal_calories"?: number | null,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
+                    "daily_goal_calories"?: number | null,"reminder_enabled"?: boolean,"reminder_last_sent_on"?: string | null,"reminder_time"?: string,"time_zone"?: string | null,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
                   }
                   Update: {
-                    "daily_goal_calories"?: number | null,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
+                    "daily_goal_calories"?: number | null,"reminder_enabled"?: boolean,"reminder_last_sent_on"?: string | null,"reminder_time"?: string,"time_zone"?: string | null,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number
                   }
                   Relationships: [
                     
@@ -104,6 +118,11 @@ isOneToOne: false
             "daily_totals":
 { Args: { "range_from": string,"range_to": string }; Returns: {
               "calories": number,"day": string,"entry_count": number
+            }[]
+                           },
+"due_reminders":
+{ Args: { "at": string }; Returns: {
+              "auth_secret": string,"endpoint": string,"local_day": string,"p256dh_key": string,"subscription_id": string,"user_id": string
             }[]
                            },
 "food_entry_counts":
