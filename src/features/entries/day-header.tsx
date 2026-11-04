@@ -35,19 +35,32 @@ export function DayHeader({ day, today, onChange }: Props) {
         <ChevronLeft aria-hidden="true" />
       </Button>
 
-      <div className="relative flex min-h-11 flex-1 items-center justify-center">
-        <h1 className="font-semibold text-2xl tracking-tight">
-          {dayLabel(day, today)}
-        </h1>
-        {/* Invisible, but covers the label so a tap opens the native date picker. */}
-        <input
-          type="date"
-          aria-label="Pick a day"
-          value={day}
-          max={last}
-          onChange={(event) => pick(event.target.value)}
-          className="absolute inset-0 size-full cursor-pointer opacity-0"
-        />
+      <div className="flex flex-1 flex-col items-center">
+        <div className="relative flex min-h-11 w-full items-center justify-center">
+          <h1 className="font-semibold text-2xl tracking-tight">
+            {dayLabel(day, today)}
+          </h1>
+          {/* Invisible, but covers the label so a tap opens the native date picker. */}
+          <input
+            type="date"
+            aria-label="Pick a day"
+            value={day}
+            max={last}
+            onChange={(event) => pick(event.target.value)}
+            className="absolute inset-0 size-full cursor-pointer opacity-0"
+          />
+        </div>
+        {/* A quick way home after wandering into the past or the plan. */}
+        {day !== today ? (
+          <Button
+            type="button"
+            variant="secondary"
+            className="h-11 px-5"
+            onClick={() => onChange(today)}
+          >
+            Today
+          </Button>
+        ) : null}
       </div>
 
       <Button

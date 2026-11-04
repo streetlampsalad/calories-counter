@@ -50,6 +50,33 @@ test("arrows step a Day at a time, and the URL follows", async ({ page }) => {
   await expect(page).toHaveURL("/");
 });
 
+test("the Today button returns from another Day, and back returns to that Day", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Today" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Next day" }).click();
+  await page.getByRole("button", { name: "Next day" }).click();
+  await expect(page).toHaveURL(`/?day=${daysAhead(2)}`);
+  await page.getByRole("button", { name: "Today" }).click();
+
+  await expect(heading(page)).toHaveText("Today");
+  await expect(page).toHaveURL("/");
+  await expect(page.getByRole("button", { name: "Today" })).toHaveCount(0);
+
+  await page.goBack();
+  await expect(page).toHaveURL(`/?day=${daysAhead(2)}`);
+});
+
+test("the Today button also returns from a past Day", async ({ page }) => {
+  await page.goto("/?day=2001-07-05");
+
+  await page.getByRole("button", { name: "Today" }).click();
+
+  await expect(heading(page)).toHaveText("Today");
+});
+
 test("two quick taps go back two Days", async ({ page }) => {
   await page.goto("/");
 
