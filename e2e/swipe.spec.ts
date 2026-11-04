@@ -231,3 +231,82 @@ test.describe("with Entries on the Day", () => {
     await expect(page.getByText("1 selected")).toBeVisible();
   });
 });
+
+// Bug #82. Watches every frame for the page getting wider than the screen, which makes mobile
+// Chrome grow its layout viewport and push the fixed bottom navigation under the gesture bar.
+async function watchLayout(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as {
+      __worst: { wider: number; navBelow: number };
+    };
+    w.__worst = { wider: 0, navBelow: 0 };
+    const tick = () => {
+      const screen = window.visualViewport;
+      const nav = document
+        .querySelector('nav[aria-label="Main"]')
+        ?.getBoundingClientRect();
+      if (screen) {
+        w.__worst.wider = Math.max(
+          w.__worst.wider,
+          document.documentElement.scrollWidth - screen.width,
+        );
+        if (nav)
+          w.__worst.navBelow = Math.max(
+            w.__worst.navBelow,
+            nav.bottom - screen.height,
+          );
+      }
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+}
+const worstLayout = (page: Page) =>
+  page.evaluate(
+    () =>
+      (window as unknown as { __worst: { wider: number; navBelow: number } })
+        .__worst,
+  );
+
+test.describe("the bottom navigation stays on screen", () => {
+  test("while Days are swiped and slide in, in either direction", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(heading(page)).toHaveText("Today");
+    await watchLayout(page);
+
+    await swipeLeft(page);
+    await expect(heading(page)).toHaveText("Tomorrow");
+    await page.waitForTimeout(400);
+    await swipeRight(page);
+    await expect(heading(page)).toHaveText("Today");
+    await page.waitForTimeout(400);
+    await swipeRight(page);
+    await expect(heading(page)).toHaveText("Yesterday");
+    await page.waitForTimeout(400);
+
+    const worst = await worstLayout(page);
+    expect(worst.wider).toBeLessThanOrEqual(0);
+    expect(worst.navBelow).toBeLessThanOrEqual(0.5);
+  });
+
+  test("when going to Today from another tab", async ({ page }) => {
+    await page.goto("/foods");
+    await expect(page.getByRole("heading", { name: "Foods" })).toBeVisible();
+    await watchLayout(page);
+
+    await page.getByRole("link", { name: "Today" }).click();
+    await expect(heading(page)).toHaveText("Today");
+    await page.waitForTimeout(400);
+
+    const worst = await worstLayout(page);
+    expect(worst.wider).toBeLessThanOrEqual(0);
+    expect(worst.navBelow).toBeLessThanOrEqual(0.5);
+    await expect(page.getByRole("navigation", { name: "Main" })).toBeInViewport(
+      {
+        ratio: 1,
+      },
+    );
+  });
+});

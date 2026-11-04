@@ -121,6 +121,13 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Nothing may make the page wider than the phone. Mobile Chrome grows its layout viewport to
+     fit sideways overflow, taller too, which drops the fixed bottom nav under the gesture bar
+     (bug #82: a swiped Day sliding in). clip, unlike hidden, makes no scroll container. */
+  html,
+  body {
+    overflow-x: clip;
+  }
   body {
     @apply bg-background text-foreground;
   }
