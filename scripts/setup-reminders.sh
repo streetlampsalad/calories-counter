@@ -200,10 +200,16 @@ if ! command -v gh >/dev/null 2>&1 || ! gh auth status >/dev/null 2>&1; then
   printf '\n  gh (GitHub CLI) must be installed and logged in first: gh auth login\n\n'
   exit 1
 fi
+# The public values the first wizard remembers. If its file is not here (another checkout, or a
+# clean one), recover them: the Sydney project's reference is fixed, and the production URL is the
+# GitHub variable that wizard set.
+SUPABASE_REF_DEFAULT="xrfbpeiugmacbossropu"   # calories-counter, ap-southeast-2 (Sydney)
 SUPABASE_PROJECT_REF=$(_existing SUPABASE_PROJECT_REF || true)
+SUPABASE_PROJECT_REF="${SUPABASE_PROJECT_REF:-$SUPABASE_REF_DEFAULT}"
 PRODUCTION_URL=$(_existing PRODUCTION_URL || true)
-if [[ -z "$SUPABASE_PROJECT_REF" || -z "$PRODUCTION_URL" ]]; then
-  printf '\n  Run ./scripts/setup-production.sh first: it records the Supabase project and the production URL.\n\n'
+[[ -n "$PRODUCTION_URL" ]] || PRODUCTION_URL=$(gh variable get PRODUCTION_URL 2>/dev/null || true)
+if [[ -z "$PRODUCTION_URL" ]]; then
+  printf '\n  Run ./scripts/setup-production.sh first: it records the production URL.\n\n'
   exit 1
 fi
 
@@ -261,6 +267,17 @@ if (( GENERATE )); then
   ask_secret VERCEL_TOKEN "Paste the Vercel token:"
   VERCEL_ORG_ID=$(_existing VERCEL_ORG_ID || true)
   VERCEL_PROJECT_ID=$(_existing VERCEL_PROJECT_ID || true)
+  if [[ -z "$VERCEL_ORG_ID" || -z "$VERCEL_PROJECT_ID" ]]; then
+    say ""
+    say "The Vercel CLI needs to know which project to change."
+    open_url "https://vercel.com/dashboard"
+    step "Open the project → Settings → General, and copy 'Project ID' (starts prj_)."
+    ask VERCEL_PROJECT_ID "Paste the Project ID:"
+    step "Open your team (or account) Settings → General, and copy the 'ID' / 'Team ID'."
+    ask VERCEL_ORG_ID "Paste the Team/Account ID:"
+    write_env VERCEL_PROJECT_ID "$VERCEL_PROJECT_ID"
+    write_env VERCEL_ORG_ID "$VERCEL_ORG_ID"
+  fi
   export VERCEL_ORG_ID VERCEL_PROJECT_ID
   failed=0
   add_vercel_env() {
