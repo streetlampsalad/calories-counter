@@ -47,6 +47,20 @@ Every new table gets pgTAP tests proving one User cannot read or change another 
 - UI building blocks come from shadcn/ui (`pnpm dlx shadcn@4.23.0 add <component>`) into `src/components/ui/`.
 - Copy is in Australian English, with metric units.
 
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `streetlampsalad/calories-counter`, one parent issue per spec plus one issue per slice. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
