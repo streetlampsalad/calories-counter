@@ -1,6 +1,6 @@
 # 016: Daily Reminder
 
-- **Status**: In progress
+- **Status**: Done
 - **Depends on**: 009, 012
 - **Tracking issue**: [#84](https://github.com/streetlampsalad/calories-counter/issues/84)
 - **ADRs**: 0004, 0005
