@@ -280,16 +280,34 @@ if (( GENERATE )); then
   fi
   export VERCEL_ORG_ID VERCEL_PROJECT_ID
   failed=0
-  add_vercel_env() {
+  # When the CLI can't set a variable, the value goes on the clipboard (never the screen) and the
+  # human adds it in the dashboard, so the run still ends with everything set.
+  add_by_hand() {
     local name="$1" value="$2"
+    if ! copy_to_clipboard "$value"; then
+      failed=1
+      SKIPPED+=("Vercel env $name: no clipboard tool, so re-run this wizard where one exists")
+      return
+    fi
+    step "Add it by hand: calories-counter → Settings → Environment Variables → Add New."
+    step "Key: $name. Environments: Production only. Value: paste (it's on your clipboard)."
+    if [[ "$name" == NEXT_PUBLIC_* ]]; then
+      step "Leave 'Sensitive' off for this one: it is public and built into the app."
+    fi
+    pause "Saved it in Vercel? Press Enter."
+  }
+  add_vercel_env() {
+    local name="$1" value="$2" output
     # A variable that already exists is replaced, so an old key and a new one never mix.
     pnpm dlx "$VERCEL_CLI" env rm "$name" production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
-    if printf '%s' "$value" | pnpm dlx "$VERCEL_CLI" env add "$name" production --token "$VERCEL_TOKEN" >/dev/null 2>&1; then
+    # The value goes in on stdin, so the CLI's messages never contain it and are safe to show.
+    if output=$(printf '%s' "$value" | pnpm dlx "$VERCEL_CLI" env add "$name" production --token "$VERCEL_TOKEN" 2>&1); then
       printf '  %s✓ set%s %s in Vercel production\n' "$GREEN" "$RESET" "$name"
     else
-      failed=1
-      SKIPPED+=("Vercel env $name (Project → Settings → Environment Variables, Production)")
-      warn "couldn't set $name"
+      warn "couldn't set $name automatically. Vercel said:"
+      printf '%s\n' "$output" | grep -v '^[[:space:]]*$' | tail -n 4 | sed 's/^/      /'
+      [[ -n "${OPENED_ENV_PAGE:-}" ]] || { open_url "https://vercel.com/dashboard"; OPENED_ENV_PAGE=1; }
+      add_by_hand "$name" "$value"
     fi
   }
   add_vercel_env SUPABASE_SECRET_KEY "$SUPABASE_SECRET_KEY"
