@@ -4,22 +4,25 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 ## Conventions
 
-- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
-- **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
-- **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
-- **Comment on an issue**: `gh issue comment <number> --body "..."`
-- **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
-- **Close**: `gh issue close <number> --comment "..."`
+Locally the `gh issue` commands work. In a cloud session the GitHub proxy blocks GraphQL, so `gh issue` and `gh pr` fail; use the `gh api` REST recipes in [`.claude/skills/deliver/github.md`](../../.claude/skills/deliver/github.md), which work in both.
 
-Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
+- **Create an issue**: `gh api -X POST repos/<owner>/<repo>/issues -f title=... -F body=@body.md -f 'labels[]=...'`. Start from the issue template for its type (`.github/ISSUE_TEMPLATE/`) and keep its headings.
+- **Read an issue**: `gh api repos/<owner>/<repo>/issues/<n>` and `.../issues/<n>/comments`.
+- **List issues**: `gh api "repos/<owner>/<repo>/issues?state=open&labels=<label>&per_page=100" --paginate`, dropping entries with a `pull_request` field.
+- **Comment on an issue**: `gh api -X POST repos/<owner>/<repo>/issues/<n>/comments -F body=@comment.md`
+- **Apply / remove labels**: `POST .../issues/<n>/labels -f 'labels[]=...'` / `DELETE .../issues/<n>/labels/<label>`
+- **Close**: `gh api -X PATCH repos/<owner>/<repo>/issues/<n> -f state=closed -f state_reason=<completed|not_planned>`
 
 ## This repo's conventions
 
-- A spec in `docs/specs/NNN-*.md` is the source of truth; its acceptance criteria are the definition of done. Issues copy criteria from it, never the other way round.
-- Each spec has a parent issue `[NNN] Spec: <title>`, labelled `spec` and `spec:NNN`, linked from the index in `docs/specs/README.md`.
-- Each row of a spec's **Issue breakdown** becomes one slice issue `[NNN] <slice title>`, labelled `spec:NNN`, created from `.github/ISSUE_TEMPLATE/spec-slice.yml`, with `Parent: #<spec issue>`.
-- A slice that depends on another says `Blocked by #<issue>`.
-- `human-step` marks an issue needing the repo owner (a dashboard, secrets or a manual check). Agents leave those steps alone.
+The process is [`workflow.md`](workflow.md); `/deliver` carries it out.
+
+- Every change has an Issue first, created from one of the six templates (Feature, Spec, Slice, Bug, Chore, Spike); blank issues are off. The type is a label.
+- A spec in `specs/<Spec issue>-<name>/` (or a frozen one in `docs/specs/`) is the source of truth; its acceptance criteria are the definition of done. Issues copy criteria from it, never the other way round.
+- A Spec is a sub-issue of its Feature, and each Slice is a sub-issue of its Spec. Blocking uses GitHub's native "blocked by" dependencies.
+- Pull requests say `Refs #<n>`, never a closing keyword: `deploy.yml` closes the Issue once the change is in production.
+- `needs-human-review` means a human approves before the work proceeds; agents add it and never remove it. `human-step` marks a manual action by the repo owner. Agents leave both alone once set.
+- The Kanban board is maintained by `.github/workflows/board.yml`. Never move cards by hand.
 
 ## Pull requests as a triage surface
 
