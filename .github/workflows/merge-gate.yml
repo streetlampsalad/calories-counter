@@ -33,5 +33,13 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          # package.json names pnpm, which these jobs never install, so skip its cache.
+          package-manager-cache: false
 
-      - run: node scripts/workflow/merge-gate.mjs
+      - name: Decide
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::AUTOMATION_TOKEN is not set, so nothing can auto-merge. Run scripts/setup-workflow.sh."
+            exit 1
+          fi
+          node scripts/workflow/merge-gate.mjs
