@@ -1,0 +1,32 @@
+name: Spike
+description: Time-boxed research that answers a question. No production code.
+title: "Spike: "
+labels: [spike]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What must we know, and what decision does the answer unblock?
+    validations:
+      required: true
+  - type: input
+    id: timebox
+    attributes:
+      label: Time box
+      description: e.g. one session
+    validations:
+      required: true
+  - type: input
+    id: output
+    attributes:
+      label: Where the answer goes
+      description: The spec, ADR or doc the findings are written into, e.g. specs/124-meal-groups/research.md.
+    validations:
+      required: true
+  - type: checkboxes
+    id: risk
+    attributes:
+      label: Risk assessment
+      options:
+        - label: Needs a secret, a real external API or a dashboard step (a Spike that does needs Human review)
