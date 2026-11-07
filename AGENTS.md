@@ -17,6 +17,10 @@ Commit directly to `main` (ADR 0003). Every commit must leave `main` deployable,
 
 When a hook fails, fix the cause. Skipping hooks, force-pushing, editing `.env*` files and touching the production database are blocked by `.claude/hooks/guard.mjs`. If one of those seems necessary, stop and ask the human.
 
+## Cloud agents
+
+Cloud sessions have no Docker (ADR 0006). Work on the `claude/*` branch you were given and open a pull request into `main`; do not push to `main`. `pnpm validate` runs only the fast checks there, so write the database and e2e tests anyway: CI runs them on the pull request, and you must read the result and fix any failure. Do not hand over a pull request with red CI.
+
 ## Where tests go
 
 | What | Where | Tool |
