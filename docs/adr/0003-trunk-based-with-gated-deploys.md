@@ -1,5 +1,7 @@
 # Trunk-based development with locally gated pushes and CI-driven deploys
 
+**Superseded** by [ADR 0007](0007-spec-driven-pull-requests-gated-by-risk.md) on 2026-11-08.
+
 All work is committed directly to `main`; there are no feature branches or pull requests. The full validation suite runs in a git pre-push hook, so nothing reaches `main` without passing it locally, and CI re-runs the same suite on every push as a backstop. Vercel's Git auto-deploy is deliberately disabled: a GitHub Action deploys only after CI passes, applying Supabase migrations first and then deploying the app, so the app never ships ahead of its schema.
 
 ## Consequences

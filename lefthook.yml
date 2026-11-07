@@ -1,4 +1,4 @@
-# Trunk-based development (docs/adr/0003): these hooks are the gate before main.
+# Fast local checks (docs/adr/0007). CI runs the full `pnpm validate` on every pull request.
 pre-commit:
   parallel: true
   jobs:
@@ -13,4 +13,4 @@ pre-commit:
 pre-push:
   jobs:
     - name: validate
-      run: pnpm validate
+      run: pnpm validate:fast

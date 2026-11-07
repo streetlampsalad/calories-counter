@@ -1,5 +1,7 @@
 # Cloud agents work on branches, gated by CI
 
+**Superseded** by [ADR 0007](0007-spec-driven-pull-requests-gated-by-risk.md) on 2026-11-08.
+
 Claude Code cloud agents push to a `claude/*` branch and open a pull request into `main`; a human merges it. This is the one exception to [ADR 0003](0003-trunk-based-with-gated-deploys.md). We chose this because the cloud sandbox has no Docker, so the pre-push hook cannot run the full `pnpm validate` there, and cloud sessions cannot push to `main` anyway. CI now also runs on pull requests, so the full gate (database, build, e2e) still stands between a cloud agent's work and `main`.
 
 ## Consequences
