@@ -1,0 +1,37 @@
+name: Spec
+description: The parent Issue for one spec-kit spec. Usually created by /deliver when it accepts a Feature.
+title: "Spec: "
+labels: [spec]
+body:
+  - type: input
+    id: feature
+    attributes:
+      label: Feature
+      description: The Feature Issue this spec answers, e.g. #123, or "—".
+  - type: input
+    id: spec
+    attributes:
+      label: Spec folder
+      description: Filled in by the Spec pull request, e.g. specs/124-meal-groups/. Named after this Issue's number.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One paragraph on what the User can do once this ships.
+    validations:
+      required: true
+  - type: dropdown
+    id: human-review
+    attributes:
+      label: Human review
+      description: The result of the spec's Risk assessment. "Needed" also means the `needs-human-review` label.
+      options:
+        - Not assessed yet
+        - Not needed
+        - Needed
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        Slices are added as sub-issues of this Issue once the Spec pull request merges. This Issue closes when the last of them is in production.

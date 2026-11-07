@@ -1,0 +1,34 @@
+# The field labels below are a contract: each becomes a "### <label>" heading in the Issue
+# body, which /deliver reads. An Issue created through the API (such as a future in-app
+# feature request) must use the same headings. Change them only with docs/agents/workflow.md.
+name: Feature
+description: An idea for new or changed behaviour. The Dispatcher triages it, then writes a spec.
+title: "Feature: "
+labels: [feature, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard, slow or impossible today? Describe the problem, not a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: who
+    attributes:
+      label: Who has it
+      description: Which Users, and when they run into it.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What a User can do once this ships, and how you would know it works.
+    validations:
+      required: true
+  - type: input
+    id: requested-by
+    attributes:
+      label: Requested by
+      description: An opaque reference only, never a name or email (this repo is public). Leave blank if you are the owner.

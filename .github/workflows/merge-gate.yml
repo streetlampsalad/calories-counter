@@ -1,0 +1,37 @@
+# Decides whether a pull request may auto-merge (docs/adr/0007). A required check on main.
+# pull_request_target runs this file and scripts/workflow/ from main, never from the pull
+# request, and never checks out or runs the pull request's code.
+name: Merge gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review, labeled, unlabeled]
+    branches: [main]
+
+concurrency:
+  group: merge-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Merge gate
+    # Never skip this job: a skipped run of a required check counts as passing.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.AUTOMATION_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: scripts/workflow
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - run: node scripts/workflow/merge-gate.mjs

@@ -11,6 +11,7 @@
       "**",
       "!node_modules",
       "!.claude/worktrees",
+      "!.specify",
       "!.next",
       "!dist",
       "!build",

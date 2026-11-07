@@ -1,0 +1,52 @@
+name: Bug
+description: Wrong behaviour. Fixed with a regression test; no spec.
+title: "Bug: "
+labels: [bug, needs-triage]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps from a fresh sign-in, with the Day and any Foods or Entries involved.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: What happened instead. Include any error message.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: Phone and browser, e.g. Pixel 7, Chrome, installed app.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How bad is it
+      options:
+        - Production is broken for everyone (P0)
+        - A User cannot finish a main task (P1)
+        - Annoying, with a workaround (P2)
+    validations:
+      required: true
+  - type: checkboxes
+    id: risk
+    attributes:
+      label: Risk assessment
+      description: Filled in by the agent that takes the Bug. Any tick means Human review.
+      options:
+        - label: Adds a third-party integration, secret, environment variable or dashboard step
+        - label: Irreversible (drops or renames a column or table, or rewrites or deletes User data)
+        - label: Cannot be proved in CI (real device, real external API)
+        - label: Touches sign-in, RLS policies or what one User can see of another
+        - label: Changes the guardrails (CI, deploy, hooks, rulesets, AGENTS.md, constitution, workflow)
+        - label: Contradicts an ADR or needs a new one

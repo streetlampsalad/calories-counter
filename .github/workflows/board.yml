@@ -1,0 +1,41 @@
+# Keeps the Kanban project (github.com/users/streetlampsalad/projects/1) in step with Issues
+# and pull requests (docs/agents/workflow.md). Agents never touch the board: cloud sessions
+# cannot call GitHub's GraphQL API, so they change labels, assignees and pull requests, and
+# this workflow moves the cards. A nightly run repairs anything an event missed.
+name: Board
+
+on:
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled, assigned, unassigned]
+  pull_request_target:
+    types: [opened, edited, reopened, ready_for_review, converted_to_draft, closed]
+  schedule:
+    - cron: "17 14 * * *" # 01:17 in Sydney (AEDT)
+  workflow_dispatch:
+
+concurrency:
+  group: board
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.AUTOMATION_TOKEN }}
+      PROJECT_OWNER: streetlampsalad
+      PROJECT_NUMBER: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: scripts/workflow
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - run: node scripts/workflow/board-sync.mjs

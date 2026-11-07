@@ -1,0 +1,50 @@
+name: Slice
+description: One user-story phase of a spec's tasks.md, closed by exactly one pull request.
+title: "[NNN] "
+labels: [slice]
+body:
+  - type: input
+    id: spec
+    attributes:
+      label: Spec
+      description: The spec folder, e.g. specs/124-meal-groups/ (or a frozen docs/specs/NNN-*.md for specs 001–019). Add this Issue as a sub-issue of the Spec Issue.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria covered
+      description: Copy each scenario or criterion verbatim from the spec (e.g. US1.2, FR-003, or AC-3 in a frozen spec). Each one needs a test.
+    validations:
+      required: true
+  - type: input
+    id: tasks
+    attributes:
+      label: Tasks
+      description: The task IDs from tasks.md, e.g. T001–T006.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Slice-specific design notes or human steps. Record blockers as native "blocked by" links.
+  - type: checkboxes
+    id: risk
+    attributes:
+      label: Risk assessment
+      description: Tick each condition that applies. Any tick means this Slice waits for a human merge.
+      options:
+        - label: Adds a third-party integration, secret, environment variable or dashboard step
+        - label: Irreversible (drops or renames a column or table, or rewrites or deletes User data)
+        - label: Cannot be proved in CI (real device, real external API)
+        - label: Touches sign-in, RLS policies or what one User can see of another
+        - label: Changes the guardrails (CI, deploy, hooks, rulesets, AGENTS.md, constitution, workflow)
+        - label: Contradicts an ADR or needs a new one
+  - type: checkboxes
+    id: done
+    attributes:
+      label: Definition of done
+      options:
+        - label: Every listed criterion has a test that fails without the change
+        - label: "`pnpm validate` passes in CI"
+        - label: CONTEXT.md and ADRs updated if the language or a decision changed
+        - label: The feature stays unreachable unless this is its final Slice

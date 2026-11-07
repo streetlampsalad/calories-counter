@@ -1,11 +1,11 @@
-// The single quality gate. Runs in the pre-push hook and in CI.
+// The single quality gate. CI runs it in full on every pull request; the pre-push hook runs --fast.
 //   pnpm validate         full gate (needs local Supabase running: pnpm db:start)
 //   pnpm validate --fast  static checks and unit tests only
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 // Cloud agents have no Docker, so they cannot run the full gate. CI runs it on their branch
-// (docs/adr/0006); CLAUDE_CODE_REMOTE is set by Claude Code on the web.
+// (docs/adr/0007); CLAUDE_CODE_REMOTE is set by Claude Code on the web.
 const cloud = process.env.CLAUDE_CODE_REMOTE === "true";
 const fast = process.argv.includes("--fast") || cloud;
 if (cloud && !process.argv.includes("--fast")) {

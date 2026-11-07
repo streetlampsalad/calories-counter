@@ -1,5 +1,6 @@
-# Deploys production after CI passes on main (docs/adr/0003, spec 001).
+# Deploys production after CI passes on main (docs/adr/0007, spec 001).
 # Order matters: migrations first, then the app, then a check that production serves this commit.
+# Then the Issues it delivered close, which is what Done means on the board.
 name: Deploy
 
 on:
@@ -36,6 +37,14 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ env.SHA }}
+
+      # Deploys queue and can skip commits, so closing Issues walks back to the last success.
+      - name: Find the previous production deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous="$(gh api "repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""')"
+          echo "PREVIOUS_SHA=$previous" >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v4
 
@@ -79,3 +88,31 @@ jobs:
           done
           echo "::error::Production did not report commit $SHA within 2 minutes"
           exit 1
+
+      - name: Close the Issues now in production
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::AUTOMATION_TOKEN is not set, so delivered Issues stay open. Run scripts/setup-workflow.sh."
+            exit 0
+          fi
+          node scripts/workflow/close-deployed.mjs "$SHA" "$PREVIOUS_SHA"
+
+      # A production incident always gets a human (docs/adr/0007).
+      - name: Open a P0 Bug
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_TOKEN || github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Bug: Production deploy failed"
+          existing="$(gh issue list --repo "${{ github.repository }}" --state open --search "\"$title\" in:title" --json number --jq '.[0].number // ""')"
+          body="The deploy of ${SHA} failed: ${RUN_URL}
+
+          Migrations run before the app deploys, so check whether they were applied. Production keeps serving the previous deploy until this is fixed."
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "${{ github.repository }}" --body "$body"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$title" --body "$body" --label bug --label priority:P0 --label needs-human-review
+          fi

@@ -3,23 +3,24 @@
 A mobile-first calorie tracker for a few friends (Next.js on Vercel, Supabase in Sydney). Before changing anything, read:
 
 - `CONTEXT.md`: the glossary. Use its terms exactly in code, UI copy, tests and commits (a **Food** has a **Portion**; an **Entry** has a **Quantity**).
-- The spec you are implementing in `docs/specs/`. Its acceptance criteria are the definition of done.
+- The spec you are implementing: `specs/<issue>-<name>/` (spec-kit), or a frozen one in `docs/specs/`. Its acceptance criteria are the definition of done.
 - `docs/adr/` before changing anything an ADR covers.
 
-## Workflow: trunk-based
+## Workflow: Issue first, spec first, one pull request per Issue
 
-Commit directly to `main` (ADR 0003). Every commit must leave `main` deployable, so a feature stays unreachable (no navigation link, no route) until its last issue lands.
+Every change starts as an Issue and reaches `main` through a pull request (ADR 0007). To work on an Issue, run `/deliver #<n>`; `/deliver next` picks one. The process and its terms (Feature, Spec, Slice, Risk assessment, Human review, Done) are in `docs/agents/workflow.md`.
 
-1. Pick one issue. Write a failing test for each acceptance criterion first.
-2. Make it pass in small commits. Iterate with `pnpm validate:fast`.
-3. Before pushing, `pnpm validate` must pass (the pre-push hook runs it). It needs Docker, `pnpm db:start` and `pnpm env:local`. It runs `db:reset`, which wipes local data and re-seeds from `supabase/seed.sql`.
-4. An issue is done when `validate` passes and every acceptance criterion has a test that would fail without the change.
+- Every merge leaves `main` deployable, so a feature stays unreachable (no navigation link, no route) until its last Slice lands.
+- Test first: a failing test for each acceptance criterion, then small commits. Iterate with `pnpm validate:fast` (the pre-push hook runs it).
+- `pnpm validate` is the full gate, which CI runs on every pull request. Locally it needs Docker, `pnpm db:start` and `pnpm env:local`, and its `db:reset` wipes local data and re-seeds from `supabase/seed.sql`. Read CI's result and fix any failure.
+- An Issue is done when its change is in production: pull requests say `Refs #<n>`, and `deploy.yml` closes the Issue.
+- Add `needs-human-review` whenever the Risk assessment ticks anything; only the owner removes it.
 
-When a hook fails, fix the cause. Skipping hooks, force-pushing, editing `.env*` files and touching the production database are blocked by `.claude/hooks/guard.mjs`. If one of those seems necessary, stop and ask the human.
+When a hook fails, fix the cause. Skipping hooks, force-pushing, pushing to `main`, merging pull requests, removing `needs-human-review`, editing `.env*` files and touching the production database are blocked by `.claude/hooks/guard.mjs`. If one of those seems necessary, stop and ask the human.
 
 ## Cloud agents
 
-Cloud sessions have no Docker (ADR 0006). Work on the `claude/*` branch you were given and open a pull request into `main`; do not push to `main`. `pnpm validate` runs only the fast checks there, so write the database and e2e tests anyway: CI runs them on the pull request, and you must read the result and fix any failure. Do not hand over a pull request with red CI.
+Cloud sessions have no Docker, so `pnpm validate` runs only the fast checks there; write the database and e2e tests anyway, because CI runs them. Work on the `claude/*` branch you were given. The GitHub proxy blocks GraphQL, so `gh issue` and `gh pr` fail: use the `gh api` REST recipes in `.claude/skills/deliver/github.md`.
 
 ## Where tests go
 
@@ -29,6 +30,7 @@ Cloud sessions have no Docker (ADR 0006). Work on the `claude/*` branch you were
 | Components | `src/**/*.test.tsx`, query by role and label | Testing Library |
 | Schema, RLS, database functions | `supabase/tests/database/*.test.sql` | pgTAP |
 | User journeys | `e2e/*.spec.ts` | Playwright (Pixel 7) |
+| Workflow scripts (merge gate, board) | `scripts/workflow/*.test.mjs` | Vitest |
 
 Every new table gets pgTAP tests proving one User cannot read or change another User's rows.
 
@@ -49,19 +51,9 @@ Every new table gets pgTAP tests proving one User cannot read or change another 
 
 ## Agent skills
 
-### Issue tracker
-
-GitHub Issues on `streetlampsalad/calories-counter`, one parent issue per spec plus one issue per slice. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
-
-<!-- BEGIN:nextjs-agent-rules -->
+- Issue tracker: GitHub Issues on `streetlampsalad/calories-counter`; conventions in `docs/agents/issue-tracker.md`.
+- Triage labels: `docs/agents/triage-labels.md`.
+- Domain docs: single-context, `CONTEXT.md` and `docs/adr/` at the repo root; see `docs/agents/domain.md`.
 
 ## This is NOT the Next.js you know
 

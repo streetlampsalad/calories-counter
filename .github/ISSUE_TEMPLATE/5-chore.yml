@@ -1,0 +1,36 @@
+name: Chore
+description: Dependencies, CI, docs or refactoring, with no change in behaviour. No spec.
+title: "Chore: "
+labels: [chore]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations:
+      required: true
+  - type: checkboxes
+    id: behaviour
+    attributes:
+      label: Behaviour
+      options:
+        - label: No User-visible behaviour changes. If it does, this is a Feature or a Bug instead.
+          required: true
+  - type: checkboxes
+    id: risk
+    attributes:
+      label: Risk assessment
+      description: Any tick means Human review. Dependency and guardrail changes are flagged automatically too.
+      options:
+        - label: Adds a third-party integration, secret, environment variable or dashboard step
+        - label: Irreversible (drops or renames a column or table, or rewrites or deletes User data)
+        - label: Cannot be proved in CI (real device, real external API)
+        - label: Touches sign-in, RLS policies or what one User can see of another
+        - label: Changes the guardrails (CI, deploy, hooks, rulesets, AGENTS.md, constitution, workflow)
+        - label: Adds or upgrades a dependency

@@ -1,4 +1,6 @@
-# Specs
+# Specs 001–019
+
+> **Frozen.** New specs are written with spec-kit in [`specs/`](../../specs/README.md) ([ADR 0007](../adr/0007-spec-driven-pull-requests-gated-by-risk.md)). Specs 006 and 016 finish in this format; spec 018 moves to spec-kit when it is next worked on. Their Slices use the Slice issue template.
 
 Each spec describes one capability. Its **Issue breakdown** lists thin, vertical slices, each of which becomes one GitHub issue. Write specs from [`_template.md`](_template.md), and use the glossary terms in [`../../CONTEXT.md`](../../CONTEXT.md).
 
@@ -8,7 +10,7 @@ Each spec describes one capability. Its **Issue breakdown** lists thin, vertical
 
 ## Turning a spec into issues
 
-Create one issue per row in the spec's **Issue breakdown** using the *Spec slice* issue template:
+Create one issue per row in the spec's **Issue breakdown** using the *Slice* issue template:
 
 - Title: `[NNN] <slice title>`, labelled `spec:NNN`.
 - Body: the acceptance criteria the slice covers, copied verbatim (for example AC-3, AC-4), plus a link to the spec.
