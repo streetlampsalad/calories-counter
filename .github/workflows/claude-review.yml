@@ -69,8 +69,17 @@ jobs:
       - name: Fail on a blocking finding
         env:
           RESULT: ${{ steps.review.outputs.structured_output }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
           echo "$RESULT"
+          # The action skips itself when this workflow file differs from main's copy. Such a pull
+          # request always gets needs-human-review from the merge gate, so a human reviews it.
+          if [ -z "$RESULT" ] && gh api "repos/${{ github.repository }}/pulls/$PR/files" --paginate \
+              --jq '.[].filename' | grep -qx '.github/workflows/claude-review.yml'; then
+            echo "::warning::This pull request changes the Claude review workflow, so the review cannot run on it. A human must review it."
+            exit 0
+          fi
           verdict="$(echo "$RESULT" | node -pe 'JSON.parse(require("fs").readFileSync(0, "utf8")).verdict' 2>/dev/null || echo missing)"
           if [ "$verdict" != "pass" ]; then
             echo "::error::Claude review verdict: $verdict. See the review comments on the pull request."
