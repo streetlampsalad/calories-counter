@@ -4,6 +4,9 @@ name: CI
 on:
   push:
     branches: [main]
+  # Cloud agents push a branch (docs/adr/0006). deploy.yml only follows pushes to main.
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:

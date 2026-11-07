@@ -4,7 +4,13 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
-const fast = process.argv.includes("--fast");
+// Cloud agents have no Docker, so they cannot run the full gate. CI runs it on their branch
+// (docs/adr/0006); CLAUDE_CODE_REMOTE is set by Claude Code on the web.
+const cloud = process.env.CLAUDE_CODE_REMOTE === "true";
+const fast = process.argv.includes("--fast") || cloud;
+if (cloud && !process.argv.includes("--fast")) {
+  console.log("Cloud agent: running the fast checks. CI runs the full gate.");
+}
 
 // The full gate must run against the local Supabase stack and never production. Values already
 // in the environment beat every .env file (including a stray .env.production.local that
