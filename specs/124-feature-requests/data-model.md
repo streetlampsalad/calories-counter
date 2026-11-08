@@ -32,7 +32,7 @@ Index on `user_id`.
 |---|---|---|
 | `public.other_feature_requests()` | `definer`, `search_path = ''` | rows of other Users with `stage` from `submitted` to `ready_to_try` (not `not_going_ahead`) and not withdrawn: `id`, `goal`, `stage`, `feature_issue`, `created_at`; never `user_id`, `problem` or `details` |
 | `public.feature_requests_ahead(request_id uuid)` | `definer` | how many requests of any User at `submitted` or `being_reviewed`, not withdrawn, were created before it; null unless the caller owns `request_id` |
-| `public.can_try_toggle(key text)` | `invoker` | replaced (Slice 3): `public.is_owner()` or the caller has a Feature Request, not withdrawn, whose `'feature-' \|\| feature_issue = key` |
+| `public.can_try_toggle(key text)` | `invoker` | replaced (Slice 3): `public.is_owner()` or the caller has a Feature Request at `ready_to_try`, not withdrawn, whose `'feature-' \|\| feature_issue = key`, so a half-built feature cannot be switched on early through the API |
 | `public.apply_feature_request_sync(updates jsonb)` | `definer`, `service_role` only | for each `{feature_issue, stage, spec_issue, latest_comment, ready_note}`: updates the matching request that is not withdrawn, sets `stage_changed_at` when the stage changes, and returns the rows whose stage changed into `ready_to_try` or `not_going_ahead` (id, user_id, goal, latest_comment), so each notification is decided once |
 
 ## Seed (local and CI only)

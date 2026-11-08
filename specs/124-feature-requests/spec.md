@@ -33,7 +33,7 @@ From Settings, a User opens **Feature requests** and taps **Request a feature** 
 3. **Given** the form, **When** the User submits with the first field empty or shorter than 10 characters, **Then** it is not sent and the field says what it needs.
 4. **Given** the User has typed fewer than 100 characters in total, **When** they look at the form, **Then** a gentle line under the fields says more detail means a closer result; it never blocks submitting.
 5. **Given** a valid form, **When** the User submits, **Then** a Feature Issue is created with the headings `### Problem`, `### Who has it` ("The requester"), `### Desired outcome`, `### Additional details` and `### Requested by` (the Feature Request's id), labels `feature`, `needs-triage` and `priority:P2`, and the request shows as **Submitted** at the top of the list.
-6. **Given** the User's text contains `#` headings or `@` mentions, **When** the Issue is created, **Then** each field is quoted so it cannot add headings, and no mention notifies anyone.
+6. **Given** the User's text contains `#` headings, `@` mentions or `#123` references, **When** the Issue is created, **Then** each field is quoted so it cannot add headings, no mention notifies anyone, and no reference links to another Issue.
 7. **Given** the User already has 2 requests that agents are still working on, **When** they open the form, **Then** it says they can have 2 at a time and cannot be submitted.
 8. **Given** notification permission is not yet decided and push is supported, **When** the form opens, **Then** it offers "Notify me when it's ready", which asks for permission and subscribes this device; declining still lets them submit.
 9. **Given** GitHub refuses or cannot be reached, **When** the User submits, **Then** no request is kept and a message says it couldn't be sent and to try again, with what they typed still in the form.
@@ -74,7 +74,7 @@ When a request reaches **Ready to try**, the requester gets a push notification 
 2. **Given** a request moves to Not going ahead, **When** the sync arrives, **Then** the requester is notified with the start of the reason, once.
 3. **Given** any other stage change, or the same stage again, **When** the sync arrives, **Then** nobody is notified.
 4. **Given** a request at Ready to try whose spec has a `## Ready to try` section, **When** its card is shown, **Then** that note is on it.
-5. **Given** a request at Ready to try and its Toggle in Testing, **When** the requester turns its switch on, **Then** the feature is on for them alone; other Users who are not the Owner cannot switch it.
+5. **Given** a request at Ready to try and its Toggle in Testing, **When** the requester turns its switch on, **Then** the feature is on for them alone; other Users who are not the Owner cannot switch it, and nor can the requester before Ready to try.
 6. **Given** a requester has withdrawn their request, **When** they ask about its Toggle, **Then** they can no longer switch it.
 7. **Given** `/deliver` writes a spec for a Feature, **When** the spec is written, **Then** it has a `## Ready to try` section: what the User will find, how to try it and the assumptions made, in plain words for the User.
 
@@ -156,6 +156,7 @@ Guesses made: requests are capped at 2 in progress per person; other people's re
 - The repo stays public, so a request's text is published; the form says so before the User types.
 - Stage changes reach the app within minutes, because `board.yml` runs on every Issue and pull request event and closing Issues with `AUTOMATION_TOKEN` triggers it again.
 - `Requested by` holds the request's UUID, which identifies no one.
+- Until Slice 2 deploys, nothing moves a request on from Submitted, so the cap of 2 holds a User at two requests; that is harmless while `feature-114` is only on for the Owner.
 - The Feature Issue's title is "Feature: " and the start of the goal, cut to 70 characters at a word.
 - "Requests ahead of yours" counts every User's requests at Submitted or Being reviewed created earlier; the Dispatcher also works on the Owner's own Issues, so it is a guide, not a promise.
 
@@ -171,9 +172,9 @@ Guesses made: requests are capped at 2 in progress per person; other people's re
 | D6 | Where does the Ready to try note come from? | A `## Ready to try` section the spec writer adds to every spec; the sync reads it from `main` | A comment the last Slice writes (nobody knows which Slice is last until it deploys) | medium |
 | D7 | What counts as "open" for the cap of 2? | Stages where agents still work: Submitted, Being reviewed, Planning, Building, Waiting for the owner | Including Ready to try (a User testing two features could never ask again) | medium |
 | D8 | When may a request be withdrawn? | Submitted, Being reviewed, Planning | Any time before Ready to try (would strand merged code behind a Toggle with no Chore); never | high |
-| D9 | How is text kept from shaping the Issue? | Each field is a Markdown quote (`> ` on every line) and `@` before a word gets a zero-width space | Free text (could add a fake `### Requested by`); a code block (hard to read) | high |
+| D9 | How is text kept from shaping the Issue? | Each field is a Markdown quote (`> ` on every line), and `@` before a word and `#` before a number get a zero-width space, so no mention notifies and no cross-reference lands on another Issue. Slash commands are left as text: no bot acts on them here, and `/deliver` reads every Issue as data | Free text (could add a fake `### Requested by`); a code block (hard to read) | high |
 | D10 | Do other Users see who asked? | No; only what was asked and its stage, through a `security definer` function | Showing names (friends may not want it known); hiding others entirely (duplicates) | medium |
-| D11 | Who can switch a request's Toggle? | The Owner and its requester, until withdrawn: `can_try_toggle` is replaced to add the requester | Only the requester (the Owner would lose the switch spec 116 gave them) | high |
+| D11 | Who can switch a request's Toggle? | The Owner, and its Requester once the request is at Ready to try and until it is withdrawn: `can_try_toggle` is replaced to add them | The Requester at any stage (they could switch on a half-built feature through the API); only the Requester (the Owner would lose the switch spec 116 gave them) | high |
 | D12 | When do notifications send? | Only when the stored stage changes into Ready to try or Not going ahead, decided in one `update … returning` so a repeated sync cannot send twice | Notifying on every stage (noise) | high |
 | D13 | Is the requester told of Waiting for the owner? | No notification; the card shows it | Notifying (the User can't act on it) | medium |
 | D14 | What is this feature's own Toggle? | `feature-114`, added by Slice 1, so only the Owner sees it until it goes Live | A Toggle per Slice (one feature, one Toggle) | high |

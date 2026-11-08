@@ -12,7 +12,7 @@
 ## Server action `withdrawFeatureRequest`
 
 - Input: `{ id: string }`. Refuses unless the Toggle is on, the caller owns the request, and its stage is `submitted`, `being_reviewed` or `planning` and it is not withdrawn.
-- Comments "Withdrawn by the requester." on the Feature Issue and the Spec Issue (if any), closes each as not planned, then sets `withdrawn_at`.
+- Sets `withdrawn_at` first, so a sync arriving meanwhile is ignored and notifies nobody. Then comments "Withdrawn by the requester." on the Feature Issue and the Spec Issue (if any) and closes each as not planned. If GitHub fails, it clears `withdrawn_at` again and answers `unavailable`, so the app never shows Withdrawn while agents keep working.
 - Returns `{ ok: true }` or `{ ok: false, code: "not_allowed" | "unavailable" }`.
 
 ## `FeatureIssues` (`src/features/feature-requests/feature-issues.ts`)
