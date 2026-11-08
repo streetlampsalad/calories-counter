@@ -52,6 +52,9 @@ export function FeatureRequestsScreen() {
               <RequestCard
                 request={request}
                 display={displayStage(request, toggles)}
+                toggle={toggles.find(
+                  (toggle) => toggle.key === `feature-${request.featureIssue}`,
+                )}
               />
             </li>
           ))}
