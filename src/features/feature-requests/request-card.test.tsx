@@ -8,6 +8,8 @@ vi.mock("./queries", () => ({
   useFeatureRequestsAhead: (id: string, enabled: boolean) =>
     useFeatureRequestsAhead(id, enabled),
   useWithdrawFeatureRequest: () => ({ mutate: vi.fn(), isPending: false }),
+  useGiveFeedback: () => ({ mutate: vi.fn(), isPending: false }),
+  useMyFeatureRequests: () => ({ data: [] }),
 }));
 
 const switchToggle = vi.fn();
@@ -26,6 +28,8 @@ const request = (overrides: Partial<FeatureRequest> = {}): FeatureRequest => ({
   latestComment: "Accepted: specified in #201",
   readyNote: null,
   withdrawnAt: null,
+  firstReadyAt: null,
+  rounds: [],
   createdAt: "2026-11-08T00:00:00Z",
   ...overrides,
 });
@@ -175,7 +179,12 @@ describe("RequestCard at Ready to try (US3)", () => {
       <RequestCard
         request={ready}
         display="ready_to_try"
-        toggle={{ key: "feature-200", isOn: false, canSwitch: true }}
+        toggle={{
+          key: "feature-200",
+          isOn: false,
+          canSwitch: true,
+          state: "testing",
+        }}
       />,
     );
 
@@ -191,7 +200,12 @@ describe("RequestCard at Ready to try (US3)", () => {
       <RequestCard
         request={ready}
         display="ready_to_try"
-        toggle={{ key: "feature-200", isOn: false, canSwitch: true }}
+        toggle={{
+          key: "feature-200",
+          isOn: false,
+          canSwitch: true,
+          state: "testing",
+        }}
       />,
     );
 
@@ -211,7 +225,12 @@ describe("RequestCard at Ready to try (US3)", () => {
       <RequestCard
         request={ready}
         display="ready_to_try"
-        toggle={{ key: "feature-200", isOn: true, canSwitch: true }}
+        toggle={{
+          key: "feature-200",
+          isOn: true,
+          canSwitch: true,
+          state: "testing",
+        }}
       />,
     );
 
@@ -224,7 +243,12 @@ describe("RequestCard at Ready to try (US3)", () => {
       <RequestCard
         request={ready}
         display="ready_to_try"
-        toggle={{ key: "feature-200", isOn: false, canSwitch: false }}
+        toggle={{
+          key: "feature-200",
+          isOn: false,
+          canSwitch: false,
+          state: "testing",
+        }}
       />,
     );
 
@@ -239,10 +263,122 @@ describe("RequestCard at Ready to try (US3)", () => {
       <RequestCard
         request={request({ stage: "building" })}
         display="building"
-        toggle={{ key: "feature-200", isOn: false, canSwitch: true }}
+        toggle={{
+          key: "feature-200",
+          isOn: false,
+          canSwitch: true,
+          state: "testing",
+        }}
       />,
     );
 
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+  });
+});
+
+describe("RequestCard and Rounds (spec 135 US1)", () => {
+  const testing = {
+    key: "feature-200",
+    isOn: true,
+    canSwitch: true,
+    state: "testing" as const,
+  };
+  const tried = "2026-11-01T00:00:00Z";
+
+  it("offers Give feedback at Ready to try with its Toggle in Testing (US1.1)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={request({ stage: "ready_to_try", firstReadyAt: tried })}
+        display="ready_to_try"
+        toggle={testing}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Give feedback" }),
+    ).toBeInTheDocument();
+  });
+
+  it("doesn't once the Toggle is Live or Removed, nor at any other stage (US1.8)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    for (const [display, state] of [
+      ["live", "live"],
+      ["removed", "removed"],
+      ["building", "testing"],
+      ["submitted", "testing"],
+    ] as const) {
+      const { unmount } = render(
+        <RequestCard
+          request={request({ stage: "ready_to_try", firstReadyAt: tried })}
+          display={display}
+          toggle={{ ...testing, state }}
+        />,
+      );
+      expect(
+        screen.queryByRole("button", { name: "Give feedback" }),
+      ).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it("lists each Round with its feedback and Issue (US1.3)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={request({
+          stage: "submitted",
+          firstReadyAt: tried,
+          rounds: [
+            {
+              id: "x1",
+              feedback: "Let me add half a glass",
+              featureIssue: 811,
+              createdAt: "2026-11-08T00:00:00Z",
+            },
+          ],
+        })}
+        display="submitted"
+        toggle={testing}
+      />,
+    );
+
+    const rounds = screen.getByRole("list", { name: "Rounds" });
+    expect(rounds).toHaveTextContent("Round 2");
+    expect(rounds).toHaveTextContent("Let me add half a glass");
+    expect(
+      screen.getByRole("link", { name: "Round 2 on GitHub" }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/streetlampsalad/calories-counter/issues/811",
+    );
+  });
+
+  it("keeps the switch while a Round is built (US1.6)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={request({ stage: "building", firstReadyAt: tried })}
+        display="building"
+        toggle={testing}
+      />,
+    );
+
+    expect(screen.getByRole("switch", { name: "Try it" })).toBeChecked();
+  });
+
+  it("offers no Withdraw once the request has been Ready to try (US1.11)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={request({ stage: "submitted", firstReadyAt: tried })}
+        display="submitted"
+        toggle={testing}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Withdraw" }),
+    ).not.toBeInTheDocument();
   });
 });

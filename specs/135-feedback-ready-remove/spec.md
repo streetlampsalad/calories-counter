@@ -92,6 +92,7 @@ If a request has sat at **Ready to try** for 14 days with its Toggle still in Te
 ### Edge Cases
 
 - **Feedback while a Round is already in progress**: not offered; the card offers it again once the Round is Ready to try.
+- **A Round that agents decline** (Not going ahead): the request was Ready to try before, so the card keeps the switch and still offers Give feedback, It's ready and Remove it, with the reason (D13).
 - **Withdraw during a Round**: not offered, and refused by the server (US1.11, D12). Withdrawing would close only the original Issues, leave the Round's Issue open, end the Requester's switch, and leave the Toggle in Testing with nobody to decide; the Requester waits for the Round's Ready to try and chooses Remove it instead.
 - **The original Feature or Spec Issue changes after a Round starts**: ignored, because the request follows its newest Round.
 - **It's ready and Remove it at once** (two phones): the Toggle can only leave Testing once, so the second finds it no longer in Testing, closes its Chore again and says so.
@@ -103,7 +104,7 @@ If a request has sat at **Ready to try** for 14 days with its Toggle still in Te
 
 ### Functional Requirements
 
-- **FR-001**: Give feedback, It's ready and Remove it MUST be offered only to the Requester, only at Ready to try, only while the request's Toggle is in Testing, and only while `feature-114` is on for them; the server actions MUST check the same.
+- **FR-001**: Give feedback, It's ready and Remove it MUST be offered only to the Requester, only at Ready to try (or Not going ahead after a declined Round, D13), only while the request's Toggle is in Testing, and only while `feature-114` is on for them; the server actions MUST check the same.
 - **FR-002**: Feedback MUST be 10–4,000 characters and MUST create a follow-up Feature Issue (FR-003 of spec 124's quoting and neutralising apply) with `### Follow-up to #<original Feature Issue>`, labelled `priority:P1`.
 - **FR-003**: A request MUST follow the stage of its newest Feature Issue, and MUST be notified at Ready to try for every Round.
 - **FR-004**: A Requester MUST keep their switch while a Round is in progress once the request has been Ready to try.
@@ -142,7 +143,7 @@ Guesses made: only you, the one who asked, can decide; It's ready can't be undon
 ## Assumptions
 
 - The Requester alone decides It's ready for everyone, as the owner decided on 2026-11-08 (grilling, Q5).
-- A Round's Feature Issue uses the request's own id under `### Requested by`, so the sync needs no new link; the newest Issue number is the current Round.
+- A Round's Feature Issue uses the request's own id under `### Requested by`, so the sync needs no new link; the app applies only the newest Issue it recorded for the request, the current Round's.
 - The board's nightly run is enough to send 14-day reminders on time to within a day.
 - Removing a Live feature, or undoing a decision, is a job for the Owner on GitHub, not the app.
 
@@ -150,7 +151,7 @@ Guesses made: only you, the one who asked, can decide; It's ready can't be undon
 
 | # | Question | Decision | Alternatives rejected | Confidence |
 |---|---|---|---|---|
-| D1 | How does a Round link to its request? | Its Feature Issue's `### Requested by` holds the request id; Rounds are rows in `feature_request_rounds`; the sync sends only the newest Feature Issue per request | A new `### Round of` heading the sync parses (a second link to keep in step) | high |
+| D1 | How does a Round link to its request? | Its Feature Issue's `### Requested by` holds the request id; Rounds are rows in `feature_request_rounds`; the sync sends every Feature Issue, and the app applies only the request's newest recorded one, so an Issue anyone else files with the same id changes nothing | A new `### Round of` heading the sync parses (a second link to keep in step) | high |
 | D2 | Does a Round get its own Toggle? | No: it changes the feature behind `feature-<original Feature Issue>` | A Toggle per Round (several half-features, and the switch moves) | high |
 | D3 | Can the Requester try it while the next Round is built? | Yes: `can_try_toggle` accepts a request that has been Ready to try at least once (`first_ready_at`) | Only at Ready to try (they lose what they were testing) | high |
 | D4 | In what order do It's ready and Remove it happen? | Chore first, then the Toggle's state; the Chore is closed again if the state change finds the Toggle no longer in Testing | State first (a Live Toggle with no Chore leaves dead checks for ever, and state cannot go back) | high |
@@ -162,6 +163,7 @@ Guesses made: only you, the one who asked, can decide; It's ready can't be undon
 | D10 | Who may change a Toggle's state? | The server, with the service role, after checking the Requester; Users still have no write access to `toggles` | A definer function Users call (more surface for one check the server already does) | high |
 | D11 | Do the clean-up Chores delete the Toggle's row? | No: the row stays, Live or Removed, because a Feature Request's card reads it to show Live for everyone or Removed; only the code checks go | Deleting it (the card would fall back to Ready to try) | high |
 | D12 | Can a Requester withdraw during a Round? | No: Withdraw is only for a request that has never been Ready to try; afterwards the way out is Remove it, at the Round's Ready to try | Withdrawing the Round (closing its Issues and going back to Ready to try: another state to sync) or the whole request (closes only the original Issues and leaves the Toggle in Testing for ever) | high |
+| D13 | What if agents decline a Round? | The request shows Not going ahead with the reason, but, having been Ready to try, keeps its switch and still offers the three actions | Leaving it stuck (its Toggle would stay in Testing with no way to decide) or putting it back at Ready to try (a misleading Ready to try notification) | medium |
 
 ## Risk Assessment *(mandatory)*
 

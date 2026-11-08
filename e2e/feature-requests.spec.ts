@@ -269,4 +269,52 @@ test.describe("stages from the board workflow (Slice 2)", () => {
         .getByRole("switch", { name: "Try it" }),
     ).toBeChecked();
   });
+
+  test("feedback on a request Ready to try starts another Round (spec 135 US1.3)", async ({
+    page,
+  }) => {
+    const added = await adminClient()
+      .from("toggles")
+      .insert({ key: `feature-${MINE}`, title: "Water tracking" });
+    if (added.error) throw added.error;
+    const ready = await adminClient()
+      .from("feature_requests")
+      .update({ stage: "ready_to_try" })
+      .eq("feature_issue", MINE);
+    if (ready.error) throw ready.error;
+
+    await page.goto("/settings/feature-requests");
+    const card = page.getByRole("article", {
+      name: "See how much water I drink",
+      exact: true,
+    });
+    await card.getByRole("button", { name: "Give feedback" }).click();
+    const sheet = page.getByRole("dialog", { name: "What should change?" });
+    await expect(sheet).toContainText("posted publicly on GitHub");
+    await sheet
+      .getByRole("textbox", { name: "What should change?" })
+      .fill("Let me add half a glass");
+    await sheet.getByRole("button", { name: "Send feedback" }).click();
+
+    await expect(sheet).toBeHidden();
+    await expect(card).toContainText("Submitted");
+    await expect(card.getByRole("list", { name: "Rounds" })).toContainText(
+      "Let me add half a glass",
+    );
+    await expect(card.getByRole("switch", { name: "Try it" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Withdraw" })).toHaveCount(0);
+
+    const { data } = await adminClient()
+      .from("feature_requests")
+      .select("stage, feature_request_rounds (feedback, feature_issue)")
+      .eq("feature_issue", MINE)
+      .single();
+    expect(data?.stage).toBe("submitted");
+    expect(data?.feature_request_rounds).toEqual([
+      {
+        feedback: "Let me add half a glass",
+        feature_issue: expect.any(Number),
+      },
+    ]);
+  });
 });

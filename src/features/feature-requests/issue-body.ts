@@ -5,6 +5,8 @@
 // space (nobody is notified, no other Issue is linked).
 
 export const ISSUE_LABELS = ["feature", "needs-triage", "priority:P2"];
+// Feedback on a feature already being tried goes ahead of new requests (spec 135 US1.3).
+export const FOLLOW_UP_LABELS = ["feature", "needs-triage", "priority:P1"];
 
 const TITLE_PREFIX = "Feature: ";
 const TITLE_MAX = 70;
@@ -26,16 +28,21 @@ function quote(text: string | undefined): string {
     .join("\n");
 }
 
-export function issueTitle(goal: string): string {
+function title(prefix: string, goal: string): string {
   const line = (goal.trim().split(/\r?\n/)[0] ?? "").replace(/\s+/g, " ");
-  const room = TITLE_MAX - TITLE_PREFIX.length;
-  if (line.length <= room) return TITLE_PREFIX + neutralise(line);
+  const room = TITLE_MAX - prefix.length;
+  if (line.length <= room) return prefix + neutralise(line);
 
   const cut = line.slice(0, room - 1);
   const atWord =
     cut.lastIndexOf(" ") > 0 ? cut.slice(0, cut.lastIndexOf(" ")) : cut;
-  return `${TITLE_PREFIX}${neutralise(atWord.trimEnd())}…`;
+  return `${prefix}${neutralise(atWord.trimEnd())}…`;
 }
+
+export const issueTitle = (goal: string) => title(TITLE_PREFIX, goal);
+
+export const followUpTitle = (goal: string) =>
+  title(`${TITLE_PREFIX}Feedback on `, goal);
 
 export function issueBody(request: {
   id: string;
@@ -63,6 +70,44 @@ export function issueBody(request: {
     "### Requested by",
     "",
     request.id,
+    "",
+  ].join("\n");
+}
+
+// A Round (spec 135 US1.3): the Requester's feedback is the Problem, the original goal still the
+// outcome, and `### Follow-up to` tells triage to change the feature behind its existing Toggle.
+// `### Requested by` is the request's own id, so the sync finds the request from either Issue.
+export function followUpBody(round: {
+  id: string;
+  goal: string;
+  feedback: string;
+  featureIssue: number;
+  round: number;
+}): string {
+  return [
+    "### Problem",
+    "",
+    quote(round.feedback),
+    "",
+    "### Who has it",
+    "",
+    "The requester.",
+    "",
+    "### Desired outcome",
+    "",
+    quote(round.goal),
+    "",
+    "### Additional details",
+    "",
+    `Round ${round.round} of #${round.featureIssue}.`,
+    "",
+    "### Follow-up to",
+    "",
+    `#${round.featureIssue}`,
+    "",
+    "### Requested by",
+    "",
+    round.id,
     "",
   ].join("\n");
 }

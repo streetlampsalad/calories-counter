@@ -4,16 +4,34 @@ import { useId } from "react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import type { ToggleState } from "@/features/toggles/queries";
 import { useSwitchToggle } from "@/features/toggles/queries";
-import { type FeatureRequest, useFeatureRequestsAhead } from "./queries";
-import { canWithdraw, type DisplayStage, issueUrl, STAGE_TEXT } from "./stage";
+import { FeedbackSheet } from "./feedback-sheet";
+import {
+  type FeatureRequest,
+  type Round,
+  useFeatureRequestsAhead,
+} from "./queries";
+import {
+  canDecide,
+  canWithdraw,
+  type DisplayStage,
+  issueUrl,
+  STAGE_TEXT,
+} from "./stage";
 import { WithdrawButton } from "./withdraw-button";
 
 // The request's Toggle as the signed-in User sees it, from my_toggles().
-export type RequestToggle = { key: string; isOn: boolean; canSwitch: boolean };
+export type RequestToggle = {
+  key: string;
+  isOn: boolean;
+  canSwitch: boolean;
+  state: ToggleState;
+};
 
 // One of the User's own Feature Requests: what they asked, where it is, and the latest word on it.
-// At Ready to try it also says what was built, and gives the Requester its switch (US3.4, US3.5).
+// At Ready to try it also says what was built, and gives the Requester its switch (US3.4, US3.5),
+// which they keep while a later Round is built (spec 135 US1.6). Feedback starts another Round.
 export function RequestCard({
   request,
   display,
@@ -25,6 +43,7 @@ export function RequestCard({
 }) {
   const ahead = useFeatureRequestsAhead(request.id, display === "submitted");
   const ready = display === "ready_to_try";
+  const tried = ready || request.firstReadyAt !== null;
 
   return (
     <article
@@ -36,7 +55,9 @@ export function RequestCard({
       {ready && request.readyNote ? (
         <p className="whitespace-pre-line text-sm">{request.readyNote}</p>
       ) : null}
-      {ready && toggle?.canSwitch ? <TryIt toggle={toggle} /> : null}
+      {tried && toggle?.canSwitch && toggle.state === "testing" ? (
+        <TryIt toggle={toggle} />
+      ) : null}
       {display === "submitted" && ahead.data !== undefined ? (
         <p className="text-muted-foreground text-sm">
           {ahead.data === 0
@@ -51,9 +72,13 @@ export function RequestCard({
             : request.latestComment}
         </p>
       ) : null}
-      {canWithdraw(display) ? (
+      {canDecide(display, toggle, request.firstReadyAt) ? (
+        <FeedbackSheet id={request.id} goal={request.goal} />
+      ) : null}
+      {canWithdraw(display, request.firstReadyAt) ? (
         <WithdrawButton id={request.id} goal={request.goal} />
       ) : null}
+      {request.rounds.length > 0 ? <Rounds rounds={request.rounds} /> : null}
       {request.featureIssue ? (
         <a
           href={issueUrl(request.featureIssue)}
@@ -65,6 +90,36 @@ export function RequestCard({
         </a>
       ) : null}
     </article>
+  );
+}
+
+// The Requester's feedback so far; the request's own build is Round 1.
+function Rounds({ rounds }: { rounds: Round[] }) {
+  return (
+    <ol aria-label="Rounds" className="flex flex-col gap-2 border-t pt-2">
+      {rounds.map((round, index) => {
+        const name = `Round ${index + 2}`;
+        return (
+          <li key={round.id} className="flex flex-col text-sm">
+            <span className="font-medium">{name}</span>
+            <span className="line-clamp-2 text-muted-foreground">
+              {round.feedback}
+            </span>
+            {round.featureIssue ? (
+              <a
+                href={issueUrl(round.featureIssue)}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${name} on GitHub`}
+                className="min-h-11 self-start py-2 underline underline-offset-4"
+              >
+                See it on GitHub
+              </a>
+            ) : null}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 

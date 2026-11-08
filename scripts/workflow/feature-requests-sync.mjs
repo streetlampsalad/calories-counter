@@ -20,6 +20,8 @@ const thirtyDaysAgo = new Date(
 ).toISOString();
 
 // Open Features, and those closed recently enough that their last stage may not have reached the app.
+// Every one is sent, a Round's follow-up Features too: the app applies only each request's newest
+// Issue it recorded, so an Issue anyone else files with the same Requested by changes nothing (spec 135).
 const features = [
   ...restAll("issues?labels=feature&state=open&per_page=100"),
   ...restAll(

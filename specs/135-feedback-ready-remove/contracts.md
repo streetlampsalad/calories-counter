@@ -6,7 +6,7 @@ All three server actions live in `src/features/feature-requests/actions.ts`, tak
 
 - `feedback` 10–4,000 characters after trimming, else `invalid`.
 - `limit` when the caller has 2 other requests at an open stage.
-- Inserts a Round, creates the follow-up Feature Issue through `FeatureIssues.create` (`issueBody` with `followUpTo`), stores its number on the Round, and sets the request's stage to `submitted`. If the Issue cannot be created, deletes the Round; if its number cannot be stored, closes the Issue again (as `submitFeatureRequest` does).
+- Starts the Round with `start_feature_request_round()` (which also puts the request back at `submitted`), creates the follow-up Feature Issue through `FeatureIssues.create` (`followUpTitle`, `followUpBody`), and stores its number on the Round. If the Issue cannot be created, `undo_feature_request_round()` deletes the Round and puts the request back as it was (stage, when it changed, comment and note) in one statement; if its number cannot be stored, also closes the Issue again (as `submitFeatureRequest` does).
 - Returns `{ ok: true }` or `{ ok: false, code: "not_allowed" | "invalid" | "limit" | "unavailable" }`.
 
 Follow-up Issue: title `Feature: Feedback on <goal start>`; headings `### Problem` (the feedback, quoted), `### Who has it` ("The requester."), `### Desired outcome` (the original goal, quoted), `### Additional details` ("Round <n> of #<original>."), `### Follow-up to` (`#<original Feature Issue>`), `### Requested by` (the request id); labels `feature`, `needs-triage`, `priority:P1`.
@@ -26,5 +26,5 @@ Follow-up Issue: title `Feature: Feedback on <goal start>`; headings `### Proble
 
 ## The sync
 
-- `scripts/workflow/feature-requests-sync.mjs` groups Feature Issues by `### Requested by` and sends only the newest (highest number) per request.
+- `scripts/workflow/feature-requests-sync.mjs` sends every Feature Issue with a `### Requested by`, a Round's too; `apply_feature_request_sync` applies only each request's newest recorded Issue, so an Issue the app did not create changes nothing.
 - `POST /api/feature-requests/sync`, after recording stages and sending stage notifications, calls `due_testing_reminders()` and sends each returned Requester `{ title: "Still trying: <goal start>?", body: "Mark it ready, give feedback or remove it.", url: "/settings/feature-requests#<id>" }`. The response gains `reminded: number`.

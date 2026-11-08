@@ -2,7 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { submitFeatureRequest, withdrawFeatureRequest } from "./actions";
+import {
+  giveFeedback,
+  submitFeatureRequest,
+  withdrawFeatureRequest,
+} from "./actions";
 import type { FeatureRequestInput, Stage } from "./domain";
 
 export type FeatureRequest = {
@@ -13,6 +17,16 @@ export type FeatureRequest = {
   latestComment: string | null;
   readyNote: string | null;
   withdrawnAt: string | null;
+  firstReadyAt: string | null;
+  // The Requester's feedback, oldest first: Round 2 onwards (spec 135).
+  rounds: Round[];
+  createdAt: string;
+};
+
+export type Round = {
+  id: string;
+  feedback: string;
+  featureIssue: number | null;
   createdAt: string;
 };
 
@@ -38,9 +52,13 @@ export function useMyFeatureRequests() {
       const { data, error } = await createClient()
         .from("feature_requests")
         .select(
-          "id, goal, stage, feature_issue, latest_comment, ready_note, withdrawn_at, created_at",
+          "id, goal, stage, feature_issue, latest_comment, ready_note, withdrawn_at, first_ready_at, created_at, feature_request_rounds (id, feedback, feature_issue, created_at)",
         )
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .order("created_at", {
+          referencedTable: "feature_request_rounds",
+          ascending: true,
+        });
       if (error) throw error;
       return data.map((row) => ({
         id: row.id,
@@ -50,6 +68,13 @@ export function useMyFeatureRequests() {
         latestComment: row.latest_comment,
         readyNote: row.ready_note,
         withdrawnAt: row.withdrawn_at,
+        firstReadyAt: row.first_ready_at,
+        rounds: row.feature_request_rounds.map((round) => ({
+          id: round.id,
+          feedback: round.feedback,
+          featureIssue: round.feature_issue,
+          createdAt: round.created_at,
+        })),
         createdAt: row.created_at,
       }));
     },
@@ -140,6 +165,32 @@ export function useWithdrawFeatureRequest() {
           result.code === "not_allowed"
             ? "It can't be withdrawn any more: building has started."
             : "Couldn't withdraw it. Check your connection and try again.",
+        );
+    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: featureRequestKeys.all }),
+  });
+}
+
+// Not optimistic: the card goes back to Submitted once the follow-up Feature Issue exists.
+export function useGiveFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { id: string; feedback: string }) => {
+      let result: Awaited<ReturnType<typeof giveFeedback>>;
+      try {
+        result = await giveFeedback(input);
+      } catch {
+        result = { ok: false, code: "unavailable" };
+      }
+      if (!result.ok)
+        throw new Error(
+          result.code === "limit"
+            ? "You already have 2 requests being worked on. Try again once one is ready."
+            : result.code === "not_allowed"
+              ? "Feedback can't be given on this request any more."
+              : "Couldn't send your feedback. Check your connection and try again.",
         );
     },
     onSettled: () =>

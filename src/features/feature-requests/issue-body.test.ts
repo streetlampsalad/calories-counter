@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { ISSUE_LABELS, issueBody, issueTitle } from "./issue-body";
+import {
+  FOLLOW_UP_LABELS,
+  followUpBody,
+  followUpTitle,
+  ISSUE_LABELS,
+  issueBody,
+  issueTitle,
+} from "./issue-body";
 
 const ID = "6f1c2a9e-1b2c-4d3e-8f90-123456789abc";
 
@@ -105,5 +112,68 @@ describe("issueBody", () => {
 
   it("is labelled as an untriaged Feature at P2", () => {
     expect(ISSUE_LABELS).toEqual(["feature", "needs-triage", "priority:P2"]);
+  });
+});
+
+describe("followUpTitle", () => {
+  it("is Feature: Feedback on and the goal, within 70 characters", () => {
+    expect(followUpTitle("Track water as well as food")).toBe(
+      "Feature: Feedback on Track water as well as food",
+    );
+    expect(
+      followUpTitle(
+        "Let me group the foods I eat together into meals so that logging is one tap",
+      ).length,
+    ).toBeLessThanOrEqual(70);
+  });
+});
+
+describe("followUpBody", () => {
+  it("has the Feature template's headings, the feedback as the Problem and the goal as the outcome (US1.3)", () => {
+    const body = followUpBody({
+      id: ID,
+      goal: "Track water as well as food",
+      feedback: "Let me add half a glass\nand see @everyone's #3",
+      featureIssue: 801,
+      round: 2,
+    });
+
+    expect(body).toBe(
+      [
+        "### Problem",
+        "",
+        "> Let me add half a glass",
+        "> and see @​everyone's #​3",
+        "",
+        "### Who has it",
+        "",
+        "The requester.",
+        "",
+        "### Desired outcome",
+        "",
+        "> Track water as well as food",
+        "",
+        "### Additional details",
+        "",
+        "Round 2 of #801.",
+        "",
+        "### Follow-up to",
+        "",
+        "#801",
+        "",
+        "### Requested by",
+        "",
+        ID,
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("is labelled to be triaged first (US1.3)", () => {
+    expect(FOLLOW_UP_LABELS).toEqual([
+      "feature",
+      "needs-triage",
+      "priority:P1",
+    ]);
   });
 });

@@ -24,6 +24,8 @@ const mine = {
   latestComment: null,
   readyNote: null,
   withdrawnAt: null,
+  firstReadyAt: "2026-11-01T00:00:00Z",
+  rounds: [],
   createdAt: "2026-11-08T00:00:00Z",
 };
 

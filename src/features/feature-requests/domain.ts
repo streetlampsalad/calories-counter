@@ -81,6 +81,27 @@ export function parseFeatureRequest(input: unknown): ParseResult {
   return { ok: false, errors };
 }
 
+// Feedback that starts a Round (spec 135 US1.2).
+export const FEEDBACK_MIN = 10;
+export const FEEDBACK_MAX = 4000;
+const FEEDBACK_SHORT = "Say what should change, in at least 10 characters.";
+
+const feedbackSchema = z
+  .string(FEEDBACK_SHORT)
+  .trim()
+  .min(FEEDBACK_MIN, FEEDBACK_SHORT)
+  .max(FEEDBACK_MAX, "Keep this under 4,000 characters.");
+
+// Checked in the sheet for its message, and again in the server action.
+export function parseFeedback(
+  input: unknown,
+): { ok: true; value: string } | { ok: false; error: string } {
+  const result = feedbackSchema.safeParse(input);
+  return result.success
+    ? { ok: true, value: result.data }
+    : { ok: false, error: result.error.issues[0]?.message ?? FEEDBACK_SHORT };
+}
+
 export function wantsMoreDetail(input: Partial<FeatureRequestInput>): boolean {
   const total =
     (input.goal?.trim().length ?? 0) +
