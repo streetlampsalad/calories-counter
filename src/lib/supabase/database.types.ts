@@ -177,7 +177,12 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "can_switch_toggle":
+            "apply_feature_request_sync":
+{ Args: { "updates": Json }; Returns: {
+              "comment": string,"goal_text": string,"new_stage": string,"notify": boolean,"request_id": string,"requester_id": string
+            }[]
+                           },
+"can_switch_toggle":
 { Args: { "key": string }; Returns: boolean
                            },
 "can_try_toggle":
@@ -192,6 +197,9 @@ isOneToOne: false
 { Args: { "at": string }; Returns: {
               "auth_secret": string,"endpoint": string,"local_day": string,"p256dh_key": string,"subscription_id": string,"user_id": string
             }[]
+                           },
+"feature_requests_ahead":
+{ Args: { "request_id": string }; Returns: number
                            },
 "food_entry_counts":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -229,6 +237,11 @@ isOneToOne: false
 "my_toggles":
 { Args: Record<PropertyKey, never>; Returns: {
               "can_switch": boolean,"is_on": boolean,"key": string,"state": string,"title": string
+            }[]
+                           },
+"other_feature_requests":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "created_at": string,"feature_issue": number,"goal": string,"id": string,"stage": string
             }[]
                            },
 "period_days":

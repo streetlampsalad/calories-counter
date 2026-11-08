@@ -82,3 +82,99 @@ test.describe("a User without the Toggle", () => {
     await expect(page.getByText("This page could not be found.")).toBeVisible();
   });
 });
+
+test.describe("stages from the board workflow (Slice 2)", () => {
+  test.use({ storageState: authFile("liv") });
+
+  const SECRET = "e2e-feature-requests-sync-secret";
+  const MINE = 99_101;
+  const THEIRS = 99_102;
+
+  async function clear() {
+    const { error } = await adminClient()
+      .from("feature_requests")
+      .delete()
+      .in("feature_issue", [MINE, THEIRS]);
+    if (error) throw error;
+  }
+
+  test.beforeEach(async () => {
+    const liv = await userClient("liv");
+    const on = await liv
+      .from("toggle_overrides")
+      .upsert(
+        { toggle_key: "feature-114", enabled: true },
+        { onConflict: "toggle_key,user_id" },
+      );
+    if (on.error) throw on.error;
+    await clear();
+    const { error } = await adminClient()
+      .from("feature_requests")
+      .insert([
+        {
+          user_id: TEST_USERS.liv.id,
+          goal: "See how much water I drink",
+          feature_issue: MINE,
+          stage: "submitted",
+        },
+        {
+          user_id: TEST_USERS.bea.id,
+          goal: "Scan barcodes on packaged food",
+          feature_issue: THEIRS,
+          stage: "building",
+        },
+      ]);
+    if (error) throw error;
+  });
+
+  test.afterEach(clear);
+
+  test("a sync moves a request on, and the card says so (US2.1)", async ({
+    page,
+    request,
+  }) => {
+    const sync = await request.post("/api/feature-requests/sync", {
+      headers: { "x-sync-secret": SECRET },
+      data: {
+        requests: [
+          {
+            featureIssue: MINE,
+            stage: "planning",
+            specIssue: MINE + 1,
+            latestComment: "Accepted: specified in the Spec",
+            readyNote: null,
+          },
+        ],
+      },
+    });
+    expect(sync.status()).toBe(200);
+    expect(await sync.json()).toEqual({ updated: 1, notified: 0 });
+
+    await page.goto("/settings/feature-requests");
+    const card = page.getByRole("article", {
+      name: "See how much water I drink",
+      exact: true,
+    });
+    await expect(card).toContainText("Planning");
+    await expect(card).toContainText("Accepted: specified in the Spec");
+  });
+
+  test("refuses a sync without the secret (US2.3)", async ({ request }) => {
+    const sync = await request.post("/api/feature-requests/sync", {
+      headers: { "x-sync-secret": "not-the-secret" },
+      data: { requests: [] },
+    });
+    expect(sync.status()).toBe(401);
+  });
+
+  test("shows another User's request in progress, without who asked (US2.4)", async ({
+    page,
+  }) => {
+    await page.goto("/settings/feature-requests");
+
+    const others = page.getByRole("list", { name: "Others are asking for" });
+    await expect(others).toContainText("Scan barcodes on packaged food");
+    await expect(others).toContainText("Building");
+    await expect(others).not.toContainText(TEST_USERS.bea.email);
+  });
+});
