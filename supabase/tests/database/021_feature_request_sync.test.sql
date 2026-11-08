@@ -3,6 +3,9 @@
 begin;
 select plan(19);
 
+-- Start from no requests, whatever earlier e2e runs left behind (rolled back at the end).
+delete from public.feature_requests;
+
 insert into auth.users (id, email)
 values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'asker@example.test'),

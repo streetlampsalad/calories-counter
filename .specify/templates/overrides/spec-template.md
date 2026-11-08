@@ -89,6 +89,18 @@
 
 - [What this spec deliberately does not do]
 
+## Ready to try *(mandatory)*
+
+<!--
+  Written for the User who will try this feature, in plain words and CONTEXT.md terms, never code
+  or process: where they'll find it, what to tap to try it, and the guesses this spec made that they
+  might want changed. A Feature Request's card shows this once it is Ready to try (spec 124).
+-->
+
+[Where to find it and how to try it, in two or three sentences]
+
+Guesses made: [the assumptions the User would notice, in one line]
+
 ## Assumptions
 
 - [Reasonable defaults chosen where the description was silent]

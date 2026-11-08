@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { FeatureRequest } from "./queries";
 
@@ -7,6 +8,12 @@ vi.mock("./queries", () => ({
   useFeatureRequestsAhead: (id: string, enabled: boolean) =>
     useFeatureRequestsAhead(id, enabled),
 }));
+
+const switchToggle = vi.fn();
+vi.mock("@/features/toggles/queries", () => ({
+  useSwitchToggle: () => ({ mutate: switchToggle }),
+}));
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 import { OtherRequestCard, RequestCard } from "./request-card";
 
@@ -102,5 +109,90 @@ describe("OtherRequestCard", () => {
     const card = screen.getByRole("article", { name: "Scan barcodes" });
     expect(card).toHaveTextContent("Building");
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+});
+
+describe("RequestCard at Ready to try (US3)", () => {
+  const ready = request({
+    stage: "ready_to_try",
+    readyNote:
+      "Open Settings, then Water.\n\nGuesses made: glasses, not millilitres.",
+  });
+
+  it("shows the agent's note on what was built and how to try it (US3.4)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={ready}
+        display="ready_to_try"
+        toggle={{ key: "feature-200", isOn: false, canSwitch: true }}
+      />,
+    );
+
+    expect(screen.getByText(/Open Settings, then Water\./)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Guesses made: glasses, not millilitres\./),
+    ).toBeInTheDocument();
+  });
+
+  it("has a switch that turns the feature on for the Requester (US3.5)", async () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={ready}
+        display="ready_to_try"
+        toggle={{ key: "feature-200", isOn: false, canSwitch: true }}
+      />,
+    );
+
+    const tryIt = screen.getByRole("switch", { name: "Try it" });
+    expect(tryIt).not.toBeChecked();
+    await userEvent.click(tryIt);
+
+    expect(switchToggle).toHaveBeenCalledWith(
+      { key: "feature-200", on: true },
+      expect.any(Object),
+    );
+  });
+
+  it("shows the switch on when the feature is on for them", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={ready}
+        display="ready_to_try"
+        toggle={{ key: "feature-200", isOn: true, canSwitch: true }}
+      />,
+    );
+
+    expect(screen.getByRole("switch", { name: "Try it" })).toBeChecked();
+  });
+
+  it("has no switch until the Requester may switch it", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={ready}
+        display="ready_to_try"
+        toggle={{ key: "feature-200", isOn: false, canSwitch: false }}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("switch", { name: "Try it" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("has no switch at any other stage", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={request({ stage: "building" })}
+        display="building"
+        toggle={{ key: "feature-200", isOn: false, canSwitch: true }}
+      />,
+    );
+
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
   });
 });

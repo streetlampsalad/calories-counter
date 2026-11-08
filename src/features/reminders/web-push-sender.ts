@@ -9,15 +9,16 @@ export type VapidKeys = {
 };
 
 // A Reminder for this evening is no use tomorrow, so a phone that is off should not show it late.
+// Other messages (a Feature Request that is ready to try) pass a longer one.
 const TTL_SECONDS = 2 * 60 * 60;
 
 // Sends one Web Push message. Only a 404 or 410 means the device is gone for good; anything else
 // (a busy push service, a dropped connection) leaves the subscription alone for next time.
-export function createPushSender(vapid: VapidKeys) {
+export function createPushSender(vapid: VapidKeys, ttlSeconds = TTL_SECONDS) {
   webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
 
   return async (
-    subscription: DueSubscription,
+    subscription: Omit<DueSubscription, "local_day">,
     payload: string,
   ): Promise<SendResult> => {
     try {
@@ -30,7 +31,7 @@ export function createPushSender(vapid: VapidKeys) {
           },
         },
         payload,
-        { TTL: TTL_SECONDS },
+        { TTL: ttlSeconds },
       );
       return "sent";
     } catch (error) {
