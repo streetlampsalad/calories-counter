@@ -18,7 +18,7 @@ All changes are additive (`create or replace` keeps every existing answer for re
 
 | Column | Type | Slice | Notes |
 |---|---|---|---|
-| `first_ready_at` | `timestamptz` | 1 | set by the sync the first time the stage becomes `ready_to_try` |
+| `first_ready_at` | `timestamptz` | 1 | set by the sync the first time the stage becomes `ready_to_try`; once set, Withdraw is refused (D12) |
 | `decision` | `text check (decision in ('ready', 'remove'))` | 2 | set with the Toggle's state change |
 | `cleanup_issue` | `integer` | 2 | the Chore that deletes the Toggle checks or the feature |
 | `testing_reminder_sent_at` | `timestamptz` | 4 | the last 14-day reminder |

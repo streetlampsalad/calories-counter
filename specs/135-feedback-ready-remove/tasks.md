@@ -14,14 +14,14 @@ description: "Tasks for Feedback, Ready and Remove for Feature Requests"
 
 **Goal**: Rounds, the follow-up Feature Issue, the sync following the newest Round, and the Give feedback sheet.
 
-**Covers**: US1.1–US1.10, FR-001–FR-005, FR-008
+**Covers**: US1.1–US1.11, FR-001–FR-005, FR-008, FR-009
 
 **Behind Toggle**: `feature-114`
 
 ### Tests (write first, see them fail)
 
 - [ ] T001 [P] [US1] pgTAP: Rounds private to their Requester; the sync follows the newest Round and ignores older Issues; `first_ready_at` set on the first Ready to try; notified again on a Round's Ready to try; the Requester keeps their switch during a Round, in `supabase/tests/database/023_feature_request_rounds.test.sql`
-- [ ] T002 [P] [US1] Vitest: the follow-up Issue's title and headings, in `issue-body.test.ts`; `giveFeedback` checks, limit, order and rollback, in `feedback.test.ts`; `canDecide`, in `stage.test.ts`; `newestPerRequest`, in `scripts/workflow/feature-requests.test.mjs`
+- [ ] T002 [P] [US1] Vitest: the follow-up Issue's title and headings, in `issue-body.test.ts`; `giveFeedback` checks, limit, order and rollback, in `feedback.test.ts`; `canDecide`, and `canWithdraw` false once the request has been Ready to try, in `stage.test.ts`; Withdraw refused once `first_ready_at` is set, in `withdraw.test.ts`; `newestPerRequest`, in `scripts/workflow/feature-requests.test.mjs`
 - [ ] T003 [P] [US1] Vitest: `### Follow-up to` in the Feature template, `triage.md` and `/deliver`'s `spec.md`, in `scripts/workflow/feature-template.test.mjs`
 - [ ] T004 [P] [US1] Testing Library: the three actions only at Ready to try with the Toggle in Testing; the Rounds list, in `request-card.test.tsx`; the sheet's validation, notice, limit and errors, in `feedback-sheet.test.tsx`
 - [ ] T005 [US1] Playwright: `liv` gives feedback on a Ready to try request and sees Submitted with the Round, in `e2e/feature-requests.spec.ts`
@@ -30,7 +30,7 @@ description: "Tasks for Feedback, Ready and Remove for Feature Requests"
 
 - [ ] T006 [US1] Migration `pnpm db:new feature_request_rounds` per `data-model.md`, then `pnpm db:reset && pnpm db:types`
 - [ ] T007 [US1] `followUpTo` in `issue-body.ts`; `feedback.ts` and `giveFeedback` in `actions.ts`; `useGiveFeedback` and Rounds in `queries.ts`
-- [ ] T008 [US1] `canDecide` in `stage.ts`; `feedback-sheet.tsx`; the actions row and Rounds in `request-card.tsx`
+- [ ] T008 [US1] `canDecide` and the `first_ready_at` check in `canWithdraw` in `stage.ts`; `markWithdrawn` also requires `first_ready_at is null` in `actions.ts`; `feedback-sheet.tsx`; the actions row and Rounds in `request-card.tsx`
 - [ ] T009 [US1] `newestPerRequest` in `scripts/workflow/feature-requests.mjs`, used by `feature-requests-sync.mjs`
 - [ ] T010 [US1] `### Follow-up to` in `.github/ISSUE_TEMPLATE/1-feature.yml`; follow-ups in `.claude/skills/deliver/triage.md` and `spec.md` (reuse Toggle `feature-<n>`, add no new one)
 
@@ -109,7 +109,7 @@ description: "Tasks for Feedback, Ready and Remove for Feature Requests"
 
 | Slice | Title | Covers | Tasks | Blocked by | Human review |
 |---|---|---|---|---|---|
-| 1 | Give feedback, and get another Round | US1.1–US1.10 | T001–T010 | — | Yes (RLS, `can_try_toggle`, Feature template and `/deliver`) |
+| 1 | Give feedback, and get another Round | US1.1–US1.11 | T001–T010 | — | Yes (RLS, `can_try_toggle`, Feature template and `/deliver`) |
 | 2 | Mark it ready | US2.1–US2.4 | T011–T016 | Slice 1 | Yes (a Requester turns a feature on for everyone, irreversibly) |
 | 3 | Remove it | US3.1–US3.3 | T017–T019 | Slice 2 | Yes (turns a feature off for everyone; its Chore drops tables) |
 | 4 | A reminder to decide | US4.1–US4.3 | T020–T023 | Slice 1 | No |

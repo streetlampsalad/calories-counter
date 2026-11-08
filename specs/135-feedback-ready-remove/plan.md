@@ -40,6 +40,7 @@ Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature
 | US1.8 | Vitest, Testing Library | `src/features/feature-requests/stage.test.ts` (`canDecide`), `src/features/feature-requests/request-card.test.tsx` |
 | US1.9 | Vitest | `scripts/workflow/feature-template.test.mjs` (follow-up heading in the template, `triage.md` and `/deliver`'s `spec.md`) |
 | US1.10 | pgTAP | `supabase/tests/database/023_feature_request_rounds.test.sql` |
+| US1.11 | Vitest, Testing Library | `src/features/feature-requests/withdraw.test.ts` (refused once `first_ready_at` is set), `src/features/feature-requests/stage.test.ts` (`canWithdraw`), `src/features/feature-requests/request-card.test.tsx` |
 | US2.1 | Vitest, Playwright | `src/features/feature-requests/decide.test.ts`, `e2e/feature-requests.spec.ts` |
 | US2.2 | Vitest | `src/features/feature-requests/decide.test.ts` |
 | US2.3 | Vitest, pgTAP | `src/features/feature-requests/decide.test.ts`, `supabase/tests/database/019_toggles.test.sql` (state moves forward only) |

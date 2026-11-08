@@ -11,6 +11,10 @@ All three server actions live in `src/features/feature-requests/actions.ts`, tak
 
 Follow-up Issue: title `Feature: Feedback on <goal start>`; headings `### Problem` (the feedback, quoted), `### Who has it` ("The requester."), `### Desired outcome` (the original goal, quoted), `### Additional details` ("Round <n> of #<original>."), `### Follow-up to` (`#<original Feature Issue>`), `### Requested by` (the request id); labels `feature`, `needs-triage`, `priority:P1`.
 
+## `withdrawFeatureRequest({ id })` (changed)
+
+- Also answers `not_allowed` once the request has been Ready to try: `markWithdrawn`'s update adds `first_ready_at is null` (D12).
+
 ## `markReady({ id })` and `removeFeature({ id })`
 
 - Creates the Chore through `FeatureIssues.create`:

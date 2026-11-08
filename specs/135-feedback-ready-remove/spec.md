@@ -24,7 +24,7 @@ On a request that is **Ready to try**, while its Toggle is in Testing, the Reque
 
 **Why this priority**: iterating is the point of trying a feature before everyone gets it.
 
-**Independent Test**: Vitest proves the follow-up Issue's headings and the action's checks; pgTAP proves Rounds are private, the sync follows the newest Round, and the Requester keeps their switch during a Round; Playwright sends feedback and sees Submitted with the Round listed.
+**Independent Test**: Vitest proves the follow-up Issue's headings, the action's checks, and that Withdraw is refused once a request has been Ready to try; pgTAP proves Rounds are private, the sync follows the newest Round, and the Requester keeps their switch during a Round; Playwright sends feedback and sees Submitted with the Round listed.
 
 **Acceptance Scenarios**:
 
@@ -38,6 +38,7 @@ On a request that is **Ready to try**, while its Toggle is in Testing, the Reque
 8. **Given** a request whose Toggle is Live or Removed, or that is not at Ready to try, **When** its card is shown, **Then** it offers none of Give feedback, It's ready or Remove it.
 9. **Given** `/deliver` triages a Feature with `### Follow-up to #<n>`, **When** it writes the spec, **Then** the spec changes the feature behind the existing Toggle `feature-<n>` and adds no new Toggle.
 10. **Given** another User, **When** they read Rounds, **Then** they see none of this Requester's Rounds.
+11. **Given** a request that has been Ready to try and is back at Submitted, Being reviewed or Planning for a Round, **When** its card is shown or the Requester asks to withdraw it, **Then** Withdraw is not offered and the server refuses it, because a built feature is in production behind its Toggle and only It's ready or Remove it may end it.
 
 ---
 
@@ -91,6 +92,7 @@ If a request has sat at **Ready to try** for 14 days with its Toggle still in Te
 ### Edge Cases
 
 - **Feedback while a Round is already in progress**: not offered; the card offers it again once the Round is Ready to try.
+- **Withdraw during a Round**: not offered, and refused by the server (US1.11, D12). Withdrawing would close only the original Issues, leave the Round's Issue open, end the Requester's switch, and leave the Toggle in Testing with nobody to decide; the Requester waits for the Round's Ready to try and chooses Remove it instead.
 - **The original Feature or Spec Issue changes after a Round starts**: ignored, because the request follows its newest Round.
 - **It's ready and Remove it at once** (two phones): the Toggle can only leave Testing once, so the second finds it no longer in Testing, closes its Chore again and says so.
 - **The Owner's own requests**: work the same; the Owner may also still switch any Toggle in Testing.
@@ -109,6 +111,7 @@ If a request has sat at **Ready to try** for 14 days with its Toggle still in Te
 - **FR-006**: It's ready MUST create the Toggle-removal Chore and then set the Toggle Live; Remove it MUST create the feature-removal Chore and then set the Toggle Removed; either MUST close its Chore again if the Toggle is no longer in Testing.
 - **FR-007**: One reminder MUST be sent per Round that stays Ready to try, with its Toggle in Testing, for 14 days.
 - **FR-008**: The Feature template, `triage.md` and `/deliver`'s `spec.md` MUST know `### Follow-up to` and reuse the original Toggle.
+- **FR-009**: Withdraw MUST NOT be offered, and the server MUST refuse it, once a request has been Ready to try (`first_ready_at` set).
 
 ### Key Entities
 
@@ -158,6 +161,7 @@ Guesses made: only you, the one who asked, can decide; It's ready can't be undon
 | D9 | What does a follow-up Issue say? | `### Problem` is the feedback, `### Desired outcome` the original goal, `### Additional details` "Round <n> of #<original>", and `### Follow-up to #<original>` | Only the feedback (triage would lose what the feature is for) | high |
 | D10 | Who may change a Toggle's state? | The server, with the service role, after checking the Requester; Users still have no write access to `toggles` | A definer function Users call (more surface for one check the server already does) | high |
 | D11 | Do the clean-up Chores delete the Toggle's row? | No: the row stays, Live or Removed, because a Feature Request's card reads it to show Live for everyone or Removed; only the code checks go | Deleting it (the card would fall back to Ready to try) | high |
+| D12 | Can a Requester withdraw during a Round? | No: Withdraw is only for a request that has never been Ready to try; afterwards the way out is Remove it, at the Round's Ready to try | Withdrawing the Round (closing its Issues and going back to Ready to try: another state to sync) or the whole request (closes only the original Issues and leaves the Toggle in Testing for ever) | high |
 
 ## Risk Assessment *(mandatory)*
 
