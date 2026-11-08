@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { submitFeatureRequest } from "./actions";
+import { submitFeatureRequest, withdrawFeatureRequest } from "./actions";
 import type { FeatureRequestInput, Stage } from "./domain";
 
 export type FeatureRequest = {
@@ -117,6 +117,30 @@ export function useSubmitFeatureRequest() {
           result.code === "limit" ? MESSAGES.limit : MESSAGES.unavailable,
         );
       return { id: result.id };
+    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: featureRequestKeys.all }),
+  });
+}
+
+// Not optimistic either: Withdrawn shows once its Issues are closed.
+export function useWithdrawFeatureRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      let result: Awaited<ReturnType<typeof withdrawFeatureRequest>>;
+      try {
+        result = await withdrawFeatureRequest({ id });
+      } catch {
+        result = { ok: false, code: "unavailable" };
+      }
+      if (!result.ok)
+        throw new Error(
+          result.code === "not_allowed"
+            ? "It can't be withdrawn any more: building has started."
+            : "Couldn't withdraw it. Check your connection and try again.",
+        );
     },
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: featureRequestKeys.all }),

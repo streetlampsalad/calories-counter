@@ -61,6 +61,37 @@ test.describe("the Owner, with Feature Requests on", () => {
     expect(data?.feature_issue).toBeGreaterThan(90000);
     expect(data?.problem).toBe("I track water on paper, and forget to");
   });
+
+  test("withdraws a request before building starts (US4.1)", async ({
+    page,
+  }) => {
+    const { error } = await adminClient().from("feature_requests").insert({
+      user_id: TEST_USERS.liv.id,
+      goal: "Copy yesterday's Entries to today",
+      feature_issue: 99_201,
+      stage: "submitted",
+    });
+    if (error) throw error;
+
+    await page.goto("/settings/feature-requests");
+    const card = page.getByRole("article", {
+      name: "Copy yesterday's Entries to today",
+    });
+    await card.getByRole("button", { name: "Withdraw" }).click();
+    await page
+      .getByRole("dialog", { name: "Withdraw this request?" })
+      .getByRole("button", { name: "Withdraw request" })
+      .click();
+
+    await expect(card).toContainText("Withdrawn");
+    await expect(card.getByRole("button", { name: "Withdraw" })).toHaveCount(0);
+    const { data } = await adminClient()
+      .from("feature_requests")
+      .select("withdrawn_at")
+      .eq("feature_issue", 99_201)
+      .single();
+    expect(data?.withdrawn_at).not.toBeNull();
+  });
 });
 
 test.describe("a User without the Toggle", () => {

@@ -1,7 +1,8 @@
 "use client";
 
 import { type FeatureRequest, useFeatureRequestsAhead } from "./queries";
-import { type DisplayStage, issueUrl, STAGE_TEXT } from "./stage";
+import { canWithdraw, type DisplayStage, issueUrl, STAGE_TEXT } from "./stage";
+import { WithdrawButton } from "./withdraw-button";
 
 // One of the User's own Feature Requests: what they asked, where it is, and the latest word on it.
 export function RequestCard({
@@ -33,6 +34,9 @@ export function RequestCard({
             ? `Why: ${request.latestComment}`
             : request.latestComment}
         </p>
+      ) : null}
+      {canWithdraw(display) ? (
+        <WithdrawButton id={request.id} goal={request.goal} />
       ) : null}
       {request.featureIssue ? (
         <a

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayStage, issueUrl, STAGE_TEXT } from "./stage";
+import { canWithdraw, displayStage, issueUrl, STAGE_TEXT } from "./stage";
 
 const request = (overrides = {}) => ({
   stage: "building" as const,
@@ -67,5 +67,23 @@ describe("issueUrl", () => {
     expect(issueUrl(200)).toBe(
       "https://github.com/streetlampsalad/calories-counter/issues/200",
     );
+  });
+});
+
+describe("canWithdraw", () => {
+  it("is only before building starts (US4.1, US4.2)", () => {
+    expect(canWithdraw("submitted")).toBe(true);
+    expect(canWithdraw("being_reviewed")).toBe(true);
+    expect(canWithdraw("planning")).toBe(true);
+    for (const stage of [
+      "building",
+      "waiting_for_owner",
+      "ready_to_try",
+      "not_going_ahead",
+      "live",
+      "removed",
+      "withdrawn",
+    ] as const)
+      expect(canWithdraw(stage)).toBe(false);
   });
 });
