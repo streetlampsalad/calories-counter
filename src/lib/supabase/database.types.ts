@@ -21,14 +21,14 @@ export type Database = {
                   ]
                 },"allowed_emails": {
                   Row: {
-                    "created_at": string,"email": string,"note": string | null
+                    "created_at": string,"email": string,"is_owner": boolean,"note": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"email": string,"note"?: string | null
+                    "created_at"?: string,"email": string,"is_owner"?: boolean,"note"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"email"?: string,"note"?: string | null
+                    "created_at"?: string,"email"?: string,"is_owner"?: boolean,"note"?: string | null
                   }
                   Relationships: [
                     
@@ -109,6 +109,40 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"toggle_overrides": {
+                  Row: {
+                    "enabled": boolean,"toggle_key": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "enabled": boolean,"toggle_key": string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "enabled"?: boolean,"toggle_key"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "toggle_overrides_toggle_key_fkey"
+      columns: ["toggle_key"]
+isOneToOne: false
+      referencedRelation: "toggles"
+      referencedColumns: ["key"]
+    }
+                  ]
+                },"toggles": {
+                  Row: {
+                    "created_at": string,"key": string,"state": string,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"key": string,"state"?: string,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"key"?: string,"state"?: string,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"user_settings": {
                   Row: {
                     "daily_goal_calories": number | null,"reminder_enabled": boolean,"reminder_last_sent_on": string | null,"reminder_time": string,"time_zone": string | null,"track_calories_burned": boolean,"updated_at": string,"user_id": string,"week_starts_on": number
@@ -129,7 +163,13 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "daily_totals":
+            "can_switch_toggle":
+{ Args: { "key": string }; Returns: boolean
+                           },
+"can_try_toggle":
+{ Args: { "key": string }; Returns: boolean
+                           },
+"daily_totals":
 { Args: { "range_from": string,"range_to": string }; Returns: {
               "calories": number,"day": string,"entry_count": number
             }[]
@@ -169,6 +209,14 @@ isOneToOne: false
 "increment_ai_usage":
 { Args: { "max_per_day": number,"usage_kind": string }; Returns: boolean
                            },
+"is_owner":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"my_toggles":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "can_switch": boolean,"is_on": boolean,"key": string,"state": string,"title": string
+            }[]
+                           },
 "period_days":
 { Args: { "range_from": string,"range_to": string }; Returns: {
               "calories": number,"calories_burned": number,"day": string,"entry_count": number
@@ -191,6 +239,9 @@ isOneToOne: false
                            },
 "send_due_reminders":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"toggle_is_on":
+{ Args: { "key": string }; Returns: boolean
                            }
           }
           Enums: {

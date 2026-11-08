@@ -20,15 +20,15 @@ description: "Tasks for Toggles for every new Feature"
 
 ### Tests (write first, see them fail)
 
-- [ ] T001 [US1] pgTAP: states, the Owner's override, forward-only state, the Owner losing the mark, missing keys, and one User unable to read or change another's overrides, in `supabase/tests/database/019_toggles.test.sql`
-- [ ] T002 [P] [US1] Vitest: `isToggleOn` returns the function's answer, and `false` on an error or no session, in `src/features/toggles/server.test.ts`
-- [ ] T003 [P] [US1] Vitest + Testing Library: `useToggle` is `false` while loading, on error and for an unknown key, and follows `my_toggles()` once loaded; `useSwitchToggle` is optimistic and rolls back on error, in `src/features/toggles/queries.test.tsx`
+- [x] T001 [US1] pgTAP: states, the Owner's override, forward-only state, the Owner losing the mark, missing keys, and one User unable to read or change another's overrides, in `supabase/tests/database/019_toggles.test.sql`
+- [x] T002 [P] [US1] Vitest: `isToggleOn` returns the function's answer, and `false` on an error or no session, in `src/features/toggles/server.test.ts`
+- [x] T003 [P] [US1] Vitest + Testing Library: `useToggle` is `false` while loading, on error and for an unknown key, and follows `my_toggles()` once loaded; `useSwitchToggle` is optimistic and rolls back on error, in `src/features/toggles/queries.test.tsx`
 
 ### Implementation
 
-- [ ] T004 [US1] Migration `pnpm db:new toggles` per `data-model.md`, then `pnpm db:reset && pnpm db:types`
-- [ ] T005 [P] [US1] `isToggleOn(key)` in `src/features/toggles/server.ts`
-- [ ] T006 [P] [US1] `toggleKeys`, `useToggles`, `useToggle` and `useSwitchToggle` in `src/features/toggles/queries.ts`
+- [x] T004 [US1] Migration `pnpm db:new toggles` per `data-model.md`, then `pnpm db:reset && pnpm db:types`
+- [x] T005 [P] [US1] `isToggleOn(key)` in `src/features/toggles/server.ts`
+- [x] T006 [P] [US1] `toggleKeys`, `useToggles`, `useToggle` and `useSwitchToggle` in `src/features/toggles/queries.ts`
 
 **Checkpoint**: `pnpm validate` passes. After deploy, the Owner sets `is_owner` on their Allowed Email in production (`human-step`).
 
