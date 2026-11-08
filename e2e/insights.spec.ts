@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import { authFile } from "./support/auth";
 import { userClient } from "./support/db";
+import { emulateMidRangePhoneCpu } from "./support/phone";
 import {
   resetSettings,
   resetUser,
@@ -564,7 +565,8 @@ test("the Logging streak says so when nothing has been logged", async ({
 });
 
 // AC-8: a year of history loads in under 2 s on a mid-range Android phone over 4G. Chromium is
-// throttled to a 4G link (9 Mbps down, 170 ms round trip) and a CPU 4x slower than this machine.
+// throttled to a 4G link (9 Mbps down, 170 ms round trip) and to a mid-range phone's CPU, which
+// takes less slowdown on a CI runner than on a fast laptop (support/phone.ts, #134).
 test("the 12-month view loads in under 2 seconds on a throttled phone", async ({
   page,
 }) => {
@@ -594,7 +596,10 @@ test("the 12-month view loads in under 2 seconds on a throttled phone", async ({
     downloadThroughput: (9 * 1024 * 1024) / 8,
     uploadThroughput: (9 * 1024 * 1024) / 8,
   });
-  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  const cpu = await emulateMidRangePhoneCpu(page, cdp);
+  console.log(
+    `CPU: this machine scores ${cpu.machine}; at ${cpu.rate.toFixed(2)}x it scores ${cpu.measured}`,
+  );
 
   const timeInsights = async () => {
     const started = Date.now();
