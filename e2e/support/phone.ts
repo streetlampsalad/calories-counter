@@ -33,42 +33,60 @@ export function nextThrottleRate(
   return Math.max(1, (rate * measured) / target);
 }
 
-// Lighthouse's computeBenchmarkIndex (core/lib/page-functions.js, Apache-2.0), unchanged: a
-// string-building loop and an array-copying loop, each run for 500 ms, averaged.
-function computeBenchmarkIndex() {
-  function benchmarkIndexGC() {
-    const start = Date.now();
-    let iterations = 0;
-    while (Date.now() - start < 500) {
-      let s = "";
-      for (let j = 0; j < 10000; j++) s += "a";
-      if (s.length === 1) throw new Error("prevents compiler optimizations");
-      iterations++;
-    }
-    const durationInSeconds = (Date.now() - start) / 1000;
-    return Math.round(iterations / 10 / durationInSeconds);
-  }
+// Lighthouse's BenchmarkIndex (computeBenchmarkIndex in core/lib/page-functions.js, Apache-2.0):
+// how many times a second the page can build a 10,000-character string, and copy a 100,000-item
+// array, each divided by 10, averaged. Lighthouse times each loop for 500 ms with the page's own
+// clock, but Playwright's page.clock can freeze that clock (this suite's Insights tests do), so
+// here the page runs a set number of loops and the test runner times them.
+const LOOP_SECONDS = 0.5;
 
-  function benchmarkIndexNoGC() {
+function buildStrings(iterations: number) {
+  for (let i = 0; i < iterations; i++) {
+    let s = "";
+    for (let j = 0; j < 10000; j++) s += "a";
+    if (s.length === 1) throw new Error("prevents compiler optimizations");
+  }
+}
+
+function copyArrays(iterations: number) {
+  const scope = globalThis as { benchmarkArrays?: [number[], number[]] };
+  if (!scope.benchmarkArrays) {
     const arrA: number[] = [];
     const arrB: number[] = [];
     for (let i = 0; i < 100000; i++) {
       arrA[i] = i;
       arrB[i] = i;
     }
-    const start = Date.now();
-    let iterations = 0;
-    while (iterations % 10 !== 0 || Date.now() - start < 500) {
-      const src = iterations % 2 === 0 ? arrA : arrB;
-      const tgt = iterations % 2 === 0 ? arrB : arrA;
-      for (let j = 0; j < src.length; j++) tgt[j] = src[j];
-      iterations++;
-    }
-    const durationInSeconds = (Date.now() - start) / 1000;
-    return Math.round(iterations / 10 / durationInSeconds);
+    scope.benchmarkArrays = [arrA, arrB];
   }
+  const [arrA, arrB] = scope.benchmarkArrays;
+  for (let i = 0; i < iterations; i++) {
+    const src = i % 2 === 0 ? arrA : arrB;
+    const tgt = i % 2 === 0 ? arrB : arrA;
+    for (let j = 0; j < src.length; j++) tgt[j] = src[j];
+  }
+}
 
-  return (benchmarkIndexGC() + benchmarkIndexNoGC()) / 2;
+async function loopsPerSecond(page: Page, loop: (n: number) => void) {
+  const time = async (iterations: number) => {
+    const started = performance.now();
+    await page.evaluate(loop, iterations);
+    return (performance.now() - started) / 1000;
+  };
+  // A short run sizes the real one, which lasts about 500 ms as Lighthouse's does.
+  const probe = 20;
+  const iterations = Math.max(
+    probe,
+    Math.round((probe * LOOP_SECONDS) / (await time(probe))),
+  );
+  return iterations / (await time(iterations));
+}
+
+async function benchmarkIndex(page: Page) {
+  await page.evaluate(copyArrays, 0); // builds the arrays outside the timing
+  const gc = await loopsPerSecond(page, buildStrings);
+  const noGC = await loopsPerSecond(page, copyArrays);
+  return Math.round((gc / 10 + noGC / 10) / 2);
 }
 
 export type PhoneCpu = {
@@ -91,10 +109,7 @@ export async function emulateMidRangePhoneCpu(
 ): Promise<PhoneCpu> {
   // Anything else on the machine only ever slows a sample down, so the best of two is the truer one.
   const benchmark = async () =>
-    Math.max(
-      await page.evaluate(computeBenchmarkIndex),
-      await page.evaluate(computeBenchmarkIndex),
-    );
+    Math.max(await benchmarkIndex(page), await benchmarkIndex(page));
   const setRate = (rate: number) =>
     cdp.send("Emulation.setCPUThrottlingRate", { rate });
 
