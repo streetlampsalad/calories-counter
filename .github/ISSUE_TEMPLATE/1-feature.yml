@@ -27,6 +27,11 @@ body:
       description: What a User can do once this ships, and how you would know it works.
     validations:
       required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional details
+      description: Anything else that helps, such as how you would know it works or what it must not do.
   - type: input
     id: requested-by
     attributes:

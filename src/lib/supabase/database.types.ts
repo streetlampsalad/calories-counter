@@ -67,6 +67,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"feature_requests": {
+                  Row: {
+                    "created_at": string,"details": string | null,"feature_issue": number | null,"goal": string,"id": string,"latest_comment": string | null,"problem": string | null,"ready_note": string | null,"spec_issue": number | null,"stage": string,"stage_changed_at": string,"user_id": string,"withdrawn_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"details"?: string | null,"feature_issue"?: number | null,"goal": string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id": string,"withdrawn_at"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"details"?: string | null,"feature_issue"?: number | null,"goal"?: string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id"?: string,"withdrawn_at"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"foods": {
                   Row: {
                     "archived_at": string | null,"calories": number,"created_at": string,"id": string,"name": string,"portion": string,"updated_at": string,"user_id": string

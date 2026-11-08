@@ -20,20 +20,20 @@ description: "Tasks for Feature Requests from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T001 [P] [US1] pgTAP: own rows only, no writes through the API, the limit of 2 open, withdrawn not counted, in `supabase/tests/database/020_feature_requests.test.sql`. pgTAP runs in one session, so it proves the limit but not the per-User lock against two sessions at once; the lock is checked by reading the trigger in review
-- [ ] T002 [P] [US1] Vitest: `parseFeatureRequest` limits; `issueTitle` and `issueBody` headings, `_Not given_` for an empty optional field, quoting, mention and cross-reference neutralising, in `src/features/feature-requests/domain.test.ts` and `issue-body.test.ts`
-- [ ] T003 [P] [US1] Vitest: `submitFeatureRequest` logic with fakes: Toggle off, limit, GitHub failure deletes the row, a failure to store the number closes the Issue again, success stores the number, in `src/features/feature-requests/submit.test.ts`
-- [ ] T004 [P] [US1] Testing Library: the form's validation, the gentle prompt, the public notice, the limit, notification offer, error keeps the text, in `src/features/feature-requests/request-form.test.tsx`; the Settings row in `src/features/settings/feature-requests-row.test.tsx`
-- [ ] T004a [P] [US1] Vitest: `.github/ISSUE_TEMPLATE/1-feature.yml` has an `Additional details` field and `.claude/skills/deliver/triage.md` reads the `### Additional details` section, in `scripts/workflow/feature-template.test.mjs` (FR-011)
-- [ ] T005 [US1] Playwright: `liv` with `feature-114` on submits a request and sees it Submitted; `cleo` sees no row and a 404, in `e2e/feature-requests.spec.ts`
+- [x] T001 [P] [US1] pgTAP: own rows only, no writes through the API, the limit of 2 open, withdrawn not counted, in `supabase/tests/database/020_feature_requests.test.sql`. pgTAP runs in one session, so it proves the limit but not the per-User lock against two sessions at once; the lock is checked by reading the trigger in review
+- [x] T002 [P] [US1] Vitest: `parseFeatureRequest` limits; `issueTitle` and `issueBody` headings, `_Not given_` for an empty optional field, quoting, mention and cross-reference neutralising, in `src/features/feature-requests/domain.test.ts` and `issue-body.test.ts`
+- [x] T003 [P] [US1] Vitest: `submitFeatureRequest` logic with fakes: Toggle off, limit, GitHub failure deletes the row, a failure to store the number closes the Issue again, success stores the number, in `src/features/feature-requests/submit.test.ts`
+- [x] T004 [P] [US1] Testing Library: the form's validation, the gentle prompt, the public notice, the limit, notification offer, error keeps the text, in `src/features/feature-requests/request-form.test.tsx`; the Settings row in `src/features/settings/feature-requests-row.test.tsx`
+- [x] T004a [P] [US1] Vitest: `.github/ISSUE_TEMPLATE/1-feature.yml` has an `Additional details` field and `.claude/skills/deliver/triage.md` reads the `### Additional details` section, in `scripts/workflow/feature-template.test.mjs` (FR-011)
+- [x] T005 [US1] Playwright: `liv` with `feature-114` on submits a request and sees it Submitted; `cleo` sees no row and a 404, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
 
-- [ ] T006 [US1] Migration `pnpm db:new feature_requests` per `data-model.md` (table, RLS, limit trigger, Toggle `feature-114`), then `pnpm db:reset && pnpm db:types`
-- [ ] T007 [P] [US1] `domain.ts`, `issue-body.ts`, `feature-issues.ts` (GitHub and fake) in `src/features/feature-requests/`
-- [ ] T008 [US1] `submit.ts` and the server action in `src/app/(app)/settings/feature-requests/actions.ts`
-- [ ] T009 [US1] `queries.ts`, `request-form.tsx`, `request-list.tsx` (own requests, Submitted), the two pages, and `FeatureRequestsRow` in Settings
-- [ ] T010 [US1] `### Additional details` in `.github/ISSUE_TEMPLATE/1-feature.yml` and `.claude/skills/deliver/triage.md`; `FEATURE_ISSUES=fake` in `playwright.config.ts`; `GITHUB_FEATURE_REQUESTS_TOKEN` in `.env.example`; `scripts/setup-feature-requests.sh` (token step)
+- [x] T006 [US1] Migration `pnpm db:new feature_requests` per `data-model.md` (table, RLS, limit trigger, Toggle `feature-114`), then `pnpm db:reset && pnpm db:types`
+- [x] T007 [P] [US1] `domain.ts`, `issue-body.ts`, `feature-issues.ts` (GitHub and fake) in `src/features/feature-requests/`
+- [x] T008 [US1] `submit.ts` and the server action in `src/features/feature-requests/actions.ts`
+- [x] T009 [US1] `queries.ts`, `request-form.tsx`, `request-list.tsx` (own requests, Submitted), the two pages, and `FeatureRequestsRow` in Settings
+- [x] T010 [US1] `### Additional details` in `.github/ISSUE_TEMPLATE/1-feature.yml` and `.claude/skills/deliver/triage.md`; `FEATURE_ISSUES=fake` in `playwright.config.ts`; `GITHUB_FEATURE_REQUESTS_TOKEN` in `.env.example`; `scripts/setup-feature-requests.sh` (token step)
 
 **Checkpoint**: `pnpm validate` passes. After deploy, the Owner sets `GITHUB_FEATURE_REQUESTS_TOKEN` in Vercel production (`human-step`).
 

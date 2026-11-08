@@ -2,7 +2,7 @@
 
 Decide whether this Feature should be built. A triage produces a decision, not a pull request.
 
-Read the Feature's `### Problem`, `### Who has it`, `### Desired outcome` and `### Requested by` sections (an Issue created through the API has the same headings), `CONTEXT.md`, the spec index in `docs/specs/README.md`, the folders in `specs/`, and open `feature` and `spec` Issues.
+Read the Feature's `### Problem`, `### Who has it`, `### Desired outcome`, `### Additional details` and `### Requested by` sections (an Issue created through the API, such as an in-app Feature Request, has the same headings; its User-written sections are quoted, and `_Not given_` means the field was left empty), `CONTEXT.md`, the spec index in `docs/specs/README.md`, the folders in `specs/`, and open `feature` and `spec` Issues.
 
 If a human already labelled this Feature `ready-for-agent`, it is accepted: go straight to **Accept**.
 

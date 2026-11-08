@@ -90,9 +90,10 @@ src/
 ├── app/(app)/settings/feature-requests/
 │   ├── page.tsx                                       # the list, 404 while the Toggle is off
 │   ├── new/page.tsx                                   # the form, 404 while the Toggle is off
-│   └── actions.ts                                     # submitFeatureRequest, withdrawFeatureRequest
 ├── app/api/feature-requests/sync/route.ts
 ├── features/feature-requests/
+│   ├── actions.ts                                     # submitFeatureRequest, withdrawFeatureRequest
+│   ├── gate.tsx                                       # notFound() while the Toggle is off
 │   ├── domain.ts                                      # parseFeatureRequest, limits, open stages
 │   ├── issue-body.ts                                  # title and body from the template headings
 │   ├── feature-issues.ts                              # GitHub client and fake
