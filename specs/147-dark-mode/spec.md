@@ -27,12 +27,13 @@ With the Toggle on for them, a User sees an "Appearance" section in Settings wit
 **Acceptance Scenarios**:
 
 1. **Given** the Toggle is on for the User, **When** they open Settings, **Then** an "Appearance" section offers Light, Dark and System, with the current choice selected.
-2. **Given** the Toggle is off for the User, **When** they open Settings, **Then** there is no "Appearance" section and the app looks as it does today.
+2. **Given** the Toggle is off for the User and nothing is saved, **When** they open Settings, **Then** there is no "Appearance" section and the app looks as it does today.
 3. **Given** no choice has been made on this phone, **When** the app opens, **Then** it is Light, as today, and Light is the selected choice.
 4. **Given** the "Appearance" section, **When** the User picks Dark, **Then** the whole app uses the dark colours at once, with no reload, and the choice is still Dark after a reload.
 5. **Given** the User picked System and the phone is set to dark, **When** the app opens, **Then** it is dark; **and when** the phone switches to light while the app is open, **Then** the app goes light without a reload.
 6. **Given** the User picked Dark, **When** they pick Light, **Then** the app goes light at once and stays light after a reload.
 7. **Given** a phone that blocks site storage, **When** the User picks Dark, **Then** the app goes dark for this visit and, after a reload, is Light with no error.
+9. **Given** the User saved Dark and the Toggle then turns out to be off for them (they switched it off, or it is loading and settles off), **When** Toggles have loaded, **Then** the saved choice is cleared and the app goes Light, so nobody is stuck in Dark without the control.
 8. **Given** the User picked Dark on one phone, **When** they sign in on another, **Then** the other phone is unchanged, because the choice is kept on each phone, not with the User.
 
 ---
@@ -56,7 +57,7 @@ A User who chose Dark never sees a white flash when the app opens or a page load
 
 - **Nothing saved, or a saved value the app does not know**: treated as Light, never an error.
 - **Storage blocked** (private windows, cleared site data): the choice lasts for the visit only; reading and writing are wrapped so nothing throws.
-- **Toggle loading, failed or off**: no "Appearance" section, as for any Toggle; a choice already saved on the phone still applies, because it is applied before Toggles can load (see D4).
+- **Toggle loading or failed**: no "Appearance" section, and a saved choice still applies, because it is applied before Toggles can load (see D4). Only once Toggles have loaded and the Toggle is off is the saved choice cleared (US1.9).
 - **Phone switches light or dark while System is chosen**: the app follows without a reload.
 - **Two tabs**: a change in one tab shows in the other.
 - **Dark colours**: every screen, sheet, chart and the Add button must stay readable (contrast as in Light) and keep 44 px touch targets; nothing may rely on a colour that exists only in Light.
@@ -114,7 +115,7 @@ Guesses made: until you pick something the app stays light as it is now, and the
 | D1 | Where is the choice kept? | `localStorage` on the phone, as Vibration is | A column on `user_settings` (a migration and a sync for a cosmetic setting nobody asked to share); a cookie (server rendering would then depend on it) | high |
 | D2 | How is the dark theme applied? | `next-themes` (already installed for toasts) sets the `dark` class the stylesheet already defines, with a `localStorage` key, `disableTransitionOnChange` and `defaultTheme="light"` | A hand-written provider and script (reinvents what is installed); the CSS `prefers-color-scheme` media query alone (no manual choice) | high |
 | D3 | What is the default before a choice? | Light, as today | System (every User on a dark phone would see the app change the day the Toggle goes on, which is the point of a Toggle) | high |
-| D4 | Does the Toggle gate the applying of a saved choice? | No: the Toggle gates only the "Appearance" section. A saved choice can exist only because a User with the Toggle on made it, and applying it before first paint cannot wait for the database | Gating the provider on the Toggle (the Toggle loads after first paint, so Dark would flash white every load) | medium |
+| D4 | Does the Toggle gate the applying of a saved choice? | Not before first paint (it cannot wait for the database), but once Toggles have loaded and `feature-146` is off for the User, the saved choice is cleared and the app goes Light. A failed load clears nothing. This avoids a User stuck in Dark with no control | Gating the provider on the Toggle (Dark would flash white every load); leaving the choice applying with the Toggle off (stuck in Dark) | medium |
 | D5 | What if a Toggle goes Removed and the choice remains? | The Removal Chore deletes the code, and with it the saved choice's effect; the stored value is harmless | Clearing it from every phone (impossible from the server) | high |
 | D6 | Does the theme colour follow the choice? | Yes, through next-themes' resolved theme setting the `theme-color` meta; the manifest keeps its fixed colours | Leaving the media-query pair (a Dark choice on a light phone gets a light status bar) | medium |
 | D7 | What does Dark mean for charts and the toasts? | They read the same colour variables, so they follow; toasts already use `useTheme` | A separate chart palette (two places to keep in step) | medium |

@@ -4,7 +4,7 @@
 
 ## Summary
 
-Mount `next-themes`' `ThemeProvider` in the root layout so it sets the `dark` class the stylesheet already defines, saved in `localStorage`, with `defaultTheme="light"`. A new "Appearance" section in Settings (behind Toggle `feature-146`) lets the User pick Light, Dark or System. The provider's inline script applies a saved choice before first paint, and the resolved theme sets the `theme-color` meta.
+Mount `next-themes`' `ThemeProvider` in the root layout so it sets the `dark` class the stylesheet already defines, saved in `localStorage`, with `defaultTheme="light"`. A new "Appearance" section in Settings (behind Toggle `feature-146`) lets the User pick Light, Dark or System. The provider's inline script (present from Slice 1) applies a saved choice before first paint; once Toggles load off, the saved choice is cleared. Slice 2 proves the no-flash behaviour and adds the `theme-color` meta and dark toasts.
 
 ## Technical Context
 
@@ -37,6 +37,7 @@ Mount `next-themes`' `ThemeProvider` in the root layout so it sets the `dark` cl
 | US1.5 | Playwright | `e2e/appearance.spec.ts` (emulated colour scheme, changed while open) |
 | US1.6 | Playwright | `e2e/appearance.spec.ts` |
 | US1.7 | Vitest | `src/lib/appearance.test.ts` (storage that throws) |
+| US1.9 | Testing Library | `src/features/settings/appearance-section.test.tsx` (a cleanup component clears the saved choice once Toggles load off, and not on a failed load) |
 | US1.8 | Playwright | `e2e/appearance.spec.ts` (a second browser context starts Light) |
 | US2.1 | Playwright | `e2e/appearance.spec.ts` (background colour read before hydration) |
 | US2.2 | Vitest, Playwright | `src/lib/appearance.test.ts` (`themeColor`), `e2e/appearance.spec.ts` |
