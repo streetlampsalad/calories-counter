@@ -145,7 +145,7 @@ function choreText(decision: Decision, featureIssue: number) {
     };
   return {
     title: `Chore: Remove the feature for #${featureIssue}`,
-    what: `Feature #${featureIssue} is Removed: its Requester decided not to keep it. Delete the code behind \`${key}\`: every component, route, server action, query and test that only it uses, and every \`useToggle("${key}")\`, \`isToggleOn("${key}")\` and \`toggle_is_on('${key}')\` check, keeping the "off" path. Then, in a new migration, drop every table and column only it used. Keep the Toggle's row in \`public.toggles\`: a Feature Request's card reads it to say Removed (spec 135 D11).`,
+    what: `Feature #${featureIssue} is Removed: its Requester decided not to keep it. Delete the code behind \`${key}\`, including what its follow-up Features (\`### Follow-up to #${featureIssue}\`) added: every component, route, server action, query and test that only it uses, and every \`useToggle("${key}")\`, \`isToggleOn("${key}")\` and \`toggle_is_on('${key}')\` check, keeping the "off" path. Then, in a new migration, drop every table, column, function, trigger, policy, type and scheduled job only it used. Migrations ship before the app (ADR 0003), so drop only what the deployed app no longer reads; anything it still reads waits for a follow-up Chore. Keep the Toggle's row in \`public.toggles\`: a Feature Request's card reads it to say Removed (spec 135 D11).`,
     why: `The Toggle \`${key}\` is Removed, so the feature is off for everyone and its code is dead (ADR 0008).`,
     risks: [IRREVERSIBLE],
   };

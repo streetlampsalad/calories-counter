@@ -77,7 +77,7 @@ export function DecideSheet({
               Keep testing
             </Button>
             <Button
-              variant="outline"
+              variant={decision === "remove" ? "destructive" : "outline"}
               onClick={confirm}
               className="h-12 text-base"
             >

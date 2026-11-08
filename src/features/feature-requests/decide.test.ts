@@ -247,7 +247,11 @@ describe("cleanupChore: Remove it", () => {
     expect(chore.labels).toEqual(["chore", "priority:P2"]);
     expect(chore.body).toMatch(/Delete the code behind `feature-801`/);
     expect(chore.body).toMatch(
-      /in a new migration, drop every table and column only it used/,
+      /in a new migration, drop every table, column, function, trigger, policy, type and scheduled job only it used/,
+    );
+    expect(chore.body).toContain("### Follow-up to #801");
+    expect(chore.body).toMatch(
+      /drop only what the deployed app no longer reads/,
     );
     expect(chore.body).toMatch(/Keep the Toggle's row/);
     expect(chore.body).toContain("Removed");
