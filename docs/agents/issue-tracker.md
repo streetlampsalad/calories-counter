@@ -8,7 +8,7 @@ Locally the `gh issue` commands work. In a cloud session the GitHub proxy blocks
 
 - **Create an issue**: `gh api -X POST repos/<owner>/<repo>/issues -f title=... -F body=@body.md -f 'labels[]=...'`. Start from the issue template for its type (`.github/ISSUE_TEMPLATE/`) and keep its headings.
 - **Read an issue**: `gh api repos/<owner>/<repo>/issues/<n>` and `.../issues/<n>/comments`.
-- **List issues**: `gh api "repos/<owner>/<repo>/issues?state=open&labels=<label>&per_page=100" --paginate`, dropping entries with a `pull_request` field.
+- **List issues**: `gh api "repos/<owner>/<repo>/issues?state=open&labels=<label>&per_page=100"`, dropping entries with a `pull_request` field. Add `&page=2` and so on for more; `--paginate` fails through the cloud proxy ([cloud-github-access.md](cloud-github-access.md)).
 - **Comment on an issue**: `gh api -X POST repos/<owner>/<repo>/issues/<n>/comments -F body=@comment.md`
 - **Apply / remove labels**: `POST .../issues/<n>/labels -f 'labels[]=...'` / `DELETE .../issues/<n>/labels/<label>`
 - **Close**: `gh api -X PATCH repos/<owner>/<repo>/issues/<n> -f state=closed -f state_reason=<completed|not_planned>`
