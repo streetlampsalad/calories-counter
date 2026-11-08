@@ -67,16 +67,36 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"feature_requests": {
+                },"feature_request_rounds": {
                   Row: {
-                    "created_at": string,"details": string | null,"feature_issue": number | null,"goal": string,"id": string,"latest_comment": string | null,"problem": string | null,"ready_note": string | null,"spec_issue": number | null,"stage": string,"stage_changed_at": string,"user_id": string,"withdrawn_at": string | null
+                    "created_at": string,"feature_issue": number | null,"feedback": string,"id": string,"request_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"details"?: string | null,"feature_issue"?: number | null,"goal": string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id": string,"withdrawn_at"?: string | null
+                    "created_at"?: string,"feature_issue"?: number | null,"feedback": string,"id"?: string,"request_id": string
                   }
                   Update: {
-                    "created_at"?: string,"details"?: string | null,"feature_issue"?: number | null,"goal"?: string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id"?: string,"withdrawn_at"?: string | null
+                    "created_at"?: string,"feature_issue"?: number | null,"feedback"?: string,"id"?: string,"request_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "feature_request_rounds_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "feature_requests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"feature_requests": {
+                  Row: {
+                    "created_at": string,"details": string | null,"feature_issue": number | null,"first_ready_at": string | null,"goal": string,"id": string,"latest_comment": string | null,"problem": string | null,"ready_note": string | null,"spec_issue": number | null,"stage": string,"stage_changed_at": string,"user_id": string,"withdrawn_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"details"?: string | null,"feature_issue"?: number | null,"first_ready_at"?: string | null,"goal": string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id": string,"withdrawn_at"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"details"?: string | null,"feature_issue"?: number | null,"first_ready_at"?: string | null,"goal"?: string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id"?: string,"withdrawn_at"?: string | null
                   }
                   Relationships: [
                     
@@ -266,6 +286,11 @@ isOneToOne: false
                            },
 "send_due_reminders":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"start_feature_request_round":
+{ Args: { "feedback": string,"request_id": string,"requester_id": string }; Returns: {
+              "feature_issue": number,"goal": string,"round_id": string,"round_number": number
+            }[]
                            },
 "toggle_is_on":
 { Args: { "key": string }; Returns: boolean
