@@ -72,12 +72,12 @@ description: "Tasks for Feedback, Ready and Remove for Feature Requests"
 
 ### Tests (write first, see them fail)
 
-- [ ] T017 [P] [US3] Vitest: `decide` with Remove: the removal Chore's title and body (drop the feature's tables in its migration), Removed, and the same rollbacks, in `decide.test.ts`
-- [ ] T018 [US3] Playwright: `liv` removes a request's feature and sees Removed, in `e2e/feature-requests.spec.ts`
+- [x] T017 [P] [US3] Vitest: `decide` with Remove: the removal Chore's title and body (drop the feature's tables in its migration), Removed, and the same rollbacks, in `decide.test.ts`
+- [x] T018 [US3] Playwright: `liv` removes a request's feature and sees Removed, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
 
-- [ ] T019 [US3] `removeFeature` in `actions.ts`, and Remove it on the card with its confirm sheet
+- [x] T019 [US3] `removeFeature` in `actions.ts`, and Remove it on the card with its confirm sheet
 
 **Checkpoint**: `pnpm validate` passes.
 

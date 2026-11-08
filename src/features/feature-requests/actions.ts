@@ -4,7 +4,7 @@ import { isToggleOn } from "@/features/toggles/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { type DecideResult, decide } from "./decide";
-import { FEATURE_REQUESTS_TOGGLE, type Stage } from "./domain";
+import { type Decision, FEATURE_REQUESTS_TOGGLE, type Stage } from "./domain";
 import { createFeatureIssues } from "./feature-issues";
 import { type FeedbackResult, giveFeedback as feedback } from "./feedback";
 import { type SubmitResult, submitFeatureRequest as submit } from "./submit";
@@ -158,10 +158,22 @@ export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
 
 // It's ready: the clean-up Chore, then the Toggle Live for everyone (spec 135 US2).
 export async function markReady(input: unknown): Promise<DecideResult> {
+  return decideOn(input, "ready");
+}
+
+// Remove it: the feature-removal Chore, then the Toggle Removed for everyone (spec 135 US3).
+export async function removeFeature(input: unknown): Promise<DecideResult> {
+  return decideOn(input, "remove");
+}
+
+async function decideOn(
+  input: unknown,
+  decision: Decision,
+): Promise<DecideResult> {
   const supabase = await createClient();
   const admin = createAdminClient();
 
-  return decide(input, "ready", {
+  return decide(input, decision, {
     toggleOn: () => isToggleOn(FEATURE_REQUESTS_TOGGLE),
     userId: async () => {
       const { data } = await supabase.auth.getClaims();

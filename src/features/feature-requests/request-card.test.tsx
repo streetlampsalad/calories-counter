@@ -302,6 +302,9 @@ describe("RequestCard and Rounds (spec 135 US1)", () => {
     expect(
       screen.getByRole("button", { name: "It's ready" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove it" }),
+    ).toBeInTheDocument();
   });
 
   it("doesn't once the Toggle is Live or Removed, nor at any other stage (US1.8)", () => {
@@ -324,6 +327,9 @@ describe("RequestCard and Rounds (spec 135 US1)", () => {
       ).not.toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: "It's ready" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Remove it" }),
       ).not.toBeInTheDocument();
       unmount();
     }

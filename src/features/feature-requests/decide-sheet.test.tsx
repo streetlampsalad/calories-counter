@@ -21,6 +21,54 @@ async function open() {
   return screen.findByRole("dialog", { name: "Turn it on for everyone?" });
 }
 
+describe("DecideSheet: Remove it (spec 135 US3)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("asks first, saying it turns off for everyone and can't be undone, then removes it (US3.1)", async () => {
+    render(
+      <DecideSheet
+        id="r1"
+        goal="Track water as well as food"
+        decision="remove"
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Remove it" }));
+    const sheet = await screen.findByRole("dialog", {
+      name: "Remove it for everyone?",
+    });
+    expect(sheet).toHaveTextContent("Track water as well as food");
+    expect(sheet).toHaveTextContent(/for you too/);
+    expect(sheet).toHaveTextContent(/can't be undone/);
+    expect(mutate).not.toHaveBeenCalled();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Remove the feature" }),
+    );
+    expect(mutate).toHaveBeenCalledWith(
+      { id: "r1", decision: "remove" },
+      expect.any(Object),
+    );
+  });
+
+  it("changes nothing on Keep testing", async () => {
+    render(
+      <DecideSheet
+        id="r1"
+        goal="Track water as well as food"
+        decision="remove"
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Remove it" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Keep testing" }),
+    );
+
+    expect(mutate).not.toHaveBeenCalled();
+  });
+});
+
 describe("DecideSheet: It's ready", () => {
   beforeEach(() => {
     vi.clearAllMocks();

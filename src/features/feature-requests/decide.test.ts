@@ -202,3 +202,69 @@ describe("cleanupChore: It's ready", () => {
     );
   });
 });
+
+describe("decide: Remove it (spec 135 US3)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("creates the feature-removal Chore first, then sets the Toggle Removed (US3.1)", async () => {
+    const { deps, issues } = setup();
+
+    expect(await decide({ id: ID }, "remove", deps)).toEqual({ ok: true });
+    expect(issues.create).toHaveBeenCalledWith(cleanupChore("remove", 801));
+    expect(deps.record).toHaveBeenCalledWith(ID, USER, "remove", 901);
+    expect(issues.addLabels).toHaveBeenCalledWith(901, ["ready-for-agent"]);
+  });
+
+  it("behaves as It's ready when the Chore or the state change fails (US3.3)", async () => {
+    const noChore = setup();
+    vi.mocked(noChore.issues.create).mockRejectedValueOnce(new Error("down"));
+    expect(await decide({ id: ID }, "remove", noChore.deps)).toEqual({
+      ok: false,
+      code: "unavailable",
+    });
+    expect(noChore.deps.record).not.toHaveBeenCalled();
+
+    const notTesting = setup({ record: vi.fn(async () => false) });
+    expect(await decide({ id: ID }, "remove", notTesting.deps)).toEqual({
+      ok: false,
+      code: "not_allowed",
+    });
+    expect(notTesting.issues.close).toHaveBeenCalledWith(
+      901,
+      "The Toggle was no longer in Testing.",
+    );
+    expect(notTesting.issues.addLabels).not.toHaveBeenCalled();
+  });
+});
+
+describe("cleanupChore: Remove it", () => {
+  it("asks for the feature's code to go, its tables dropped in a migration, keeping the Toggle's row (US3.2, D11)", () => {
+    const chore = cleanupChore("remove", 801);
+
+    expect(chore.title).toBe("Chore: Remove the feature for #801");
+    expect(chore.labels).toEqual(["chore", "priority:P2"]);
+    expect(chore.body).toMatch(/Delete the code behind `feature-801`/);
+    expect(chore.body).toMatch(
+      /in a new migration, drop every table, column, function, trigger, policy, type and scheduled job only it used/,
+    );
+    expect(chore.body).toContain("### Follow-up to #801");
+    expect(chore.body).toMatch(
+      /drop only what the deployed app no longer reads/,
+    );
+    expect(chore.body).toMatch(/Keep the Toggle's row/);
+    expect(chore.body).toContain("Removed");
+    expect(chore.body).toContain("ADR 0008");
+    expect(chore.body).toContain(
+      "- [x] Irreversible (drops or renames a column or table, or rewrites or deletes User data)",
+    );
+    expect(chore.body).toContain(
+      "### Behaviour\n\n- [x] No User-visible behaviour changes.",
+    );
+  });
+
+  it("ticks no risk for removing a Toggle's checks", () => {
+    expect(cleanupChore("ready", 801).body).not.toContain("- [x] Irreversible");
+  });
+});
