@@ -18,7 +18,7 @@ Mount `next-themes`' `ThemeProvider` in the root layout so it sets the `dark` cl
 
 ## Constitution Check
 
-- [x] I. No new glossary term beyond Appearance, used only in this spec
+- [x] I. Appearance added to `CONTEXT.md` in this pull request
 - [x] II. Every acceptance scenario has a test at the right layer (below)
 - [x] III. The "Appearance" section is behind `feature-146`; the first Slice adds the Toggle (see D4 for why applying a saved choice is not gated)
 - [x] IV. The only migration is an insert, safe with the deployed app

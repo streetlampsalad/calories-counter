@@ -104,6 +104,10 @@ _Avoid_: net calories, balance, remaining
 A named range of Days that a summary covers, such as week to date, month to date, last week, or last month.
 _Avoid_: range, window, timeframe
 
+**Appearance**:
+A User's choice of Light, Dark or System for how the app looks, kept on one phone and not with the User. System follows the phone's own light or dark setting.
+_Avoid_: theme, colour scheme, skin
+
 ### Toggles
 
 **Toggle**:
