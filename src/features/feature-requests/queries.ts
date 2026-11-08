@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   giveFeedback,
   markReady,
+  removeFeature,
   submitFeatureRequest,
   withdrawFeatureRequest,
 } from "./actions";
@@ -208,7 +209,9 @@ export function useDecide() {
     mutationFn: async (input: { id: string; decision: Decision }) => {
       let result: Awaited<ReturnType<typeof markReady>>;
       try {
-        result = await markReady({ id: input.id });
+        result = await (input.decision === "ready" ? markReady : removeFeature)(
+          { id: input.id },
+        );
       } catch {
         result = { ok: false, code: "unavailable" };
       }

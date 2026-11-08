@@ -120,5 +120,5 @@ export function countOpen(
 }
 
 // What a Requester decides about a feature they have tried (spec 135): It's ready turns its Toggle
-// Live for everyone.
-export type Decision = "ready";
+// Live for everyone, Remove it turns it off for everyone (Removed).
+export type Decision = "ready" | "remove";

@@ -23,9 +23,16 @@ const COPY: Record<
     body: "will be on for every User, and this can't be undone. An agent then tidies up the code behind it.",
     confirm: "Turn it on for everyone",
   },
+  remove: {
+    button: "Remove it",
+    title: "Remove it for everyone?",
+    body: "will be turned off for every User and for you too. This can't be undone. An agent then deletes the code behind it.",
+    confirm: "Remove the feature",
+  },
 };
 
-// It's ready (spec 135 US2), after asking: the decision is for everyone and can't be undone.
+// It's ready or Remove it (spec 135 US2, US3), after asking: either is for everyone and can't be
+// undone.
 export function DecideSheet({
   id,
   goal,

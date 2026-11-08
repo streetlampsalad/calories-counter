@@ -37,7 +37,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NOT_ALLOWED = { ok: false, code: "not_allowed" } as const;
 const UNAVAILABLE = { ok: false, code: "unavailable" } as const;
 
-// It's ready (spec 135 US2). The clean-up Chore is created first and the Toggle's state changed
+// It's ready and Remove it (spec 135 US2, US3). The clean-up Chore is created first and the Toggle's state changed
 // second (D4): a Toggle cannot go back to Testing, so it must never leave Testing without its
 // Chore. The Chore is only made ready-for-agent once the state has changed, so no agent deletes the
 // checks of a feature still being tried; if the state does not change, the Chore is closed again,

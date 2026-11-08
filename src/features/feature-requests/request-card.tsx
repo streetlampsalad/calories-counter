@@ -77,6 +77,7 @@ export function RequestCard({
         <div className="flex flex-wrap gap-2">
           <FeedbackSheet id={request.id} goal={request.goal} />
           <DecideSheet id={request.id} goal={request.goal} decision="ready" />
+          <DecideSheet id={request.id} goal={request.goal} decision="remove" />
         </div>
       ) : null}
       {canWithdraw(display, request.firstReadyAt) ? (

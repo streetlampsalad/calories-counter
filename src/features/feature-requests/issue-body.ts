@@ -130,21 +130,42 @@ const CHORE_RISKS = [
   "Adds or upgrades a dependency",
 ];
 
+const IRREVERSIBLE = CHORE_RISKS[1];
+
+// It's ready deletes the Toggle's checks; Remove it deletes the feature itself, and its tables in a
+// migration, which is irreversible, so the merge gate flags that Chore's pull request for the Owner.
+function choreText(decision: Decision, featureIssue: number) {
+  const key = `feature-${featureIssue}`;
+  if (decision === "ready")
+    return {
+      title: `Chore: Remove the Toggle for #${featureIssue}`,
+      what: `Feature #${featureIssue} is Live for everyone: its Requester marked it ready. Delete every \`useToggle("${key}")\`, \`isToggleOn("${key}")\` and \`toggle_is_on('${key}')\` check and the tests of the "off" path; keep the "on" path, and drop the Toggle setup from its tests. Keep the Toggle's row in \`public.toggles\`: a Feature Request's card reads it to say Live for everyone (spec 135 D11).`,
+      why: `The Toggle \`${key}\` is Live, so its checks are dead code (ADR 0008).`,
+      risks: [] as string[],
+    };
+  return {
+    title: `Chore: Remove the feature for #${featureIssue}`,
+    what: `Feature #${featureIssue} is Removed: its Requester decided not to keep it. Delete the code behind \`${key}\`: every component, route, server action, query and test that only it uses, and every \`useToggle("${key}")\`, \`isToggleOn("${key}")\` and \`toggle_is_on('${key}')\` check, keeping the "off" path. Then, in a new migration, drop every table and column only it used. Keep the Toggle's row in \`public.toggles\`: a Feature Request's card reads it to say Removed (spec 135 D11).`,
+    why: `The Toggle \`${key}\` is Removed, so the feature is off for everyone and its code is dead (ADR 0008).`,
+    risks: [IRREVERSIBLE],
+  };
+}
+
 export function cleanupChore(
   decision: Decision,
   featureIssue: number,
 ): { title: string; body: string; labels: string[] } {
-  const key = `feature-${featureIssue}`;
+  const text = choreText(decision, featureIssue);
   return {
-    title: `Chore: Remove the Toggle for #${featureIssue}`,
+    title: text.title,
     body: [
       "### What",
       "",
-      `Feature #${featureIssue} is Live for everyone: its Requester marked it ready. Delete every \`useToggle("${key}")\`, \`isToggleOn("${key}")\` and \`toggle_is_on('${key}')\` check and the tests of the "off" path; keep the "on" path, and drop the Toggle setup from its tests. Keep the Toggle's row in \`public.toggles\`: a Feature Request's card reads it to say Live for everyone (spec 135 D11).`,
+      text.what,
       "",
       "### Why",
       "",
-      `The Toggle \`${key}\` is Live, so its checks are dead code (ADR 0008).`,
+      text.why,
       "",
       "### Behaviour",
       "",
@@ -152,7 +173,9 @@ export function cleanupChore(
       "",
       "### Risk assessment",
       "",
-      ...CHORE_RISKS.map((risk) => `- [ ] ${risk}`),
+      ...CHORE_RISKS.map(
+        (risk) => `- [${text.risks.includes(risk) ? "x" : " "}] ${risk}`,
+      ),
       "",
     ].join("\n"),
     labels: CHORE_LABELS,

@@ -361,4 +361,48 @@ test.describe("stages from the board workflow (Slice 2)", () => {
     expect(data?.decision).toBe("ready");
     expect(data?.cleanup_issue).toBeGreaterThan(90000);
   });
+  test("removing a request's feature turns it off for everyone (spec 135 US3.1)", async ({
+    page,
+  }) => {
+    const added = await adminClient()
+      .from("toggles")
+      .insert({ key: `feature-${MINE}`, title: "Water tracking" });
+    if (added.error) throw added.error;
+    const ready = await adminClient()
+      .from("feature_requests")
+      .update({ stage: "ready_to_try" })
+      .eq("feature_issue", MINE);
+    if (ready.error) throw ready.error;
+
+    await page.goto("/settings/feature-requests");
+    const card = page.getByRole("article", {
+      name: "See how much water I drink",
+      exact: true,
+    });
+    await card.getByRole("button", { name: "Remove it" }).click();
+    await page
+      .getByRole("dialog", { name: "Remove it for everyone?" })
+      .getByRole("button", { name: "Remove the feature" })
+      .click();
+
+    await expect(card).toContainText("Removed");
+    await expect(card.getByRole("button", { name: "Remove it" })).toHaveCount(
+      0,
+    );
+    await expect(card.getByRole("switch", { name: "Try it" })).toHaveCount(0);
+
+    const toggle = await adminClient()
+      .from("toggles")
+      .select("state")
+      .eq("key", `feature-${MINE}`)
+      .single();
+    expect(toggle.data?.state).toBe("removed");
+    const { data } = await adminClient()
+      .from("feature_requests")
+      .select("decision, cleanup_issue")
+      .eq("feature_issue", MINE)
+      .single();
+    expect(data?.decision).toBe("remove");
+    expect(data?.cleanup_issue).toBeGreaterThan(90000);
+  });
 });
