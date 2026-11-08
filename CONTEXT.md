@@ -14,6 +14,10 @@ _Avoid_: member, customer, profile
 A Google account email address permitted to become a User. Anyone else is refused at sign-in.
 _Avoid_: invite, whitelist, approved user
 
+**Owner**:
+The one User who runs the app: they add Allowed Emails and may try any Toggle in Testing.
+_Avoid_: admin, superuser
+
 ### Foods
 
 **Food**:
@@ -99,3 +103,21 @@ _Avoid_: net calories, balance, remaining
 **Period**:
 A named range of Days that a summary covers, such as week to date, month to date, last week, or last month.
 _Avoid_: range, window, timeframe
+
+### Toggles
+
+**Toggle**:
+The control a new feature ships behind, so it can reach production before everyone sees it. Each Toggle is in exactly one state: Testing, Live or Removed.
+_Avoid_: flag, feature flag, switch, experiment
+
+**Testing**:
+A Toggle that is off for everyone except the Users allowed to try it, who each turn it on or off for themselves.
+_Avoid_: beta, preview, draft
+
+**Live**:
+A Toggle that is on for every User. A Live Toggle never goes back to Testing.
+_Avoid_: released, shipped, enabled
+
+**Removed**:
+A Toggle that is off for every User, whose feature is being deleted. A Removed Toggle never comes back.
+_Avoid_: disabled, killed, archived
