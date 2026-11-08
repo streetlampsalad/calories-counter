@@ -570,6 +570,8 @@ test("the Logging streak says so when nothing has been logged", async ({
 test("the 12-month view loads in under 2 seconds on a throttled phone", async ({
   page,
 }) => {
+  // Calibrating the CPU takes a few seconds on top of seeding a year and four timed visits.
+  test.slow();
   const gus = await startFresh();
   const foods = await Promise.all(
     [90, 120, 200, 310, 450, 60].map((calories, i) =>
@@ -588,6 +590,11 @@ test("the 12-month view loads in under 2 seconds on a throttled phone", async ({
 
   // Warm the app shell first, as a returning User would have it, then time the Insights view.
   await page.goto("/summary");
+  // Let the Summary settle first, so its own work does not slow the benchmark.
+  await expect(
+    page.getByRole("heading", { name: "Summary", level: 1 }),
+  ).toBeVisible();
+  await page.waitForLoadState("networkidle");
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Network.enable");
   await cdp.send("Network.emulateNetworkConditions", {

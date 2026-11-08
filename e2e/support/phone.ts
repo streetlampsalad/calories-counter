@@ -16,7 +16,9 @@ export const MID_RANGE_PHONE = 400;
 
 // Within 10% of the phone is close enough: one measurement varies about that much on its own.
 const TOLERANCE = 0.1;
-const MAX_CORRECTIONS = 3;
+const MAX_CORRECTIONS = 4;
+// Past this, the run would time a different phone than the one promised, so it stops instead.
+const GIVE_UP = 0.2;
 
 /**
  * The CPU slowdown to try next, given the score the browser measured at the current one. The
@@ -81,28 +83,40 @@ export type PhoneCpu = {
 /**
  * Throttles the page's CPU until it scores like a mid-range phone, and reports what it found.
  * Run it on a page that has finished loading, so the app's own work does not skew the score.
+ * Throws when it cannot get within 20% of the phone, rather than time a different phone.
  */
 export async function emulateMidRangePhoneCpu(
   page: Page,
   cdp: CDPSession,
 ): Promise<PhoneCpu> {
-  const benchmark = () => page.evaluate(computeBenchmarkIndex);
+  // Anything else on the machine only ever slows a sample down, so the best of two is the truer one.
+  const benchmark = async () =>
+    Math.max(
+      await page.evaluate(computeBenchmarkIndex),
+      await page.evaluate(computeBenchmarkIndex),
+    );
   const setRate = (rate: number) =>
     cdp.send("Emulation.setCPUThrottlingRate", { rate });
 
-  const closeEnough = (score: number) =>
-    Math.abs(score - MID_RANGE_PHONE) / MID_RANGE_PHONE <= TOLERANCE;
+  const miss = (score: number) =>
+    Math.abs(score - MID_RANGE_PHONE) / MID_RANGE_PHONE;
 
   await setRate(1);
   const machine = await benchmark();
   let rate = 1;
   let measured = machine;
-  for (let i = 0; i < MAX_CORRECTIONS && !closeEnough(measured); i++) {
+  for (let i = 0; i < MAX_CORRECTIONS && miss(measured) > TOLERANCE; i++) {
     const next = nextThrottleRate(rate, measured);
     if (next === rate) break; // already at full speed on a machine slower than the phone
     rate = next;
     await setRate(rate);
     measured = await benchmark();
+  }
+  // A machine slower than the phone runs at full speed, which only makes the test harder.
+  if (rate > 1 && miss(measured) > GIVE_UP) {
+    throw new Error(
+      `Could not emulate a mid-range phone's CPU: at ${rate.toFixed(2)}x this machine scores ${measured}, not ${MID_RANGE_PHONE}`,
+    );
   }
   return { machine, rate, measured };
 }
