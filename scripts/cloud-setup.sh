@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # Environment setup script for Claude Code cloud agents (docs/adr/0006, 0007).
-# Paste `bash scripts/cloud-setup.sh` into the cloud environment's "Setup script" field.
+# The cloud environment's "Setup script" field holds this line, not this file's contents, because
+# setup runs outside the repo, which the cloud clones to /home/user/calories-counter:
+#   cd /home/user/calories-counter && bash scripts/cloud-setup.sh
 # It is safe to re-run. There is no Docker in the cloud, so it installs only what
 # `pnpm validate:fast` needs: Node 24, pnpm, the dependencies and the git hooks.
 set -euo pipefail
+
+# Work from the repo root whatever directory it was started in.
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 want_node="$(cut -d. -f1 .nvmrc)"
 node_major() { "${1:-node}" -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo none; }
