@@ -13,7 +13,7 @@ Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature
 - **Data**: [data-model.md](./data-model.md)
 - **Server boundaries**: server actions `giveFeedback`, `markReady` and `removeFeature`; the sync route gains reminders ([contracts.md](./contracts.md))
 - **New environment variables**: none
-- **Query keys**: `featureRequestKeys.rounds(id)` added; every action invalidates `featureRequestKeys.all`, and It's ready and Remove it also `toggleKeys.all`
+- **Query keys**: none added: each request's Rounds load with it (`feature_request_rounds` embedded in `featureRequestKeys.mine()`); every action invalidates `featureRequestKeys.all`, and It's ready and Remove it also `toggleKeys.all`
 - **Screens and states**: the Ready to try card gains **Give feedback** (a bottom sheet with a textarea, the public notice and the limit), **It's ready** and **Remove it** (bottom confirm sheets), and a list of Rounds. Each action shows progress, keeps its sheet's text on an error, and says what went wrong in a toast.
 
 ## Constitution Check
@@ -40,7 +40,7 @@ Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature
 | US1.8 | Vitest, Testing Library | `src/features/feature-requests/stage.test.ts` (`canDecide`), `src/features/feature-requests/request-card.test.tsx` |
 | US1.9 | Vitest | `scripts/workflow/feature-template.test.mjs` (follow-up heading in the template, `triage.md` and `/deliver`'s `spec.md`) |
 | US1.10 | pgTAP | `supabase/tests/database/023_feature_request_rounds.test.sql` |
-| US1.11 | Vitest, Testing Library | `src/features/feature-requests/withdraw.test.ts` (refused once `first_ready_at` is set), `src/features/feature-requests/stage.test.ts` (`canWithdraw`), `src/features/feature-requests/request-card.test.tsx` |
+| US1.11 | Vitest, Testing Library, Playwright | `src/features/feature-requests/stage.test.ts` (`canWithdraw`), `src/features/feature-requests/request-card.test.tsx`, `e2e/feature-requests.spec.ts`; the server's `markWithdrawn` update requires `first_ready_at is null` |
 | US2.1 | Vitest, Playwright | `src/features/feature-requests/decide.test.ts`, `e2e/feature-requests.spec.ts` |
 | US2.2 | Vitest | `src/features/feature-requests/decide.test.ts` |
 | US2.3 | Vitest, pgTAP | `src/features/feature-requests/decide.test.ts`, `supabase/tests/database/019_toggles.test.sql` (state moves forward only) |
@@ -54,7 +54,7 @@ Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature
 
 ## Migration Plan
 
-1. **Slice 1, `feature_request_rounds`**: the table, `first_ready_at`, and `create or replace` of `apply_feature_request_sync` and `can_try_toggle`. For requests without Rounds both answer as before, so the deployed app is unaffected. `first_ready_at` is backfilled from `stage_changed_at` for requests already at `ready_to_try`.
+1. **Slice 1, `feature_request_rounds`**: the table, `first_ready_at` (set by a trigger the first time a request is Ready to try), `start_feature_request_round()`, and `create or replace` of `apply_feature_request_sync` and `can_try_toggle`. For requests without Rounds both answer as before, so the deployed app is unaffected. `first_ready_at` is backfilled from `stage_changed_at` for requests already at `ready_to_try`.
 2. **Slice 2, `feature_request_decisions`**: `decision` and `cleanup_issue`. New nullable columns.
 3. **Slice 4, `testing_reminders`**: `testing_reminder_sent_at` and `due_testing_reminders()`.
 

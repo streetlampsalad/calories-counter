@@ -18,7 +18,7 @@ All changes are additive (`create or replace` keeps every existing answer for re
 
 | Column | Type | Slice | Notes |
 |---|---|---|---|
-| `first_ready_at` | `timestamptz` | 1 | set by the sync the first time the stage becomes `ready_to_try`; once set, Withdraw is refused (D12) |
+| `first_ready_at` | `timestamptz` | 1 | set by a trigger the first time the stage becomes `ready_to_try`; once set, Withdraw is refused (D12) |
 | `decision` | `text check (decision in ('ready', 'remove'))` | 2 | set with the Toggle's state change |
 | `cleanup_issue` | `integer` | 2 | the Chore that deletes the Toggle checks or the feature |
 | `testing_reminder_sent_at` | `timestamptz` | 4 | the last 14-day reminder |
@@ -28,6 +28,7 @@ All changes are additive (`create or replace` keeps every existing answer for re
 | Function | Change | Slice |
 |---|---|---|
 | `public.apply_feature_request_sync(updates jsonb)` | `create or replace`: finds a request by its own Feature Issue or one of its Rounds', applies an update only when that Issue is the request's newest (its newest Round's, else its own), and sets `first_ready_at` on the first `ready_to_try` | 1 |
+| `public.start_feature_request_round(request_id, requester_id, feedback)` | new, `definer`, `service_role` only: under the open-request lock, checks the request is the Requester's, not withdrawn, has been Ready to try and is at `ready_to_try` (or `not_going_ahead`, D13), and its Toggle is in Testing; raises `feature_request_limit` when 2 others are open; inserts the Round and puts the request back at `submitted`. Returns `round_id`, `round_number`, `goal`, `feature_issue`, `previous_stage`, or no row | 1 |
 | `public.can_try_toggle(key text)` | `create or replace`: the Requester may try while `first_ready_at is not null` (not only at `ready_to_try`), until withdrawn | 1 |
 | `public.due_testing_reminders()` | new, `definer`, `service_role` only: requests at `ready_to_try` whose `stage_changed_at` is 14 days old or more, Toggle in Testing, not withdrawn, and `testing_reminder_sent_at` null or older than `stage_changed_at`; sets `testing_reminder_sent_at = now()` in the same update and returns `request_id`, `requester_id`, `goal_text` | 4 |
 

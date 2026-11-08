@@ -6,7 +6,7 @@ All three server actions live in `src/features/feature-requests/actions.ts`, tak
 
 - `feedback` 10–4,000 characters after trimming, else `invalid`.
 - `limit` when the caller has 2 other requests at an open stage.
-- Inserts a Round, creates the follow-up Feature Issue through `FeatureIssues.create` (`issueBody` with `followUpTo`), stores its number on the Round, and sets the request's stage to `submitted`. If the Issue cannot be created, deletes the Round; if its number cannot be stored, closes the Issue again (as `submitFeatureRequest` does).
+- Starts the Round with `start_feature_request_round()` (which also puts the request back at `submitted`), creates the follow-up Feature Issue through `FeatureIssues.create` (`followUpTitle`, `followUpBody`), and stores its number on the Round. If the Issue cannot be created, deletes the Round and puts the request back at its previous stage; if its number cannot be stored, also closes the Issue again (as `submitFeatureRequest` does).
 - Returns `{ ok: true }` or `{ ok: false, code: "not_allowed" | "invalid" | "limit" | "unavailable" }`.
 
 Follow-up Issue: title `Feature: Feedback on <goal start>`; headings `### Problem` (the feedback, quoted), `### Who has it` ("The requester."), `### Desired outcome` (the original goal, quoted), `### Additional details` ("Round <n> of #<original>."), `### Follow-up to` (`#<original Feature Issue>`), `### Requested by` (the request id); labels `feature`, `needs-triage`, `priority:P1`.
