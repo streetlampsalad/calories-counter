@@ -184,7 +184,11 @@ test.describe("stages from the board workflow (Slice 2)", () => {
       },
     });
     expect(sync.status()).toBe(200);
-    expect(await sync.json()).toEqual({ updated: 1, notified: 0 });
+    expect(await sync.json()).toEqual({
+      updated: 1,
+      notified: 0,
+      reminded: 0,
+    });
 
     await page.goto("/settings/feature-requests");
     const card = page.getByRole("article", {

@@ -93,13 +93,13 @@ description: "Tasks for Feedback, Ready and Remove for Feature Requests"
 
 ### Tests (write first, see them fail)
 
-- [ ] T020 [P] [US4] pgTAP: who is due, once per Round, and nobody Live, Removed, withdrawn or under 14 days, in `supabase/tests/database/025_testing_reminders.test.sql`
-- [ ] T021 [P] [US4] Vitest: the reminder's title, body and URL, and `reminded` in the response, in `sync-handler.test.ts`
+- [x] T020 [P] [US4] pgTAP: who is due, once per Round, and nobody Live, Removed, withdrawn or under 14 days, in `supabase/tests/database/025_testing_reminders.test.sql`
+- [x] T021 [P] [US4] Vitest: the reminder's title, body and URL, and `reminded` in the response, in `sync-handler.test.ts`
 
 ### Implementation
 
-- [ ] T022 [US4] Migration `pnpm db:new testing_reminders`, then `pnpm db:reset && pnpm db:types`
-- [ ] T023 [US4] Reminders in `sync-handler.ts` and the sync route
+- [x] T022 [US4] Migration `pnpm db:new testing_reminders`, then `pnpm db:reset && pnpm db:types`
+- [x] T023 [US4] Reminders in `sync-handler.ts` and the sync route
 
 **Checkpoint**: `pnpm validate` passes.
 
