@@ -44,13 +44,13 @@ description: "Tasks for Toggles for every new Feature"
 
 ### Tests (write first, see them fail)
 
-- [ ] T007 [P] [US2] Testing Library: lists Toggles the User can switch with their state; hidden when there are none or while loading; a failed save rolls back with a toast, in `src/features/settings/try-features-section.test.tsx`
-- [ ] T008 [US2] Playwright: `gus` turns on "Example feature", reloads and sees it still on; `eve` sees no section, in `e2e/toggles.spec.ts`
+- [x] T007 [P] [US2] Testing Library: lists Toggles the User can switch with their state; hidden when there are none or while loading; a failed save rolls back with a toast, in `src/features/settings/try-features-section.test.tsx`
+- [x] T008 [US2] Playwright: `liv` turns on "Example feature", reloads and sees it still on; `cleo` sees no section, in `e2e/toggles.spec.ts`
 
 ### Implementation
 
-- [ ] T009 [US2] Seed `gus@example.test` as the Owner and Toggle `feature-0` "Example feature" in Testing in `supabase/seed.sql`; add `gus` to `e2e/support/auth.ts`
-- [ ] T010 [US2] `TryFeaturesSection` in `src/features/settings/try-features-section.tsx`, added to `src/app/(app)/settings/page.tsx` after the Vibration row
+- [x] T009 [US2] Seed `liv@example.test` as the Owner and Toggle `feature-0` "Example feature" in Testing in `supabase/seed.sql`; add `liv` to `e2e/support/auth.ts`
+- [x] T010 [US2] `TryFeaturesSection` in `src/features/settings/try-features-section.tsx`, added to `src/app/(app)/settings/page.tsx` after the Vibration row
 
 **Checkpoint**: `pnpm validate` passes and the Owner can try a Toggle in Testing.
 

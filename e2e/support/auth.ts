@@ -51,6 +51,11 @@ export const TEST_USERS = {
     id: "10101010-1010-1010-1010-101010101010",
     email: "kit@example.test",
   },
+  // The Owner (spec 116), for the Toggle tests, which run in series and reset liv's overrides first.
+  liv: {
+    id: "12121212-1212-1212-1212-121212121212",
+    email: "liv@example.test",
+  },
   // Always empty: tests must never leave data behind for cleo.
   cleo: {
     id: "33333333-3333-3333-3333-333333333333",
