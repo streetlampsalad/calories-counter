@@ -10,6 +10,8 @@ const baseURL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  // Vitest owns the *.test.ts files beside the helpers in e2e/support.
+  testMatch: "**/*.spec.ts",
   globalSetup: "./e2e/global-setup.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
