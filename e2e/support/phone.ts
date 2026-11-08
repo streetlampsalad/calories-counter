@@ -8,9 +8,9 @@ import type { CDPSession, Page } from "@playwright/test";
 // is and picks the slowdown that brings it to the phone's speed, as Chrome DevTools' calibrated
 // "Mid-tier mobile" preset does.
 //
-// Speed is Lighthouse's BenchmarkIndex, measured the way Lighthouse measures it. Lighthouse puts a
-// mid-tier mobile phone at 125-800, and its default 4x is meant to bring a typical high-end
-// desktop (1,500-2,000) into that range, so the phone here scores 400.
+// Speed is Lighthouse's BenchmarkIndex, from the same loops (benchmarkIndex below). Lighthouse
+// puts a mid-tier mobile phone at 125-800, and its default 4x is meant to bring a typical
+// high-end desktop (1,500-2,000) into that range, so the phone here scores 400.
 // https://github.com/GoogleChrome/lighthouse/blob/main/docs/throttling.md
 export const MID_RANGE_PHONE = 400;
 
