@@ -104,14 +104,14 @@ description: "Tasks for Feature Requests from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T029 [P] [US4] Vitest: `withdrawFeatureRequest` logic: allowed stages, sets `withdrawn_at` before closing both Issues with the comment, clears it again if GitHub fails, refuses others, including a request a sync moved to Building after the screen loaded, in `src/features/feature-requests/withdraw.test.ts`; `canWithdraw` in `stage.test.ts`
-- [ ] T030 [P] [US4] Testing Library: Withdraw and its confirm dialog only at allowed stages; Withdrawn shown, in `request-card.test.tsx`
-- [ ] T031 [US4] Playwright: `liv` withdraws a Submitted request and it shows Withdrawn, in `e2e/feature-requests.spec.ts`
+- [x] T029 [P] [US4] Vitest: `withdrawFeatureRequest` logic: allowed stages, sets `withdrawn_at` before closing both Issues with the comment, clears it again if GitHub fails, refuses others, including a request a sync moved to Building after the screen loaded, in `src/features/feature-requests/withdraw.test.ts`; `canWithdraw` in `stage.test.ts`
+- [x] T030 [P] [US4] Testing Library: Withdraw and its confirm dialog only at allowed stages; Withdrawn shown, in `request-card.test.tsx`
+- [x] T031 [US4] Playwright: `liv` withdraws a Submitted request and it shows Withdrawn, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
 
-- [ ] T032 [US4] `withdraw.ts` and `withdrawFeatureRequest` in `actions.ts`
-- [ ] T033 [US4] Withdraw and the confirm dialog in `request-card.tsx`
+- [x] T032 [US4] `withdraw.ts` and `withdrawFeatureRequest` in `actions.ts`
+- [x] T033 [US4] Withdraw and the confirm dialog in `request-card.tsx`
 
 **Checkpoint**: `pnpm validate` passes.
 

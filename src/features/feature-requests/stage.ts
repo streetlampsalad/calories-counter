@@ -36,3 +36,13 @@ export function displayStage(
 
 export const issueUrl = (number: number) =>
   `https://github.com/${REPOSITORY}/issues/${number}`;
+
+// A request may be withdrawn only before building starts; after that it is tried and Removed (D8).
+export const WITHDRAWABLE: readonly DisplayStage[] = [
+  "submitted",
+  "being_reviewed",
+  "planning",
+];
+
+export const canWithdraw = (display: DisplayStage) =>
+  WITHDRAWABLE.includes(display);

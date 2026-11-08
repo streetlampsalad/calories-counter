@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useSwitchToggle } from "@/features/toggles/queries";
 import { type FeatureRequest, useFeatureRequestsAhead } from "./queries";
-import { type DisplayStage, issueUrl, STAGE_TEXT } from "./stage";
+import { canWithdraw, type DisplayStage, issueUrl, STAGE_TEXT } from "./stage";
+import { WithdrawButton } from "./withdraw-button";
 
 // The request's Toggle as the signed-in User sees it, from my_toggles().
 export type RequestToggle = { key: string; isOn: boolean; canSwitch: boolean };
@@ -49,6 +50,9 @@ export function RequestCard({
             ? `Why: ${request.latestComment}`
             : request.latestComment}
         </p>
+      ) : null}
+      {canWithdraw(display) ? (
+        <WithdrawButton id={request.id} goal={request.goal} />
       ) : null}
       {request.featureIssue ? (
         <a

@@ -7,6 +7,7 @@ const useFeatureRequestsAhead = vi.fn();
 vi.mock("./queries", () => ({
   useFeatureRequestsAhead: (id: string, enabled: boolean) =>
     useFeatureRequestsAhead(id, enabled),
+  useWithdrawFeatureRequest: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 const switchToggle = vi.fn();
@@ -109,6 +110,55 @@ describe("OtherRequestCard", () => {
     const card = screen.getByRole("article", { name: "Scan barcodes" });
     expect(card).toHaveTextContent("Building");
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+});
+
+describe("RequestCard and Withdraw (US4)", () => {
+  it("offers Withdraw before building starts (US4.1)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    for (const display of [
+      "submitted",
+      "being_reviewed",
+      "planning",
+    ] as const) {
+      const { unmount } = render(
+        <RequestCard request={request({ stage: display })} display={display} />,
+      );
+      expect(
+        screen.getByRole("button", { name: "Withdraw" }),
+      ).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it("doesn't once building has started, nor after (US4.2)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    for (const display of [
+      "building",
+      "waiting_for_owner",
+      "ready_to_try",
+      "withdrawn",
+    ] as const) {
+      const { unmount } = render(
+        <RequestCard request={request()} display={display} />,
+      );
+      expect(
+        screen.queryByRole("button", { name: "Withdraw" }),
+      ).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it("says Withdrawn once withdrawn", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={request({ withdrawnAt: "2026-11-08T00:00:00Z" })}
+        display="withdrawn"
+      />,
+    );
+
+    expect(screen.getByText("Withdrawn")).toBeInTheDocument();
   });
 });
 
