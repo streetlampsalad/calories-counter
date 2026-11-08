@@ -97,14 +97,3 @@ export function countOpen(
       request.withdrawnAt === null && OPEN_STAGES.includes(request.stage),
   ).length;
 }
-
-// What each stored stage is called on screen. Live for everyone and Removed come from the Toggle.
-export const STAGE_LABELS: Record<Stage, string> = {
-  submitted: "Submitted",
-  being_reviewed: "Being reviewed",
-  planning: "Planning",
-  building: "Building",
-  waiting_for_owner: "Waiting for the owner",
-  ready_to_try: "Ready to try",
-  not_going_ahead: "Not going ahead",
-};

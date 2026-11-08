@@ -19,6 +19,15 @@ export type FeatureRequest = {
 export const featureRequestKeys = {
   all: ["feature-requests"] as const,
   mine: () => [...featureRequestKeys.all, "mine"] as const,
+  others: () => [...featureRequestKeys.all, "others"] as const,
+  ahead: (id: string) => [...featureRequestKeys.all, "ahead", id] as const,
+};
+
+export type OtherFeatureRequest = {
+  id: string;
+  goal: string;
+  stage: Stage;
+  featureIssue: number;
 };
 
 // The signed-in User's own Feature Requests, newest first.
@@ -43,6 +52,43 @@ export function useMyFeatureRequests() {
         withdrawnAt: row.withdrawn_at,
         createdAt: row.created_at,
       }));
+    },
+  });
+}
+
+// Other Users' requests in progress, without who asked (spec 124 US2.4).
+export function useOtherFeatureRequests() {
+  return useQuery({
+    queryKey: featureRequestKeys.others(),
+    queryFn: async (): Promise<OtherFeatureRequest[]> => {
+      const { data, error } = await createClient().rpc(
+        "other_feature_requests",
+      );
+      if (error) throw error;
+      return data.map((row) => ({
+        id: row.id,
+        goal: row.goal,
+        stage: row.stage as Stage,
+        featureIssue: row.feature_issue,
+      }));
+    },
+  });
+}
+
+// How many requests are waiting to be triaged ahead of one of the User's own.
+export function useFeatureRequestsAhead(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: featureRequestKeys.ahead(id),
+    enabled,
+    queryFn: async (): Promise<number | undefined> => {
+      const { data, error } = await createClient().rpc(
+        "feature_requests_ahead",
+        {
+          request_id: id,
+        },
+      );
+      if (error) throw error;
+      return data ?? undefined;
     },
   });
 }

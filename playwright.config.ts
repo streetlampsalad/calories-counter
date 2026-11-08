@@ -40,6 +40,8 @@ export default defineConfig({
       OFF_SOURCE: "fixture",
       // Feature Requests create no real GitHub Issues in tests (spec 124).
       FEATURE_ISSUES: "fake",
+      // e2e/feature-requests.spec.ts posts syncs with this; production sets its own.
+      FEATURE_REQUESTS_SYNC_SECRET: "e2e-feature-requests-sync-secret",
     },
     timeout: 60_000,
   },

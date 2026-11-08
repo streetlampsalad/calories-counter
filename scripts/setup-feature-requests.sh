@@ -185,15 +185,15 @@ finish() {
 # ──────────────────────────────────────────────────────────────────────────
 
 
-# Production setup for Feature Requests (specs/124-feature-requests/, Slice 1).
+# Production setup for Feature Requests (specs/124-feature-requests/, Slices 1 and 2).
 # Run from the repo root, after ./scripts/setup-production.sh: ./scripts/setup-feature-requests.sh
-# Needs: gh (logged in), Node 24 + pnpm. The token is never written to disk: it goes straight to
-# Vercel, so an interrupted run just asks for it again.
+# Needs: gh (logged in), Node 24 + pnpm. The token and the sync secret are never written to disk: they
+# go straight to Vercel and GitHub, so an interrupted run just asks again and makes a fresh secret.
 
 ENV_FILE=".setup-production.env"
 VERCEL_CLI="vercel@65.0.0"         # keep in step with .github/workflows/deploy.yml
 
-TOTAL_STAGES=2
+TOTAL_STAGES=3
 
 copy_to_clipboard() {
   if   command -v clip.exe >/dev/null 2>&1; then printf '%s' "$1" | clip.exe
@@ -236,21 +236,35 @@ if [[ -z "$VERCEL_ORG_ID" || -z "$VERCEL_PROJECT_ID" ]]; then
   write_env VERCEL_ORG_ID "$VERCEL_ORG_ID"
 fi
 export VERCEL_ORG_ID VERCEL_PROJECT_ID
-pnpm dlx "$VERCEL_CLI" env rm GITHUB_FEATURE_REQUESTS_TOKEN production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
-# The value goes in on stdin, so the CLI's messages never contain it and are safe to show.
-if output=$(printf '%s' "$GITHUB_FEATURE_REQUESTS_TOKEN" | pnpm dlx "$VERCEL_CLI" env add GITHUB_FEATURE_REQUESTS_TOKEN production --sensitive --token "$VERCEL_TOKEN" 2>&1); then
-  printf '  %s✓ set%s GITHUB_FEATURE_REQUESTS_TOKEN in Vercel production\n' "$GREEN" "$RESET"
-else
-  warn "couldn't set it automatically. Vercel said:"
+# add_vercel_env NAME VALUE replaces a server-only production variable. The value goes in on stdin,
+# so the CLI's messages never contain it and are safe to show.
+add_vercel_env() {
+  local name="$1" value="$2" output
+  pnpm dlx "$VERCEL_CLI" env rm "$name" production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+  if output=$(printf '%s' "$value" | pnpm dlx "$VERCEL_CLI" env add "$name" production --sensitive --token "$VERCEL_TOKEN" 2>&1); then
+    printf '  %s✓ set%s %s in Vercel production\n' "$GREEN" "$RESET" "$name"
+    return
+  fi
+  warn "couldn't set $name automatically. Vercel said:"
   printf '%s\n' "$output" | grep -v '^[[:space:]]*$' | tail -n 4 | sed 's/^/      /'
-  if copy_to_clipboard "$GITHUB_FEATURE_REQUESTS_TOKEN"; then
+  if copy_to_clipboard "$value"; then
     step "Add it by hand: calories-counter → Settings → Environment Variables → Add New."
-    step "Key: GITHUB_FEATURE_REQUESTS_TOKEN. Production only, Sensitive on. Value: paste (on your clipboard)."
+    step "Key: $name. Production only, Sensitive on. Value: paste (on your clipboard)."
     pause "Saved it in Vercel? Press Enter."
   else
-    SKIPPED+=("Vercel env GITHUB_FEATURE_REQUESTS_TOKEN: no clipboard tool, so re-run this wizard where one exists")
+    SKIPPED+=("Vercel env $name: no clipboard tool, so re-run this wizard where one exists")
   fi
-fi
-note "It takes effect on the next production deploy."
+}
+add_vercel_env GITHUB_FEATURE_REQUESTS_TOKEN "$GITHUB_FEATURE_REQUESTS_TOKEN"
+
+# ── 3. The secret the board workflow sends stages with ─────────────────────
+stage "The sync secret: Vercel and GitHub Actions"
+say "The board workflow tells the app which stage each request has reached. They share a secret,"
+say "so nobody else can move a request on."
+FEATURE_REQUESTS_SYNC_SECRET=$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')
+note "Generated a 64-character secret, kept in memory only."
+add_vercel_env FEATURE_REQUESTS_SYNC_SECRET "$FEATURE_REQUESTS_SYNC_SECRET"
+set_secret FEATURE_REQUESTS_SYNC_SECRET "$FEATURE_REQUESTS_SYNC_SECRET"
+note "Everything takes effect on the next production deploy; until then the board's sync step warns and skips."
 
 finish

@@ -49,19 +49,19 @@ description: "Tasks for Feature Requests from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T011 [P] [US2] Vitest: `stageFor` on every Issue tree in US2.1 (including Submitted versus Being reviewed by `needs-triage` and assignee exactly as US2.1 states), Waiting for the owner winning per D5, and `latestComment`, and that the sync skips with a warning when the secret is missing or the route answers 404, in `scripts/workflow/feature-requests.test.mjs`
-- [ ] T012 [P] [US2] pgTAP: `apply_feature_request_sync` updates by Feature Issue, ignores unknown Issues and withdrawn requests (US4.3); `other_feature_requests` hides who asked and stages outside Submitted–Ready to try; `feature_requests_ahead` only for the owner of the request; only `service_role` may sync, in `supabase/tests/database/021_feature_request_sync.test.sql`
-- [ ] T013 [P] [US2] Vitest: the sync handler refuses a missing or wrong secret and a bad body, in `src/features/feature-requests/sync-handler.test.ts`
-- [ ] T014 [P] [US2] Vitest and Testing Library: stage labels, Live and Removed from the Toggle, in `stage.test.ts`; the card's stage, comment and reason, in `request-card.test.tsx`; the list's loading, empty and error states, in `request-list.test.tsx`
-- [ ] T015 [US2] Playwright: a sync moves `liv`'s request to Planning and the card says so; another User's in-progress request shows without a name, in `e2e/feature-requests.spec.ts`
+- [x] T011 [P] [US2] Vitest: `stageFor` on every Issue tree in US2.1 (including Submitted versus Being reviewed by `needs-triage` and assignee exactly as US2.1 states), Waiting for the owner winning per D5, and `latestComment`, and that the sync skips with a warning when the secret is missing or the route answers 404, in `scripts/workflow/feature-requests.test.mjs`
+- [x] T012 [P] [US2] pgTAP: `apply_feature_request_sync` updates by Feature Issue, ignores unknown Issues and withdrawn requests (US4.3); `other_feature_requests` hides who asked and stages outside Submitted–Ready to try; `feature_requests_ahead` only for the owner of the request; only `service_role` may sync, in `supabase/tests/database/021_feature_request_sync.test.sql`
+- [x] T013 [P] [US2] Vitest: the sync handler refuses a missing or wrong secret and a bad body, in `src/features/feature-requests/sync-handler.test.ts`
+- [x] T014 [P] [US2] Vitest and Testing Library: stage labels, Live and Removed from the Toggle, in `stage.test.ts`; the card's stage, comment and reason, in `request-card.test.tsx`; the list's loading, empty and error states, in `request-list.test.tsx`
+- [x] T015 [US2] Playwright: a sync moves `liv`'s request to Planning and the card says so; another User's in-progress request shows without a name, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
 
-- [ ] T016 [US2] Migration `pnpm db:new feature_request_sync` (three functions), then `pnpm db:reset && pnpm db:types`
-- [ ] T017 [US2] `scripts/workflow/feature-requests.mjs` and `feature-requests-sync.mjs`; a "Sync Feature Requests" step in `.github/workflows/board.yml` (sparse checkout adds `specs`)
-- [ ] T018 [US2] `sync-handler.ts` and `src/app/api/feature-requests/sync/route.ts`
-- [ ] T019 [US2] `stage.ts`, `request-card.tsx`, "Others are asking for" in `request-list.tsx`, requests ahead
-- [ ] T020 [US2] `FEATURE_REQUESTS_SYNC_SECRET` in `.env.example`, `playwright.config.ts` (a test value) and `scripts/setup-feature-requests.sh`
+- [x] T016 [US2] Migration `pnpm db:new feature_request_sync` (three functions), then `pnpm db:reset && pnpm db:types`
+- [x] T017 [US2] `scripts/workflow/feature-requests.mjs` and `feature-requests-sync.mjs`; a "Sync Feature Requests" step in `.github/workflows/board.yml` (sparse checkout adds `specs`)
+- [x] T018 [US2] `sync-handler.ts` and `src/app/api/feature-requests/sync/route.ts`
+- [x] T019 [US2] `stage.ts`, `request-card.tsx`, "Others are asking for" in `request-list.tsx`, requests ahead
+- [x] T020 [US2] `FEATURE_REQUESTS_SYNC_SECRET` in `.env.example`, `playwright.config.ts` (a test value) and `scripts/setup-feature-requests.sh`
 
 **Checkpoint**: `pnpm validate` passes. After deploy, the Owner sets `FEATURE_REQUESTS_SYNC_SECRET` in Vercel production and GitHub Actions (`human-step`).
 
