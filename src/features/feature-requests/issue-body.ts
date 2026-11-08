@@ -115,8 +115,11 @@ export function followUpBody(round: {
 }
 
 // The clean-up Chore an agent delivers once a Requester has decided (spec 135 D4, ADR 0008). It
-// carries no User-written text: it is labelled ready-for-agent, so nothing a User typed reaches it.
-export const CHORE_LABELS = ["chore", "ready-for-agent", "priority:P2"];
+// carries no User-written text, because agents act on it. It is created without ready-for-agent,
+// which is added only once the Toggle has left Testing, so no agent ever deletes the checks of a
+// feature still being tried.
+export const CHORE_LABELS = ["chore", "priority:P2"];
+export const CHORE_READY_LABELS = ["ready-for-agent"];
 
 const CHORE_RISKS = [
   "Adds a third-party integration, secret, environment variable or dashboard step",
@@ -137,7 +140,7 @@ export function cleanupChore(
     body: [
       "### What",
       "",
-      `Feature #${featureIssue} is Live for everyone: its Requester marked it ready. Delete every \`useToggle("${key}")\` and \`isToggleOn("${key}")\` check, keeping the "on" path, and the tests of the "off" path. Keep the Toggle's row in \`public.toggles\`: a Feature Request's card reads it to say Live for everyone (spec 135 D11).`,
+      `Feature #${featureIssue} is Live for everyone: its Requester marked it ready. Delete every \`useToggle("${key}")\`, \`isToggleOn("${key}")\` and \`toggle_is_on('${key}')\` check and the tests of the "off" path; keep the "on" path, and drop the Toggle setup from its tests. Keep the Toggle's row in \`public.toggles\`: a Feature Request's card reads it to say Live for everyone (spec 135 D11).`,
       "",
       "### Why",
       "",

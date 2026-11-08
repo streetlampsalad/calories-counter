@@ -17,6 +17,7 @@ function setup(overrides: Partial<FeedbackDeps> = {}) {
   const issues: FeatureIssues = {
     create: vi.fn(async () => ({ number: 811 })),
     close: vi.fn(async () => {}),
+    addLabels: vi.fn(async () => {}),
   };
   const deps: FeedbackDeps = {
     toggleOn: vi.fn(async () => true),

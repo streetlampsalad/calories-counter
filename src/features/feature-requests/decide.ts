@@ -1,6 +1,6 @@
 import type { Decision } from "./domain";
 import type { FeatureIssues } from "./feature-issues";
-import { cleanupChore } from "./issue-body";
+import { CHORE_READY_LABELS, cleanupChore } from "./issue-body";
 
 export type DecideResult =
   | { ok: true }
@@ -39,8 +39,9 @@ const UNAVAILABLE = { ok: false, code: "unavailable" } as const;
 
 // It's ready (spec 135 US2). The clean-up Chore is created first and the Toggle's state changed
 // second (D4): a Toggle cannot go back to Testing, so it must never leave Testing without its
-// Chore. If the state change does not happen, the Chore is closed again, so no agent deletes the
-// checks of a feature still being tried.
+// Chore. The Chore is only made ready-for-agent once the state has changed, so no agent deletes the
+// checks of a feature still being tried; if the state does not change, the Chore is closed again,
+// and if nobody can tell, it stays open, unlabelled, for the Owner.
 export async function decide(
   input: unknown,
   decision: Decision,
@@ -78,13 +79,34 @@ export async function decide(
         deps.log(`could not close clean-up Chore #${number}`, error),
       );
 
+  const ready = async () => {
+    await deps.issues
+      .addLabels(number, CHORE_READY_LABELS)
+      .catch((error) =>
+        deps.log(
+          `clean-up Chore #${number} is not ready-for-agent; label it by hand`,
+          error,
+        ),
+      );
+    return { ok: true } as const;
+  };
+
   let recorded: boolean;
   try {
     recorded = await deps.record(id, userId, decision, number);
   } catch (error) {
     deps.log(`could not record the decision on request ${id}`, error);
-    const landed = await deps.recordedChore(id).catch(() => null);
-    if (landed === number) return { ok: true };
+    let landed: number | null;
+    try {
+      landed = await deps.recordedChore(id);
+    } catch (readError) {
+      deps.log(
+        `could not tell whether clean-up Chore #${number} landed; it stays open without ready-for-agent`,
+        readError,
+      );
+      return UNAVAILABLE;
+    }
+    if (landed === number) return ready();
     await close("Not recorded in the app; the Toggle is still in Testing.");
     return UNAVAILABLE;
   }
@@ -92,5 +114,5 @@ export async function decide(
     await close("The Toggle was no longer in Testing.");
     return NOT_ALLOWED;
   }
-  return { ok: true };
+  return ready();
 }

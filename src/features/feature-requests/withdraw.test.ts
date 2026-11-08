@@ -9,6 +9,7 @@ function setup(overrides: Partial<WithdrawDeps> = {}) {
   const issues: FeatureIssues = {
     create: vi.fn(),
     close: vi.fn(async () => {}),
+    addLabels: vi.fn(async () => {}),
   };
   const deps: WithdrawDeps = {
     toggleOn: vi.fn(async () => true),

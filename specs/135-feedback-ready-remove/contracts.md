@@ -20,7 +20,7 @@ Follow-up Issue: title `Feature: Feedback on <goal start>`; headings `### Proble
 - Creates the Chore through `FeatureIssues.create`:
   - Ready: title `Chore: Remove the Toggle for #<n>`; `### What`: delete every `useToggle("feature-<n>")` and `isToggleOn("feature-<n>")` check, keeping the "on" path; the Toggle's row stays, because the Feature Request's card reads it to say Live for everyone; `### Why`: the Toggle is Live (ADR 0008).
   - Remove: title `Chore: Remove the feature for #<n>`; `### What`: delete the code behind `feature-<n>` and, in a migration, any table or column only it used; the Toggle's row stays, because the card reads it to say Removed; `### Why`: the Toggle is Removed (ADR 0008).
-  - Both: `### Behaviour` ticks "No User-visible behaviour changes"; labels `chore`, `ready-for-agent`, `priority:P2`.
+  - Both: `### Behaviour` ticks "No User-visible behaviour changes"; labels `chore` and `priority:P2`, and `ready-for-agent` only once the Toggle has left Testing, so no agent works on it while the feature is still being tried. When the server can't tell whether the decision landed, the Chore stays open without `ready-for-agent`, for the Owner.
 - Then, with the service role, `decide_feature_request()` moves the Toggle out of Testing and records `decision` and `cleanup_issue`, in one transaction. If it answers false, closes the Chore as not planned ("The Toggle was no longer in Testing.") and answers `not_allowed`. If the call fails, reads the request's `cleanup_issue`: if it is this Chore the decision landed (`ok`); otherwise closes the Chore ("Not recorded in the app; the Toggle is still in Testing.") and answers `unavailable`.
 - Returns `{ ok: true }` or `{ ok: false, code: "not_allowed" | "unavailable" }`.
 

@@ -1,7 +1,7 @@
 -- It's ready (spec 135, Slice 2): only the server records a decision, only for the Requester's own
 -- request that has been Ready to try, and the Toggle leaves Testing once, for everyone.
 begin;
-select plan(13);
+select plan(16);
 
 -- Start from no requests, whatever earlier e2e runs left behind (rolled back at the end).
 delete from public.feature_requests;
@@ -88,6 +88,29 @@ select is(
   (select decision from public.feature_requests where feature_issue = 852),
   null, 'US2.3: and nothing is recorded'
 );
+
+-- A decided request gets no more Rounds, even from a phone that read its Toggle in Testing while
+-- waiting on the decision (here its Toggle is still in Testing, so only the decision stops it).
+delete from public.toggles where key = 'feature-853';
+insert into public.toggles (key, title) values ('feature-853', 'Barcodes');
+insert into public.feature_requests (id, user_id, goal, feature_issue, stage, decision, cleanup_issue)
+values ('11111111-0000-0000-0000-000000000003', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Scan barcodes', 853, 'ready_to_try', 'ready', 905);
+select is(
+  (select count(*)::integer from public.start_feature_request_round('11111111-0000-0000-0000-000000000003', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'One more thing please')),
+  0, 'no Round starts on a request marked ready'
+);
+
+-- Nothing is decided without a decision and its Chore.
+set local role service_role;
+select throws_ok(
+  $$ select public.decide_feature_request('11111111-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'ready', null) $$,
+  '22023', null, 'D4: never without its Chore'
+);
+select throws_ok(
+  $$ select public.decide_feature_request('11111111-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', null, 904) $$,
+  '22023', null, 'nor without a decision'
+);
+reset role;
 
 -- Everyone sees it on.
 select set_config('request.jwt.claims',

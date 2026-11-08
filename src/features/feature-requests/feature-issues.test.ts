@@ -63,6 +63,22 @@ describe("gitHubFeatureIssues", () => {
   });
 });
 
+describe("gitHubFeatureIssues labels", () => {
+  it("adds labels to an Issue", async () => {
+    const fetchImpl = vi.fn(async () => ok([]));
+    await gitHubFeatureIssues("token-123", fetchImpl).addLabels(901, [
+      "ready-for-agent",
+    ]);
+
+    const calls = fetchImpl.mock.calls as unknown as [string, RequestInit][];
+    expect(calls[0][0]).toContain("/issues/901/labels");
+    expect(calls[0][1].method).toBe("POST");
+    expect(JSON.parse(calls[0][1].body as string)).toEqual({
+      labels: ["ready-for-agent"],
+    });
+  });
+});
+
 describe("createFeatureIssues", () => {
   it("never calls GitHub when faked, and numbers each Issue uniquely", async () => {
     const issues = createFeatureIssues({ FEATURE_ISSUES: "fake" });

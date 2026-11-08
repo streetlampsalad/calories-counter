@@ -10,6 +10,7 @@ function setup(overrides: Partial<DecideDeps> = {}) {
   const issues: FeatureIssues = {
     create: vi.fn(async () => ({ number: 901 })),
     close: vi.fn(async () => {}),
+    addLabels: vi.fn(async () => {}),
   };
   const deps: DecideDeps = {
     toggleOn: vi.fn(async () => true),
@@ -49,6 +50,51 @@ describe("decide: It's ready", () => {
     expect(issues.close).not.toHaveBeenCalled();
   });
 
+  it("makes the Chore ready-for-agent only once the Toggle is Live", async () => {
+    const order: string[] = [];
+    const { deps, issues } = setup();
+    vi.mocked(deps.record).mockImplementation(async () => {
+      order.push("live");
+      return true;
+    });
+    vi.mocked(issues.addLabels).mockImplementation(async () => {
+      order.push("label");
+    });
+
+    expect(await decide({ id: ID }, "ready", deps)).toEqual({ ok: true });
+    expect(order).toEqual(["live", "label"]);
+    expect(issues.addLabels).toHaveBeenCalledWith(901, ["ready-for-agent"]);
+  });
+
+  it("still says it is Live when the label cannot be added, and logs it", async () => {
+    const { deps, issues } = setup();
+    vi.mocked(issues.addLabels).mockRejectedValueOnce(new Error("GitHub down"));
+
+    expect(await decide({ id: ID }, "ready", deps)).toEqual({ ok: true });
+    expect(deps.log).toHaveBeenCalledWith(
+      "clean-up Chore #901 is not ready-for-agent; label it by hand",
+      expect.any(Error),
+    );
+  });
+
+  it("leaves the Chore open and unlabelled when it can't tell whether the decision landed", async () => {
+    const { deps, issues } = setup({
+      record: vi.fn(async () => {
+        throw new Error("response lost");
+      }),
+      recordedChore: vi.fn(async () => {
+        throw new Error("still down");
+      }),
+    });
+
+    expect(await decide({ id: ID }, "ready", deps)).toEqual({
+      ok: false,
+      code: "unavailable",
+    });
+    expect(issues.close).not.toHaveBeenCalled();
+    expect(issues.addLabels).not.toHaveBeenCalled();
+  });
+
   it("changes nothing when the Chore cannot be created (US2.2)", async () => {
     const { deps, issues } = setup();
     vi.mocked(issues.create).mockRejectedValueOnce(new Error("GitHub down"));
@@ -71,6 +117,7 @@ describe("decide: It's ready", () => {
       901,
       "The Toggle was no longer in Testing.",
     );
+    expect(issues.addLabels).not.toHaveBeenCalled();
   });
 
   it("closes the Chore again when recording fails and the decision did not land", async () => {
@@ -101,6 +148,7 @@ describe("decide: It's ready", () => {
 
     expect(await decide({ id: ID }, "ready", deps)).toEqual({ ok: true });
     expect(issues.close).not.toHaveBeenCalled();
+    expect(issues.addLabels).toHaveBeenCalledWith(901, ["ready-for-agent"]);
   });
 
   it("refuses a request that may not be decided, before creating anything (FR-001)", async () => {
@@ -139,10 +187,11 @@ describe("cleanupChore: It's ready", () => {
     const chore = cleanupChore("ready", 801);
 
     expect(chore.title).toBe("Chore: Remove the Toggle for #801");
-    expect(chore.labels).toEqual(["chore", "ready-for-agent", "priority:P2"]);
+    expect(chore.labels).toEqual(["chore", "priority:P2"]);
     expect(chore.body).toContain('useToggle("feature-801")');
     expect(chore.body).toContain('isToggleOn("feature-801")');
-    expect(chore.body).toMatch(/keeping the "on" path/);
+    expect(chore.body).toContain("toggle_is_on('feature-801')");
+    expect(chore.body).toMatch(/keep the "on" path/);
     expect(chore.body).toMatch(/Keep the Toggle's row/);
     expect(chore.body).toContain("ADR 0008");
     expect(chore.body).toContain(
