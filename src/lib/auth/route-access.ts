@@ -7,6 +7,8 @@ const PUBLIC_PATHS = [
   // Called by the database's scheduler, which has no session. It proves itself with a shared
   // secret instead (spec 016, ADR 0005).
   "/api/reminders/send",
+  // Called by the board workflow, which has no session either; it sends a shared secret (spec 124).
+  "/api/feature-requests/sync",
   "/manifest.webmanifest",
   "/sw.js",
   "/offline",
