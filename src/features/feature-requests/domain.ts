@@ -118,3 +118,7 @@ export function countOpen(
       request.withdrawnAt === null && OPEN_STAGES.includes(request.stage),
   ).length;
 }
+
+// What a Requester decides about a feature they have tried (spec 135): It's ready turns its Toggle
+// Live for everyone.
+export type Decision = "ready";

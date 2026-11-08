@@ -3,6 +3,7 @@
 import { isToggleOn } from "@/features/toggles/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { type DecideResult, decide } from "./decide";
 import { FEATURE_REQUESTS_TOGGLE, type Stage } from "./domain";
 import { createFeatureIssues } from "./feature-issues";
 import { type FeedbackResult, giveFeedback as feedback } from "./feedback";
@@ -149,6 +150,64 @@ export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
         ready_note: before.readyNote ?? undefined,
       });
       if (error) throw error;
+    },
+    issues: createFeatureIssues(),
+    log: (message, error) => console.error(message, error),
+  });
+}
+
+// It's ready: the clean-up Chore, then the Toggle Live for everyone (spec 135 US2).
+export async function markReady(input: unknown): Promise<DecideResult> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  return decide(input, "ready", {
+    toggleOn: () => isToggleOn(FEATURE_REQUESTS_TOGGLE),
+    userId: async () => {
+      const { data } = await supabase.auth.getClaims();
+      return data?.claims.sub ?? null;
+    },
+    find: async (id, userId) => {
+      const { data, error } = await admin
+        .from("feature_requests")
+        .select("feature_issue")
+        .eq("id", id)
+        .eq("user_id", userId)
+        .is("withdrawn_at", null)
+        .is("decision", null)
+        .not("first_ready_at", "is", null)
+        .in("stage", ["ready_to_try", "not_going_ahead"])
+        .maybeSingle();
+      if (error) throw error;
+      if (!data?.feature_issue) return null;
+      const toggle = await admin
+        .from("toggles")
+        .select("state")
+        .eq("key", `feature-${data.feature_issue}`)
+        .maybeSingle();
+      if (toggle.error) throw toggle.error;
+      return toggle.data?.state === "testing"
+        ? { featureIssue: data.feature_issue }
+        : null;
+    },
+    record: async (id, userId, decision, cleanupIssue) => {
+      const { data, error } = await admin.rpc("decide_feature_request", {
+        request_id: id,
+        requester_id: userId,
+        decision,
+        cleanup_issue: cleanupIssue,
+      });
+      if (error) throw error;
+      return data;
+    },
+    recordedChore: async (id) => {
+      const { data, error } = await admin
+        .from("feature_requests")
+        .select("cleanup_issue")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data.cleanup_issue;
     },
     issues: createFeatureIssues(),
     log: (message, error) => console.error(message, error),

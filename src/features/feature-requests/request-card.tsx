@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { ToggleState } from "@/features/toggles/queries";
 import { useSwitchToggle } from "@/features/toggles/queries";
+import { DecideSheet } from "./decide-sheet";
 import { FeedbackSheet } from "./feedback-sheet";
 import {
   type FeatureRequest,
@@ -73,7 +74,10 @@ export function RequestCard({
         </p>
       ) : null}
       {canDecide(display, toggle, request.firstReadyAt) ? (
-        <FeedbackSheet id={request.id} goal={request.goal} />
+        <div className="flex flex-wrap gap-2">
+          <FeedbackSheet id={request.id} goal={request.goal} />
+          <DecideSheet id={request.id} goal={request.goal} decision="ready" />
+        </div>
       ) : null}
       {canWithdraw(display, request.firstReadyAt) ? (
         <WithdrawButton id={request.id} goal={request.goal} />

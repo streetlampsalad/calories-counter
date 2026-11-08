@@ -1,13 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toggleKeys } from "@/features/toggles/queries";
 import { createClient } from "@/lib/supabase/client";
 import {
   giveFeedback,
+  markReady,
   submitFeatureRequest,
   withdrawFeatureRequest,
 } from "./actions";
-import type { FeatureRequestInput, Stage } from "./domain";
+import type { Decision, FeatureRequestInput, Stage } from "./domain";
 
 export type FeatureRequest = {
   id: string;
@@ -195,5 +197,32 @@ export function useGiveFeedback() {
     },
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: featureRequestKeys.all }),
+  });
+}
+
+// Not optimistic: the Toggle only leaves Testing once its clean-up Chore exists (spec 135 D4).
+export function useDecide() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { id: string; decision: Decision }) => {
+      let result: Awaited<ReturnType<typeof markReady>>;
+      try {
+        result = await markReady({ id: input.id });
+      } catch {
+        result = { ok: false, code: "unavailable" };
+      }
+      if (!result.ok)
+        throw new Error(
+          result.code === "not_allowed"
+            ? "It couldn't be done: this feature is no longer being tested."
+            : "Couldn't do that. Check your connection and try again.",
+        );
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: featureRequestKeys.all }),
+        queryClient.invalidateQueries({ queryKey: toggleKeys.all }),
+      ]),
   });
 }
