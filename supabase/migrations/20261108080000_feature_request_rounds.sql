@@ -55,10 +55,20 @@ revoke all on function public.feature_requests_first_ready() from public, anon, 
 -- Starts a Round on the Requester's own request: only once it has been Ready to try and is Ready to
 -- try again (or its last Round was declined, D13), with its Toggle still in Testing. The request goes
 -- back to Submitted in the same transaction as the open-request check, under the same lock as new
--- requests, so feedback counts towards the 2 at a time. Returns no Round when it may not start one.
+-- requests, so feedback counts towards the 2 at a time. Returns no Round when it may not start one,
+-- and otherwise what the request was, so undo_feature_request_round can put it back.
 -- Only the server (service role) may call it, after checking the caller.
 create function public.start_feature_request_round(request_id uuid, requester_id uuid, feedback text)
-returns table (round_id uuid, round_number integer, goal text, feature_issue integer, previous_stage text)
+returns table (
+  round_id uuid,
+  round_number integer,
+  goal text,
+  feature_issue integer,
+  previous_stage text,
+  previous_stage_changed_at timestamptz,
+  previous_latest_comment text,
+  previous_ready_note text
+)
 language plpgsql
 security definer
 set search_path = ''
@@ -105,12 +115,47 @@ begin
   goal := request.goal;
   feature_issue := request.feature_issue;
   previous_stage := request.stage;
+  previous_stage_changed_at := request.stage_changed_at;
+  previous_latest_comment := request.latest_comment;
+  previous_ready_note := request.ready_note;
   return next;
 end;
 $$;
 
 revoke all on function public.start_feature_request_round(uuid, uuid, text) from public, anon, authenticated;
 grant execute on function public.start_feature_request_round(uuid, uuid, text) to service_role;
+
+-- Undoes a Round whose follow-up Feature Issue could not be created or recorded: puts the request
+-- back as it was and deletes the Round, together, so a sync never finds the request at Submitted
+-- with no Round (and notifies a Ready to try it already had). Only the server may call it.
+create function public.undo_feature_request_round(
+  round_id uuid,
+  stage text,
+  stage_changed_at timestamptz,
+  latest_comment text default null,
+  ready_note text default null
+)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  with round as (
+    delete from public.feature_request_rounds x
+    where x.id = undo_feature_request_round.round_id
+    returning x.request_id
+  )
+  update public.feature_requests r
+  set stage = undo_feature_request_round.stage,
+      stage_changed_at = undo_feature_request_round.stage_changed_at,
+      latest_comment = undo_feature_request_round.latest_comment,
+      ready_note = undo_feature_request_round.ready_note
+  from round
+  where r.id = round.request_id;
+$$;
+
+revoke all on function public.undo_feature_request_round(uuid, text, timestamptz, text, text) from public, anon, authenticated;
+grant execute on function public.undo_feature_request_round(uuid, text, timestamptz, text, text) to service_role;
 
 -- As before, but a request is found by its own Feature Issue or one of its Rounds', and an update
 -- counts only when it is about the request's newest Issue: its newest Round's (nothing while that

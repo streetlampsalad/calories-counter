@@ -289,11 +289,14 @@ isOneToOne: false
                            },
 "start_feature_request_round":
 { Args: { "feedback": string,"request_id": string,"requester_id": string }; Returns: {
-              "feature_issue": number,"goal": string,"previous_stage": string,"round_id": string,"round_number": number
+              "feature_issue": number,"goal": string,"previous_latest_comment": string,"previous_ready_note": string,"previous_stage": string,"previous_stage_changed_at": string,"round_id": string,"round_number": number
             }[]
                            },
 "toggle_is_on":
 { Args: { "key": string }; Returns: boolean
+                           },
+"undo_feature_request_round":
+{ Args: { "latest_comment"?: string,"ready_note"?: string,"round_id": string,"stage": string,"stage_changed_at": string }; Returns: undefined
                            }
           }
           Enums: {

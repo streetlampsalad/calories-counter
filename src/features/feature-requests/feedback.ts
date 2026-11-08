@@ -11,7 +11,15 @@ export type StartedRound = {
   round: number;
   goal: string;
   featureIssue: number;
-  previousStage: Stage;
+  previous: RequestBefore;
+};
+
+// What the request was before its Round started, so an undo can put it back.
+export type RequestBefore = {
+  stage: Stage;
+  stageChangedAt: string;
+  latestComment: string | null;
+  readyNote: string | null;
 };
 
 export type FeedbackDeps = {
@@ -27,8 +35,8 @@ export type FeedbackDeps = {
     feedback: string,
   ) => Promise<StartedRound | "limit" | null>;
   setRoundIssue: (roundId: string, number: number) => Promise<void>;
-  /** Deletes the Round and puts the request back at the stage it was at. */
-  undoRound: (roundId: string, id: string, stage: Stage) => Promise<void>;
+  /** Deletes the Round and puts the request back as it was, together. */
+  undoRound: (roundId: string, before: RequestBefore) => Promise<void>;
   issues: FeatureIssues;
   log: (message: string, error: unknown) => void;
 };
@@ -66,7 +74,14 @@ export async function giveFeedback(
   if (started === "limit") return { ok: false, code: "limit" };
   const round = started;
   const undo = () =>
-    deps.undoRound(round.roundId, id, round.previousStage).catch(() => {});
+    deps
+      .undoRound(round.roundId, round.previous)
+      .catch((error) =>
+        deps.log(
+          `could not undo Round ${round.roundId} of request ${id}`,
+          error,
+        ),
+      );
 
   let number: number;
   try {

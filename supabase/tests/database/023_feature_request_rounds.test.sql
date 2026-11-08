@@ -1,7 +1,7 @@
 -- Rounds (spec 135, Slice 1): feedback starts another Round behind the same Toggle; the request
 -- follows its newest Round; the Requester keeps their switch; Rounds are private to their Requester.
 begin;
-select plan(24);
+select plan(28);
 
 -- Start from no requests, whatever earlier e2e runs left behind (rolled back at the end).
 delete from public.feature_requests;
@@ -79,10 +79,11 @@ select is(
 );
 select results_eq(
   $$ select new_stage, notify from public.apply_feature_request_sync('[
+       {"featureIssue": 899, "stage": "not_going_ahead", "specIssue": null, "latestComment": "Spam", "readyNote": null},
        {"featureIssue": 811, "stage": "being_reviewed", "specIssue": null, "latestComment": "Accepted", "readyNote": null}
      ]'::jsonb) $$,
   $$ values ('being_reviewed', false) $$,
-  'US1.4: the newest Round''s Issue moves the request'
+  'US1.4: the newest Round''s Issue moves the request, and an Issue the app never recorded, however new, changes nothing'
 );
 reset role;
 
@@ -157,6 +158,29 @@ select is(
    where round_number is not null),
   1, 'D13: after a declined Round, feedback can start another'
 );
+
+-- Undoing a Round whose Issue could not be created puts the request back as it was, in one go.
+select lives_ok(
+  $$ select public.undo_feature_request_round(
+       (select id from public.feature_request_rounds where feedback = 'Then just let me type millilitres'),
+       'not_going_ahead', '2026-11-01 00:00:00+00', 'Out of scope', null) $$,
+  'the server can undo a Round'
+);
+select is(
+  (select count(*)::integer from public.feature_request_rounds where request_id = '11111111-0000-0000-0000-000000000001'),
+  2, 'the undone Round is gone'
+);
+select results_eq(
+  $$ select stage, stage_changed_at, latest_comment from public.feature_requests where feature_issue = 801 $$,
+  $$ values ('not_going_ahead', '2026-11-01 00:00:00+00'::timestamptz, 'Out of scope') $$,
+  'and the request is back as it was'
+);
+set local role authenticated;
+select throws_ok(
+  $$ select public.undo_feature_request_round(gen_random_uuid(), 'submitted', now(), null, null) $$,
+  '42501', null, 'a User cannot undo a Round'
+);
+set local role service_role;
 
 -- US1.8: nothing once the Toggle has left Testing.
 update public.feature_requests set stage = 'ready_to_try' where feature_issue = 801;

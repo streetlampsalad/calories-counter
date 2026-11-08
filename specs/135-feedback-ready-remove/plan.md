@@ -4,7 +4,7 @@
 
 ## Summary
 
-Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature Issue whose `### Requested by` is the request's own id, so the existing sync only has to send the newest Feature Issue per request. It's ready and Remove it are server actions that create the clean-up Chore first and then move the Toggle out of Testing with the service role. A 14-day reminder rides on the sync route, which the board's nightly run calls.
+Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature Issue whose `### Requested by` is the request's own id, so the existing sync sends every Feature Issue as before and the database applies only each request's newest recorded one. It's ready and Remove it are server actions that create the clean-up Chore first and then move the Toggle out of Testing with the service role. A 14-day reminder rides on the sync route, which the board's nightly run calls.
 
 ## Technical Context
 
@@ -33,7 +33,7 @@ Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature
 | US1.1 | Testing Library | `src/features/feature-requests/request-card.test.tsx` |
 | US1.2 | Vitest, Testing Library | `src/features/feature-requests/feedback.test.ts`, `src/features/feature-requests/feedback-sheet.test.tsx` |
 | US1.3 | Vitest, Playwright | `src/features/feature-requests/issue-body.test.ts`, `src/features/feature-requests/feedback.test.ts`, `e2e/feature-requests.spec.ts` |
-| US1.4 | Vitest, pgTAP | `scripts/workflow/feature-requests.test.mjs` (`newestPerRequest`), `supabase/tests/database/023_feature_request_rounds.test.sql` |
+| US1.4 | pgTAP | `supabase/tests/database/023_feature_request_rounds.test.sql` |
 | US1.5 | pgTAP | `supabase/tests/database/023_feature_request_rounds.test.sql` |
 | US1.6 | pgTAP | `supabase/tests/database/023_feature_request_rounds.test.sql` |
 | US1.7 | Vitest, Testing Library | `src/features/feature-requests/feedback.test.ts`, `src/features/feature-requests/feedback-sheet.test.tsx` |
@@ -68,7 +68,7 @@ src/features/feature-requests/
 ├── issue-body.ts                       # followUpTo; Chore bodies
 ├── actions.ts, queries.ts, request-card.tsx, stage.ts, sync-handler.ts
 app/api/feature-requests/sync/route.ts  # reminders
-scripts/workflow/feature-requests.mjs, feature-requests-sync.mjs   # newest per request
+scripts/workflow/feature-requests-sync.mjs   # sends Round Issues too
 supabase/migrations/<timestamp>_feature_request_rounds.sql, _feature_request_decisions.sql, _testing_reminders.sql
 supabase/tests/database/023_feature_request_rounds.test.sql, 024_testing_reminders.test.sql
 .github/ISSUE_TEMPLATE/1-feature.yml, .claude/skills/deliver/triage.md, .claude/skills/deliver/spec.md

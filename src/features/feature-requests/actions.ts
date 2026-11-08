@@ -124,7 +124,12 @@ export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
             round: round.round_number,
             goal: round.goal,
             featureIssue: round.feature_issue,
-            previousStage: round.previous_stage as Stage,
+            previous: {
+              stage: round.previous_stage as Stage,
+              stageChangedAt: round.previous_stage_changed_at,
+              latestComment: round.previous_latest_comment,
+              readyNote: round.previous_ready_note,
+            },
           }
         : null;
     },
@@ -135,16 +140,14 @@ export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
         .eq("id", roundId);
       if (error) throw error;
     },
-    undoRound: async (roundId, id, stage) => {
-      const removed = await admin
-        .from("feature_request_rounds")
-        .delete()
-        .eq("id", roundId);
-      if (removed.error) throw removed.error;
-      const { error } = await admin
-        .from("feature_requests")
-        .update({ stage })
-        .eq("id", id);
+    undoRound: async (roundId, before) => {
+      const { error } = await admin.rpc("undo_feature_request_round", {
+        round_id: roundId,
+        stage: before.stage,
+        stage_changed_at: before.stageChangedAt,
+        latest_comment: before.latestComment ?? undefined,
+        ready_note: before.readyNote ?? undefined,
+      });
       if (error) throw error;
     },
     issues: createFeatureIssues(),

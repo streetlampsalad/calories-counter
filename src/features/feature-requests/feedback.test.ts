@@ -6,6 +6,12 @@ const USER = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const ID = "6f1c2a9e-1b2c-4d3e-8f90-123456789abc";
 const ROUND = "7a2d3b0f-2c3d-4e4f-9a01-23456789abcd";
 const VALID = { id: ID, feedback: "Let me add half a glass" };
+const BEFORE = {
+  stage: "ready_to_try" as const,
+  stageChangedAt: "2026-11-01T00:00:00Z",
+  latestComment: "In production",
+  readyNote: "Tap Water to add a glass.",
+};
 
 function setup(overrides: Partial<FeedbackDeps> = {}) {
   const issues: FeatureIssues = {
@@ -20,7 +26,7 @@ function setup(overrides: Partial<FeedbackDeps> = {}) {
       round: 2,
       goal: "Track water as well as food",
       featureIssue: 801,
-      previousStage: "ready_to_try" as const,
+      previous: BEFORE,
     })),
     setRoundIssue: vi.fn(async () => {}),
     undoRound: vi.fn(async () => {}),
@@ -122,7 +128,7 @@ describe("giveFeedback", () => {
       ok: false,
       code: "unavailable",
     });
-    expect(deps.undoRound).toHaveBeenCalledWith(ROUND, ID, "ready_to_try");
+    expect(deps.undoRound).toHaveBeenCalledWith(ROUND, BEFORE);
     expect(deps.setRoundIssue).not.toHaveBeenCalled();
   });
 
@@ -141,7 +147,27 @@ describe("giveFeedback", () => {
       811,
       "Not recorded in the app; please send the feedback again.",
     );
-    expect(deps.undoRound).toHaveBeenCalledWith(ROUND, ID, "ready_to_try");
+    expect(deps.undoRound).toHaveBeenCalledWith(ROUND, BEFORE);
+  });
+
+  it("logs an undo that fails, and still answers unavailable", async () => {
+    const { deps } = setup({
+      undoRound: vi.fn(async () => {
+        throw new Error("database down");
+      }),
+    });
+    vi.mocked(deps.issues.create).mockRejectedValueOnce(
+      new Error("GitHub down"),
+    );
+
+    expect(await giveFeedback(VALID, deps)).toEqual({
+      ok: false,
+      code: "unavailable",
+    });
+    expect(deps.log).toHaveBeenCalledWith(
+      `could not undo Round ${ROUND} of request ${ID}`,
+      expect.any(Error),
+    );
   });
 
   it("is unavailable when the Round cannot be started", async () => {

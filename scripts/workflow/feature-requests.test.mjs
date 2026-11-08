@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   latestComment,
-  newestPerRequest,
   readyNote,
   requestedBy,
   sendSync,
@@ -314,37 +313,5 @@ describe("sendSync", () => {
     await expect(
       sendSync({ url: "https://a.test", secret: "s", requests, fetchImpl }),
     ).rejects.toThrow("401");
-  });
-});
-
-describe("newestPerRequest (spec 135 US1.4)", () => {
-  const OTHER = "7a2d3b0f-2c3d-4e4f-9a01-23456789abcd";
-  const issue = (number, id) => ({
-    number,
-    body: `### Follow-up to
-
-#1
-
-### Requested by
-
-${id}
-`,
-  });
-
-  it("keeps only the newest Feature Issue of each request", () => {
-    const kept = newestPerRequest([
-      issue(801, ID),
-      issue(811, ID),
-      issue(802, OTHER),
-      issue(805, ID),
-    ]);
-
-    expect(kept.map((each) => each.number).sort()).toEqual([802, 811]);
-  });
-
-  it("keeps a request's only Issue", () => {
-    expect(
-      newestPerRequest([issue(801, ID)]).map((each) => each.number),
-    ).toEqual([801]);
   });
 });
