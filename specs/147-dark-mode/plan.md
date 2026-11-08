@@ -37,8 +37,8 @@ Mount `next-themes`' `ThemeProvider` in the root layout so it sets the `dark` cl
 | US1.5 | Playwright | `e2e/appearance.spec.ts` (emulated colour scheme, changed while open) |
 | US1.6 | Playwright | `e2e/appearance.spec.ts` |
 | US1.7 | Vitest | `src/lib/appearance.test.ts` (storage that throws) |
-| US1.9 | Testing Library | `src/features/settings/appearance-section.test.tsx` (a cleanup component clears the saved choice once Toggles load off, and not on a failed load) |
 | US1.8 | Playwright | `e2e/appearance.spec.ts` (a second browser context starts Light) |
+| US1.9 | Testing Library | `src/features/settings/appearance-section.test.tsx` (a cleanup component clears the saved choice once Toggles load off, and not on a failed load) |
 | US2.1 | Playwright | `e2e/appearance.spec.ts` (background colour read before hydration) |
 | US2.2 | Vitest, Playwright | `src/lib/appearance.test.ts` (`themeColor`), `e2e/appearance.spec.ts` |
 | US2.3 | Testing Library | `src/components/ui/sonner.test.tsx` |

@@ -33,8 +33,8 @@ With the Toggle on for them, a User sees an "Appearance" section in Settings wit
 5. **Given** the User picked System and the phone is set to dark, **When** the app opens, **Then** it is dark; **and when** the phone switches to light while the app is open, **Then** the app goes light without a reload.
 6. **Given** the User picked Dark, **When** they pick Light, **Then** the app goes light at once and stays light after a reload.
 7. **Given** a phone that blocks site storage, **When** the User picks Dark, **Then** the app goes dark for this visit and, after a reload, is Light with no error.
-9. **Given** the User saved Dark and the Toggle then turns out to be off for them (they switched it off, or it is loading and settles off), **When** Toggles have loaded, **Then** the saved choice is cleared and the app goes Light, so nobody is stuck in Dark without the control.
 8. **Given** the User picked Dark on one phone, **When** they sign in on another, **Then** the other phone is unchanged, because the choice is kept on each phone, not with the User.
+9. **Given** the User saved Dark and the Toggle then turns out to be off for them (they switched it off, or it is loading and settles off), **When** Toggles have loaded, **Then** the saved choice is cleared and the app goes Light, so nobody is stuck in Dark without the control.
 
 ---
 
