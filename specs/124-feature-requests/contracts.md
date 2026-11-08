@@ -6,7 +6,7 @@
 
 - Input: `{ goal: string, problem?: string, details?: string }`, validated by `parseFeatureRequest` (zod) in `src/features/feature-requests/domain.ts`.
 - Refuses with `{ ok: false, code: "not_found" }` unless `isToggleOn("feature-114")`.
-- Inserts the row with the admin client (`user_id` from `getClaims()`), creates the Issue through `FeatureIssues.create`, then stores `feature_issue`. If the Issue cannot be created, deletes the row.
+- Inserts the row with the admin client (`user_id` from `getClaims()`), creates the Issue through `FeatureIssues.create`, then stores `feature_issue`. If the Issue cannot be created, deletes the row. If the Issue was created but storing its number fails, closes the Issue as not planned with "Not recorded in the app; please ask again.", deletes the row, logs both numbers, and answers `unavailable`, so no public Issue is left without a request.
 - Returns `{ ok: true, id }`, or `{ ok: false, code: "limit" | "invalid" | "unavailable" }`.
 
 ## Server action `withdrawFeatureRequest`

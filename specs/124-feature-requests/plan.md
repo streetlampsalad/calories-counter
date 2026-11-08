@@ -55,7 +55,7 @@ A `feature_requests` table holds each request, written only by the server and re
 | US3.4 | Vitest, Testing Library | `scripts/workflow/feature-requests.test.mjs`, `src/features/feature-requests/request-card.test.tsx` |
 | US3.5 | pgTAP, Playwright | `supabase/tests/database/022_requester_toggles.test.sql`, `e2e/feature-requests.spec.ts` |
 | US3.6 | pgTAP | `supabase/tests/database/022_requester_toggles.test.sql` |
-| US3.7 | Review | `.claude/skills/deliver/spec.md`, `.specify/templates/overrides/spec-template.md` |
+| US3.7 | Vitest | `scripts/workflow/ready-to-try.test.mjs`: the spec template and `.claude/skills/deliver/spec.md` both have the `## Ready to try` heading, and every `specs/<n>-*/spec.md` with `n` of 124 or more has the section, non-empty |
 | US4.1 | Vitest, Playwright | `src/features/feature-requests/withdraw.test.ts`, `e2e/feature-requests.spec.ts` |
 | US4.2 | Vitest, Testing Library | `src/features/feature-requests/stage.test.ts`, `src/features/feature-requests/request-card.test.tsx` |
 | US4.3 | pgTAP | `supabase/tests/database/021_feature_request_sync.test.sql` |
@@ -107,7 +107,7 @@ supabase/
 ├── migrations/<timestamp>_feature_requests.sql, _feature_request_sync.sql, _requester_toggles.sql
 └── tests/database/020_feature_requests.test.sql, 021_feature_request_sync.test.sql, 022_requester_toggles.test.sql
 scripts/
-├── workflow/feature-requests.mjs, feature-requests.test.mjs, feature-requests-sync.mjs
+├── workflow/feature-requests.mjs, feature-requests.test.mjs, feature-requests-sync.mjs, ready-to-try.test.mjs
 └── setup-feature-requests.sh                          # the Owner's human steps
 .github/
 ├── workflows/board.yml                                # the sync step

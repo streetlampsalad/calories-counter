@@ -22,7 +22,7 @@ description: "Tasks for Feature Requests from inside the app"
 
 - [ ] T001 [P] [US1] pgTAP: own rows only, no writes through the API, the limit of 2 open, withdrawn not counted, in `supabase/tests/database/020_feature_requests.test.sql`
 - [ ] T002 [P] [US1] Vitest: `parseFeatureRequest` limits; `issueTitle` and `issueBody` headings, quoting, mention neutralising, in `src/features/feature-requests/domain.test.ts` and `issue-body.test.ts`
-- [ ] T003 [P] [US1] Vitest: `submitFeatureRequest` logic with fakes: Toggle off, limit, GitHub failure deletes the row, success stores the number, in `src/features/feature-requests/submit.test.ts`
+- [ ] T003 [P] [US1] Vitest: `submitFeatureRequest` logic with fakes: Toggle off, limit, GitHub failure deletes the row, a failure to store the number closes the Issue again, success stores the number, in `src/features/feature-requests/submit.test.ts`
 - [ ] T004 [P] [US1] Testing Library: the form's validation, the gentle prompt, the public notice, the limit, notification offer, error keeps the text, in `src/features/feature-requests/request-form.test.tsx`; the Settings row in `src/features/settings/feature-requests-row.test.tsx`
 - [ ] T005 [US1] Playwright: `liv` with `feature-114` on submits a request and sees it Submitted; `cleo` sees no row and a 404, in `e2e/feature-requests.spec.ts`
 
@@ -79,6 +79,7 @@ description: "Tasks for Feature Requests from inside the app"
 - [ ] T021 [P] [US3] pgTAP: `apply_feature_request_sync` returns a request only on the change into Ready to try or Not going ahead, in `021_feature_request_sync.test.sql`; the Requester (not withdrawn) and the Owner can switch the Toggle and nobody else, in `supabase/tests/database/022_requester_toggles.test.sql`
 - [ ] T022 [P] [US3] Vitest: the handler sends one push per device with the right title and URL, deletes expired subscriptions, sends nothing on other stages, in `sync-handler.test.ts`; `readyNote` reads the section, in `feature-requests.test.mjs`
 - [ ] T023 [P] [US3] Testing Library: the note and the switch on a Ready to try card, in `request-card.test.tsx`
+- [ ] T023a [P] [US3] Vitest: the spec template and `.claude/skills/deliver/spec.md` have the `## Ready to try` heading, and every `specs/<n>-*/spec.md` with `n` ≥ 124 has a non-empty section, in `scripts/workflow/ready-to-try.test.mjs` (US3.7)
 - [ ] T024 [US3] Playwright: a sync to Ready to try shows the note, and `liv` turns the switch on, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
@@ -121,5 +122,5 @@ description: "Tasks for Feature Requests from inside the app"
 |---|---|---|---|---|---|
 | 1 | Ask for a feature | US1.1–US1.10 | T001–T010 | — | Yes (GitHub token, RLS, Feature template) |
 | 2 | Follow a request through its stages | US2.1–US2.6 | T011–T020 | Slice 1 | Yes (sync secret, `board.yml`, others' requests) |
-| 3 | Hear it's ready, and try it | US3.1–US3.7 | T021–T028 | Slice 2 | Yes (Toggle access, `/deliver`, real push) |
+| 3 | Hear it's ready, and try it | US3.1–US3.7 | T021–T028 (with T023a) | Slice 2 | Yes (Toggle access, `/deliver`, real push) |
 | 4 | Withdraw a request | US4.1–US4.4 | T029–T033 | Slice 1 | No |

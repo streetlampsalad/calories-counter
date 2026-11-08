@@ -22,7 +22,7 @@ All changes are additive. Users read; only the server (service role) writes.
 Index on `user_id`.
 
 - RLS: `authenticated` may `select` their own rows (`user_id = auth.uid()`). No insert, update or delete grant for `anon` or `authenticated`.
-- Trigger `feature_requests_open_limit` (before insert): refuses a third request at an open stage (`submitted`, `being_reviewed`, `planning`, `building`, `waiting_for_owner`, not withdrawn) for the same User, with SQLSTATE `23514` and message `feature_request_limit`.
+- Trigger `feature_requests_open_limit` (before insert): takes `pg_advisory_xact_lock(hashtext('feature_requests:' || new.user_id))` so two submits at once cannot both pass, then refuses a third request at an open stage (`submitted`, `being_reviewed`, `planning`, `building`, `waiting_for_owner`, not withdrawn) for the same User, with SQLSTATE `23514` and message `feature_request_limit`.
 
 "Live for everyone" and "Removed" are never stored: the app shows them when the Toggle `feature-<feature_issue>` is Live or Removed. "Withdrawn" is `withdrawn_at is not null`.
 

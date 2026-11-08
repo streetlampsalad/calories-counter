@@ -104,6 +104,8 @@ Before building starts, the requester can withdraw a request. After a confirm di
 - **Very long text**: each field is capped (goal 2,000 characters, the others 4,000) and counted as typed.
 - **The User loses access** (their Allowed Email removed): their requests stay; nobody else's view changes.
 - **Offline**: the form keeps what was typed and says it couldn't be sent.
+- **Two submits at once** at 1 open request: a per-User lock in the database lets only one through, so the limit of 2 holds.
+- **The Issue is created but the app can't record it**: the Issue is closed again with a comment and the User is asked to try again, so no orphan Issue is built.
 
 ## Requirements *(mandatory)*
 
