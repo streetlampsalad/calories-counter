@@ -89,14 +89,14 @@ isOneToOne: false
                   ]
                 },"feature_requests": {
                   Row: {
-                    "created_at": string,"details": string | null,"feature_issue": number | null,"first_ready_at": string | null,"goal": string,"id": string,"latest_comment": string | null,"problem": string | null,"ready_note": string | null,"spec_issue": number | null,"stage": string,"stage_changed_at": string,"user_id": string,"withdrawn_at": string | null
+                    "cleanup_issue": number | null,"created_at": string,"decision": string | null,"details": string | null,"feature_issue": number | null,"first_ready_at": string | null,"goal": string,"id": string,"latest_comment": string | null,"problem": string | null,"ready_note": string | null,"spec_issue": number | null,"stage": string,"stage_changed_at": string,"user_id": string,"withdrawn_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"details"?: string | null,"feature_issue"?: number | null,"first_ready_at"?: string | null,"goal": string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id": string,"withdrawn_at"?: string | null
+                    "cleanup_issue"?: number | null,"created_at"?: string,"decision"?: string | null,"details"?: string | null,"feature_issue"?: number | null,"first_ready_at"?: string | null,"goal": string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id": string,"withdrawn_at"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"details"?: string | null,"feature_issue"?: number | null,"first_ready_at"?: string | null,"goal"?: string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id"?: string,"withdrawn_at"?: string | null
+                    "cleanup_issue"?: number | null,"created_at"?: string,"decision"?: string | null,"details"?: string | null,"feature_issue"?: number | null,"first_ready_at"?: string | null,"goal"?: string,"id"?: string,"latest_comment"?: string | null,"problem"?: string | null,"ready_note"?: string | null,"spec_issue"?: number | null,"stage"?: string,"stage_changed_at"?: string,"user_id"?: string,"withdrawn_at"?: string | null
                   }
                   Relationships: [
                     
@@ -212,6 +212,9 @@ isOneToOne: false
 { Args: { "range_from": string,"range_to": string }; Returns: {
               "calories": number,"day": string,"entry_count": number
             }[]
+                           },
+"decide_feature_request":
+{ Args: { "cleanup_issue": number,"decision": string,"request_id": string,"requester_id": string }; Returns: boolean
                            },
 "due_reminders":
 { Args: { "at": string }; Returns: {
