@@ -27,6 +27,8 @@ These are hard guardrails, because this workflow can reach production with no hu
 
 Assign yourself and comment `Claimed by /deliver`. Done when the assignment shows on the Issue. Then read the Issue, its comments, its parent and any Issue it is blocked by.
 
+In a cloud session, before you change anything, put the `claude/*` branch you were given on the latest `main`: `git fetch origin main && git checkout -B <that branch> origin/main`. A run started by a merge begins with the merged pull request's branch checked out, and pull requests are squash-merged, so that branch's commits never reach `main`. Work built on it would repeat them in its own pull request.
+
 ## 3. Route by Issue type
 
 | Issue | Path |
@@ -41,7 +43,7 @@ Assign yourself and comment `Claimed by /deliver`. Done when the assignment show
 
 Every path that produces a pull request ends here.
 
-1. **Branch**: in a cloud session, the `claude/*` branch you were given; locally, `<type>/<issue>-<slug>` from an up-to-date `main`.
+1. **Branch**: in a cloud session, the `claude/*` branch you were given, started from `main` in step 2; locally, `<type>/<issue>-<slug>` from an up-to-date `main`.
 2. **Self-review**: run `/code-review` against `main` in a subagent, fix every finding that holds up, and repeat until a pass finds nothing blocking.
 3. **Push and open the pull request** from [`.github/pull_request_template.md`](../../../.github/pull_request_template.md): `Refs #<issue>` on the first line (never a closing keyword: the Issue closes when the change is in production), what changed, how each criterion is tested, and the Risk assessment with every applicable box ticked.
 4. **Flag it** with `needs-human-review` when your Risk assessment ticked anything. The merge gate also flags guardrail files, dependencies, destructive migrations and new environment variables on its own.
