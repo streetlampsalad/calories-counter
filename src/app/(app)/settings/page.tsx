@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AboutSection } from "@/features/settings/about-section";
+import { AppearanceSection } from "@/features/settings/appearance-section";
 import { BurnedSection } from "@/features/settings/burned-section";
 import { FeatureRequestsRow } from "@/features/settings/feature-requests-row";
 import { GoalSection } from "@/features/settings/goal-section";
@@ -48,6 +49,7 @@ export default function SettingsPage() {
       <WeekStartSection />
       <ReminderSection />
       <VibrationSection />
+      <AppearanceSection />
       <TryFeaturesSection />
       <FeatureRequestsRow />
       <Suspense fallback={<div className="h-32" />}>
