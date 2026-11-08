@@ -289,7 +289,7 @@ isOneToOne: false
                            },
 "start_feature_request_round":
 { Args: { "feedback": string,"request_id": string,"requester_id": string }; Returns: {
-              "feature_issue": number,"goal": string,"round_id": string,"round_number": number
+              "feature_issue": number,"goal": string,"previous_stage": string,"round_id": string,"round_number": number
             }[]
                            },
 "toggle_is_on":

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { canWithdraw, displayStage, issueUrl, STAGE_TEXT } from "./stage";
+import {
+  canDecide,
+  canWithdraw,
+  displayStage,
+  issueUrl,
+  STAGE_TEXT,
+} from "./stage";
 
 const request = (overrides = {}) => ({
   stage: "building" as const,
@@ -72,9 +78,9 @@ describe("issueUrl", () => {
 
 describe("canWithdraw", () => {
   it("is only before building starts (US4.1, US4.2)", () => {
-    expect(canWithdraw("submitted")).toBe(true);
-    expect(canWithdraw("being_reviewed")).toBe(true);
-    expect(canWithdraw("planning")).toBe(true);
+    expect(canWithdraw("submitted", null)).toBe(true);
+    expect(canWithdraw("being_reviewed", null)).toBe(true);
+    expect(canWithdraw("planning", null)).toBe(true);
     for (const stage of [
       "building",
       "waiting_for_owner",
@@ -84,6 +90,38 @@ describe("canWithdraw", () => {
       "removed",
       "withdrawn",
     ] as const)
-      expect(canWithdraw(stage)).toBe(false);
+      expect(canWithdraw(stage, null)).toBe(false);
+  });
+});
+
+describe("canDecide", () => {
+  it("is only at Ready to try with the Toggle in Testing (US1.1, US1.8)", () => {
+    expect(canDecide("ready_to_try", { state: "testing" })).toBe(true);
+    expect(canDecide("ready_to_try", undefined)).toBe(false);
+    expect(canDecide("live", { state: "live" })).toBe(false);
+    expect(canDecide("removed", { state: "removed" })).toBe(false);
+    expect(canDecide("building", { state: "testing" })).toBe(false);
+    expect(canDecide("submitted", { state: "testing" })).toBe(false);
+  });
+
+  it("is also after a Round was declined, once the request has been Ready to try (D13)", () => {
+    expect(
+      canDecide(
+        "not_going_ahead",
+        { state: "testing" },
+        "2026-11-01T00:00:00Z",
+      ),
+    ).toBe(true);
+    expect(canDecide("not_going_ahead", { state: "testing" }, null)).toBe(
+      false,
+    );
+  });
+});
+
+describe("canWithdraw once Ready to try", () => {
+  it("is never once the request has been Ready to try, even back at Submitted for a Round (US1.11)", () => {
+    expect(canWithdraw("submitted", "2026-11-01T00:00:00Z")).toBe(false);
+    expect(canWithdraw("planning", "2026-11-01T00:00:00Z")).toBe(false);
+    expect(canWithdraw("submitted", null)).toBe(true);
   });
 });

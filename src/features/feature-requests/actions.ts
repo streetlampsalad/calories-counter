@@ -3,8 +3,9 @@
 import { isToggleOn } from "@/features/toggles/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { FEATURE_REQUESTS_TOGGLE } from "./domain";
+import { FEATURE_REQUESTS_TOGGLE, type Stage } from "./domain";
 import { createFeatureIssues } from "./feature-issues";
+import { type FeedbackResult, giveFeedback as feedback } from "./feedback";
 import { type SubmitResult, submitFeatureRequest as submit } from "./submit";
 import {
   type WithdrawResult,
@@ -75,6 +76,7 @@ export async function withdrawFeatureRequest(
         .eq("id", id)
         .eq("user_id", userId)
         .is("withdrawn_at", null)
+        .is("first_ready_at", null)
         .in("stage", ["submitted", "being_reviewed", "planning"])
         .select("feature_issue, spec_issue")
         .maybeSingle();
@@ -87,6 +89,61 @@ export async function withdrawFeatureRequest(
       const { error } = await admin
         .from("feature_requests")
         .update({ withdrawn_at: null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    issues: createFeatureIssues(),
+    log: (message, error) => console.error(message, error),
+  });
+}
+
+// Starts another Round on one of the caller's own requests (spec 135 US1).
+export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  return feedback(input, {
+    toggleOn: () => isToggleOn(FEATURE_REQUESTS_TOGGLE),
+    userId: async () => {
+      const { data } = await supabase.auth.getClaims();
+      return data?.claims.sub ?? null;
+    },
+    startRound: async (id, userId, text) => {
+      const { data, error } = await admin.rpc("start_feature_request_round", {
+        request_id: id,
+        requester_id: userId,
+        feedback: text,
+      });
+      if (error?.code === "23514" && error.message === "feature_request_limit")
+        return "limit";
+      if (error) throw error;
+      const round = data[0];
+      return round
+        ? {
+            roundId: round.round_id,
+            round: round.round_number,
+            goal: round.goal,
+            featureIssue: round.feature_issue,
+            previousStage: round.previous_stage as Stage,
+          }
+        : null;
+    },
+    setRoundIssue: async (roundId, number) => {
+      const { error } = await admin
+        .from("feature_request_rounds")
+        .update({ feature_issue: number })
+        .eq("id", roundId);
+      if (error) throw error;
+    },
+    undoRound: async (roundId, id, stage) => {
+      const removed = await admin
+        .from("feature_request_rounds")
+        .delete()
+        .eq("id", roundId);
+      if (removed.error) throw removed.error;
+      const { error } = await admin
+        .from("feature_requests")
+        .update({ stage })
         .eq("id", id);
       if (error) throw error;
     },
