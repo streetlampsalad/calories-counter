@@ -56,5 +56,12 @@ export async function POST(request: Request) {
         .in("id", ids);
       if (error) throw error;
     },
+    dueReminders: async () => {
+      const { data, error } = await createAdminClient().rpc(
+        "due_testing_reminders",
+      );
+      if (error) throw error;
+      return data;
+    },
   });
 }

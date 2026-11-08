@@ -48,9 +48,9 @@ Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature
 | US3.1 | Vitest, Playwright | `src/features/feature-requests/decide.test.ts`, `e2e/feature-requests.spec.ts` |
 | US3.2 | Vitest | `src/features/feature-requests/decide.test.ts` (the removal Chore's body) |
 | US3.3 | Vitest | `src/features/feature-requests/decide.test.ts` |
-| US4.1 | pgTAP, Vitest | `supabase/tests/database/024_testing_reminders.test.sql`, `src/features/feature-requests/sync-handler.test.ts` |
-| US4.2 | pgTAP | `supabase/tests/database/024_testing_reminders.test.sql` |
-| US4.3 | pgTAP | `supabase/tests/database/024_testing_reminders.test.sql` |
+| US4.1 | pgTAP, Vitest | `supabase/tests/database/025_testing_reminders.test.sql`, `src/features/feature-requests/sync-handler.test.ts` |
+| US4.2 | pgTAP | `supabase/tests/database/025_testing_reminders.test.sql` |
+| US4.3 | pgTAP | `supabase/tests/database/025_testing_reminders.test.sql` |
 
 ## Migration Plan
 
@@ -70,7 +70,7 @@ src/features/feature-requests/
 app/api/feature-requests/sync/route.ts  # reminders
 scripts/workflow/feature-requests-sync.mjs   # sends Round Issues too
 supabase/migrations/<timestamp>_feature_request_rounds.sql, _feature_request_decisions.sql, _testing_reminders.sql
-supabase/tests/database/023_feature_request_rounds.test.sql, 024_testing_reminders.test.sql
+supabase/tests/database/023_feature_request_rounds.test.sql, 024_feature_request_decisions.test.sql, 025_testing_reminders.test.sql
 .github/ISSUE_TEMPLATE/1-feature.yml, .claude/skills/deliver/triage.md, .claude/skills/deliver/spec.md
 e2e/feature-requests.spec.ts
 ```
