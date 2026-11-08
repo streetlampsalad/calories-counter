@@ -77,18 +77,18 @@ description: "Tasks for Feature Requests from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T021 [P] [US3] pgTAP: `apply_feature_request_sync` returns a request only on the change into Ready to try or Not going ahead, in `021_feature_request_sync.test.sql`; the Requester (at Ready to try, not withdrawn) and the Owner can switch the Toggle and nobody else, nor the Requester at an earlier stage, in `supabase/tests/database/022_requester_toggles.test.sql`
-- [ ] T022 [P] [US3] Vitest: the handler sends one push per device with the right title and URL, deletes expired subscriptions, sends nothing on other stages, in `sync-handler.test.ts`; `readyNote` reads the section, in `feature-requests.test.mjs`
-- [ ] T023 [P] [US3] Testing Library: the note and the switch on a Ready to try card, in `request-card.test.tsx`
-- [ ] T023a [P] [US3] Vitest: the spec template and `.claude/skills/deliver/spec.md` have the `## Ready to try` heading, and every `specs/<n>-*/spec.md` with `n` ≥ 124 has a non-empty section, in `scripts/workflow/ready-to-try.test.mjs` (US3.7)
-- [ ] T024 [US3] Playwright: a sync to Ready to try shows the note, and `liv` turns the switch on, in `e2e/feature-requests.spec.ts`
+- [x] T021 [P] [US3] pgTAP: `apply_feature_request_sync` returns a request only on the change into Ready to try or Not going ahead, in `021_feature_request_sync.test.sql`; the Requester (at Ready to try, not withdrawn) and the Owner can switch the Toggle and nobody else, nor the Requester at an earlier stage, in `supabase/tests/database/022_requester_toggles.test.sql`
+- [x] T022 [P] [US3] Vitest: the handler sends one push per device with the right title and URL, deletes expired subscriptions, sends nothing on other stages, in `sync-handler.test.ts`; `readyNote` reads the section, in `feature-requests.test.mjs`
+- [x] T023 [P] [US3] Testing Library: the note and the switch on a Ready to try card, in `request-card.test.tsx`
+- [x] T023a [P] [US3] Vitest: the spec template and `.claude/skills/deliver/spec.md` have the `## Ready to try` heading, and every `specs/<n>-*/spec.md` with `n` ≥ 124 has a non-empty section, in `scripts/workflow/ready-to-try.test.mjs` (US3.7)
+- [x] T024 [US3] Playwright: a sync to Ready to try shows the note, and `liv` turns the switch on, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
 
-- [ ] T025 [US3] Migration `pnpm db:new requester_toggles` (replace `can_try_toggle`), then `pnpm db:reset && pnpm db:types`
-- [ ] T026 [US3] Notifications in `sync-handler.ts` and the route; `readyNote` in the sync script
-- [ ] T027 [US3] The note and switch in `request-card.tsx` (with `useSwitchToggle`)
-- [ ] T028 [US3] A `## Ready to try` section in `.specify/templates/overrides/spec-template.md`, and a step for it in `.claude/skills/deliver/spec.md`
+- [x] T025 [US3] Migration `pnpm db:new requester_toggles` (replace `can_try_toggle`), then `pnpm db:reset && pnpm db:types`
+- [x] T026 [US3] Notifications in `sync-handler.ts` and the route; `readyNote` in the sync script
+- [x] T027 [US3] The note and switch in `request-card.tsx` (with `useSwitchToggle`)
+- [x] T028 [US3] A `## Ready to try` section in `.specify/templates/overrides/spec-template.md`, and a step for it in `.claude/skills/deliver/spec.md`
 
 **Checkpoint**: `pnpm validate` passes, and the Owner checks one real request end to end on their phone.
 

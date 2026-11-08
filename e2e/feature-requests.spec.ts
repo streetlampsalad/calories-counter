@@ -96,6 +96,11 @@ test.describe("stages from the board workflow (Slice 2)", () => {
       .delete()
       .in("feature_issue", [MINE, THEIRS]);
     if (error) throw error;
+    const toggle = await adminClient()
+      .from("toggles")
+      .delete()
+      .eq("key", `feature-${MINE}`);
+    if (toggle.error) throw toggle.error;
   }
 
   test.beforeEach(async () => {
@@ -176,5 +181,61 @@ test.describe("stages from the board workflow (Slice 2)", () => {
     await expect(others).toContainText("Scan barcodes on packaged food");
     await expect(others).toContainText("Building");
     await expect(others).not.toContainText(TEST_USERS.bea.email);
+  });
+
+  test("a request Ready to try shows what was built, and its switch turns it on (US3.4, US3.5)", async ({
+    page,
+    request,
+  }) => {
+    // The feature's first Slice would add its Toggle; here the test does.
+    const added = await adminClient()
+      .from("toggles")
+      .insert({ key: `feature-${MINE}`, title: "Water tracking" });
+    if (added.error) throw added.error;
+
+    const sync = await request.post("/api/feature-requests/sync", {
+      headers: { "x-sync-secret": SECRET },
+      data: {
+        requests: [
+          {
+            featureIssue: MINE,
+            stage: "ready_to_try",
+            specIssue: MINE + 1,
+            latestComment: "In production",
+            readyNote: "Open Today and tap Water to add a glass.",
+          },
+        ],
+      },
+    });
+    expect(sync.status()).toBe(200);
+
+    await page.goto("/settings/feature-requests");
+    const card = page.getByRole("article", {
+      name: "See how much water I drink",
+      exact: true,
+    });
+    await expect(card).toContainText("Ready to try");
+    await expect(card).toContainText(
+      "Open Today and tap Water to add a glass.",
+    );
+
+    const tryIt = card.getByRole("switch", { name: "Try it" });
+    await expect(tryIt).not.toBeChecked();
+    const saved = page.waitForResponse(
+      (response) =>
+        response.request().method() !== "GET" &&
+        response.url().includes("/rest/v1/toggle_overrides"),
+    );
+    await tryIt.click();
+    await saved;
+    await page.reload();
+    await expect(
+      page
+        .getByRole("article", {
+          name: "See how much water I drink",
+          exact: true,
+        })
+        .getByRole("switch", { name: "Try it" }),
+    ).toBeChecked();
   });
 });
