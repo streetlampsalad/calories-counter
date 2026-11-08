@@ -6,6 +6,7 @@ import { authFile } from "./e2e/support/auth";
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 
 const PORT = 3000;
+const PERFORMANCE = "**/*-performance.spec.ts";
 const baseURL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
@@ -29,7 +30,22 @@ export default defineConfig({
     serviceWorkers: "block",
   },
   // Every current User is on Android, so the phone is the primary target.
-  projects: [{ name: "android", use: { ...devices["Pixel 7"] } }],
+  projects: [
+    {
+      name: "android",
+      use: { ...devices["Pixel 7"] },
+      testIgnore: PERFORMANCE,
+    },
+    // Load-time budgets run alone, after everything else, so other tests' browsers and requests
+    // do not share the machine while they are timed (#134). To run one on its own locally:
+    // pnpm test:e2e --no-deps e2e/insights-performance.spec.ts
+    {
+      name: "performance",
+      use: { ...devices["Pixel 7"] },
+      testMatch: PERFORMANCE,
+      dependencies: ["android"],
+    },
+  ],
   webServer: {
     // Runs the production build; `pnpm build` must have run first (validate does this).
     command: `pnpm start --port ${PORT}`,

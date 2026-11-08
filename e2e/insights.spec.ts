@@ -1,7 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { authFile } from "./support/auth";
 import { userClient } from "./support/db";
-import { emulateMidRangePhoneCpu } from "./support/phone";
 import {
   resetSettings,
   resetUser,
@@ -562,74 +561,4 @@ test("the Logging streak says so when nothing has been logged", async ({
   await page.goto("/summary/insights");
 
   await expect(streakCard(page)).toContainText("No streak yet");
-});
-
-// AC-8: a year of history loads in under 2 s on a mid-range Android phone over 4G. Chromium is
-// throttled to a 4G link (9 Mbps down, 170 ms round trip) and to a mid-range phone's CPU, which
-// takes less slowdown on a CI runner than on a fast laptop (support/phone.ts, #134).
-test("the 12-month view loads in under 2 seconds on a throttled phone", async ({
-  page,
-}) => {
-  // Calibrating the CPU takes a few seconds on top of seeding a year and four timed visits.
-  test.slow();
-  const gus = await startFresh();
-  const foods = await Promise.all(
-    [90, 120, 200, 310, 450, 60].map((calories, i) =>
-      seedFood(gus, { name: `Food ${i}`, calories }),
-    ),
-  );
-  const entries = Array.from({ length: 365 }, (_, i) => {
-    const day = new Date(Date.UTC(2025, 10, 4 + i)).toISOString().slice(0, 10);
-    return [0, 1, 2, 3].map((n) => ({
-      foodId: foods[(i + n) % foods.length].id,
-      day,
-      quantity: 1 + ((i + n) % 4),
-    }));
-  }).flat();
-  await seedEntries(gus, entries);
-
-  // Warm the app shell first, as a returning User would have it, then time the Insights view.
-  await page.goto("/summary");
-  // Let the Summary settle first, so its own work does not slow the benchmark.
-  await expect(
-    page.getByRole("heading", { name: "Summary", level: 1 }),
-  ).toBeVisible();
-  await page.waitForLoadState("networkidle");
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send("Network.enable");
-  await cdp.send("Network.emulateNetworkConditions", {
-    offline: false,
-    latency: 170,
-    downloadThroughput: (9 * 1024 * 1024) / 8,
-    uploadThroughput: (9 * 1024 * 1024) / 8,
-  });
-  const cpu = await emulateMidRangePhoneCpu(page, cdp);
-  console.log(
-    `CPU: this machine scores ${cpu.machine}; at ${cpu.rate.toFixed(2)}x it scores ${cpu.measured}`,
-  );
-
-  const timeInsights = async () => {
-    const started = Date.now();
-    await page.goto("/summary/insights?range=12-months");
-    await expect(page.getByRole("region", { name: "Trend" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Top foods" })).toContainText(
-      "kcal",
-    );
-    await expect(
-      page.getByRole("region", { name: "Day of week" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("region", { name: "Logging streak" }),
-    ).toBeVisible();
-    return Date.now() - started;
-  };
-
-  // The first visit downloads this screen's code too, so it is reported but not held to the budget;
-  // the User's next visit, from the browser cache, is.
-  console.log(`12-month Insights, first visit: ${await timeInsights()} ms`);
-  // Best of two, so a busy CI runner's hiccup does not fail a load that is normally well inside it.
-  const elapsed = Math.min(await timeInsights(), await timeInsights());
-
-  console.log(`12-month Insights, next visit: ${elapsed} ms`);
-  expect(elapsed).toBeLessThan(2000);
 });
