@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  deliveredBy,
   fieldsFromLabels,
+  issuesToClose,
   parentIsFinished,
   parseRefs,
   STATUS,
@@ -129,5 +131,113 @@ describe("parentIsFinished", () => {
       false,
     );
     expect(parentIsFinished([{ state: "CLOSED" }])).toBe(true);
+  });
+});
+
+describe("issuesToClose", () => {
+  // An open Issue as close-deployed.mjs reads it; a closed or missing Issue is null.
+  const open = (overrides = {}) => ({
+    labels: [],
+    subIssues: 0,
+    isPullRequest: false,
+    deliveredBy: [],
+    ...overrides,
+  });
+  const lookup = (issues) => (number) => issues[number] ?? null;
+
+  it("closes the open Issue of every deployed pull request, whatever deployed before (#156)", () => {
+    const pulls = [
+      { number: 155, body: "Refs #153" },
+      { number: 152, body: "Refs #151" },
+    ];
+    expect(
+      issuesToClose(pulls, lookup({ 153: open(), 151: open() }), () => true),
+    ).toEqual([
+      { issue: 153, pull: 155 },
+      { issue: 151, pull: 152 },
+    ]);
+  });
+
+  it("leaves an Issue open while its pull request is not in the deployed commit", () => {
+    const pulls = [
+      { number: 160, body: "Refs #159" },
+      { number: 155, body: "Refs #153" },
+    ];
+    const deployed = new Set([155]);
+    expect(
+      issuesToClose(pulls, lookup({ 159: open(), 153: open() }), (pull) =>
+        deployed.has(pull.number),
+      ),
+    ).toEqual([{ issue: 153, pull: 155 }]);
+  });
+
+  it("skips closed Issues, Specs, parents and pull requests, which close another way", () => {
+    const pulls = [{ number: 149, body: "Refs #147, #146, #120, #148, #145" }];
+    expect(
+      issuesToClose(
+        pulls,
+        lookup({
+          147: open({ labels: ["spec"] }),
+          146: open({ subIssues: 1 }),
+          148: open(),
+          145: open({ isPullRequest: true }),
+        }),
+        () => true,
+      ),
+    ).toEqual([{ issue: 148, pull: 149 }]);
+  });
+
+  it("asks whether a pull request is deployed only when it has an Issue left to close", () => {
+    const isDeployed = vi.fn(() => true);
+    issuesToClose(
+      [
+        { number: 144, body: "Refs #140" },
+        { number: 143, body: "Refs #139" },
+        { number: 137, body: "No Issue" },
+      ],
+      lookup({ 139: open() }),
+      isDeployed,
+    );
+    expect(isDeployed.mock.calls.map(([pull]) => pull.number)).toEqual([143]);
+  });
+
+  it("goes by the newest pull request for an Issue, so an older one never closes it early", () => {
+    const pulls = [
+      { number: 165, body: "Refs #158" },
+      { number: 160, body: "Refs #158" },
+    ];
+    expect(
+      issuesToClose(
+        pulls,
+        lookup({ 158: open() }),
+        (pull) => pull.number === 160,
+      ),
+    ).toEqual([]);
+    expect(issuesToClose(pulls, lookup({ 158: open() }), () => true)).toEqual([
+      { issue: 158, pull: 165 },
+    ]);
+  });
+
+  it("does not close a reopened Issue again for a pull request that already delivered it", () => {
+    expect(
+      issuesToClose(
+        [{ number: 160, body: "Refs #158" }],
+        lookup({ 158: open({ deliveredBy: [160] }) }),
+        () => true,
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("deliveredBy", () => {
+  it("reads the pull requests a deploy closed the Issue for, from its comments", () => {
+    expect(
+      deliveredBy([
+        { body: "In production since 433bfc6 (#123)." },
+        { body: "In production as of d20dfd7 (#155)." },
+        { body: "Claimed by /deliver" },
+        { body: "Is this in production as of d20dfd7 (#99)? No." },
+      ]),
+    ).toEqual([123, 155]);
   });
 });
