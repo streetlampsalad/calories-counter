@@ -47,4 +47,4 @@ body:
         - label: Every listed criterion has a test that fails without the change
         - label: "`pnpm validate` passes in CI"
         - label: CONTEXT.md and ADRs updated if the language or a decision changed
-        - label: The feature stays unreachable unless this is its final Slice
+        - label: New behaviour is behind the Feature's Toggle (ADR 0008)

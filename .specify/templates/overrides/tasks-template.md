@@ -10,7 +10,7 @@ description: "Task list template for feature implementation (project override)"
 
 **Tests are mandatory.** Every acceptance scenario gets a test task, written first and seen failing before its implementation task (constitution II).
 
-**Organisation**: each phase is one **Slice**: one Issue, one pull request, merged on its own. A Slice must leave `main` deployable, and the feature stays unreachable (no navigation link, no route) until the final Slice, which makes it reachable.
+**Organisation**: each phase is one **Slice**: one Issue, one pull request, merged on its own. A Slice must leave `main` deployable: the first Slice adds the Feature's Toggle (`feature-<Feature issue number>`, in Testing) in a migration, and every Slice gates its new behaviour on it, so with the Toggle off the app behaves exactly as before (ADR 0008).
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -21,7 +21,7 @@ description: "Task list template for feature implementation (project override)"
 <!--
   Replace every sample task below. Fold setup and foundational work (migrations, query
   keys, shared components) into the first Slice that needs it. Use a separate
-  "Foundation" Slice only when several stories need it and it can merge unreachable.
+  "Foundation" Slice only when several stories need it; it adds the Toggle.
   A Slice should be small enough for one pull request a reviewer can read in one sitting.
 -->
 
@@ -31,7 +31,7 @@ description: "Task list template for feature implementation (project override)"
 
 **Covers**: US1.1, US1.2, FR-001
 
-**Reachable after merge**: No (or Yes, for the final Slice)
+**Behind Toggle**: `feature-[FEATURE ISSUE NUMBER]` (added by this Slice's migration)
 
 ### Tests (write first, see them fail)
 
@@ -55,7 +55,7 @@ description: "Task list template for feature implementation (project override)"
 
 **Covers**: US2.1, FR-002
 
-**Reachable after merge**: Yes
+**Behind Toggle**: `feature-[FEATURE ISSUE NUMBER]`
 
 ### Tests (write first, see them fail)
 

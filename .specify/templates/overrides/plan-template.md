@@ -25,7 +25,7 @@ The stack is fixed; record only what this feature adds or changes.
 
 - [ ] I. Glossary terms used exactly; new terms added to `CONTEXT.md`
 - [ ] II. Every acceptance scenario has a test at the right layer (below)
-- [ ] III. Each Slice leaves `main` deployable; the feature stays unreachable until the last Slice
+- [ ] III. Each Slice leaves `main` deployable; the first Slice adds the Feature's Toggle and every Slice gates its new behaviour on it
 - [ ] IV. Migrations are new, backwards compatible with production, and Daily Totals stay computed
 - [ ] V. No secret reaches the browser
 - [ ] VI. Phone first: 44 px targets, main actions within thumb reach, Australian English, metric

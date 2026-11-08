@@ -8,9 +8,9 @@ If a human already labelled this Feature `ready-for-agent`, it is accepted: go s
 
 ## Decide
 
-- **Accept** when it fits a calorie tracker for a few friends, is not a duplicate, and is specific enough to write a spec from.
+- **Accept** when it fits a calorie tracker for a few friends and is not a duplicate. When in doubt, accept: guess whatever the Feature leaves out and record each guess in the spec's Assumptions. A wrong guess is cheap, because the feature is tried behind its Toggle before anyone else sees it (ADR 0008).
 - **Reject** when it is a duplicate, out of the product's scope, or harmful to Users.
-- **Ask** when the answer turns on a product judgement only the owner can make, or the Feature is too vague to specify.
+- **Ask** only when the answer turns on a product or risk decision only the owner can make. Missing detail is not a reason to ask: guess it.
 
 ## Accept
 
