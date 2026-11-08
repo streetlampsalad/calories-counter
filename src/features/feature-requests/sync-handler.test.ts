@@ -34,10 +34,144 @@ function setup(overrides: Partial<SyncDeps> = {}) {
         notify: false,
       },
     ]),
+    devices: vi.fn(async () => []),
+    send: vi.fn(async () => "sent" as const),
+    deleteSubscriptions: vi.fn(async () => {}),
     ...overrides,
   };
   return deps;
 }
+
+const device = (id: string, userId = "u1") => ({
+  subscription_id: id,
+  user_id: userId,
+  endpoint: `https://push.example.test/${id}`,
+  p256dh_key: "p256dh",
+  auth_secret: "auth",
+});
+
+const synced = (overrides = {}) => ({
+  request_id: "r1",
+  requester_id: "u1",
+  goal_text: "Track water as well as food",
+  new_stage: "ready_to_try",
+  comment: "In production since abc1234",
+  notify: true,
+  ...overrides,
+});
+
+describe("notifications (US3)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("tells each of the Requester's devices it is Ready to try, opening the request (US3.1)", async () => {
+    const deps = setup({
+      apply: vi.fn(async () => [synced()]),
+      devices: vi.fn(async () => [device("d1"), device("d2")]),
+    });
+
+    const response = await handleFeatureRequestSync(
+      post({ requests: [{ ...UPDATE, stage: "ready_to_try" }] }),
+      deps,
+    );
+
+    expect(await response.json()).toEqual({ updated: 1, notified: 1 });
+    expect(deps.devices).toHaveBeenCalledWith(["u1"]);
+    expect(deps.send).toHaveBeenCalledTimes(2);
+    const [, payload] = vi.mocked(deps.send).mock.calls[0];
+    expect(JSON.parse(payload)).toEqual({
+      title: "Ready to try: Track water as well as food",
+      body: "Turn it on to try it.",
+      url: "/settings/feature-requests#r1",
+    });
+  });
+
+  it("says when it is Not going ahead, with the start of the reason (US3.2)", async () => {
+    const deps = setup({
+      apply: vi.fn(async () => [
+        synced({
+          new_stage: "not_going_ahead",
+          comment: "A duplicate of the Meal groups request.",
+        }),
+      ]),
+      devices: vi.fn(async () => [device("d1")]),
+    });
+
+    await handleFeatureRequestSync(post({ requests: [UPDATE] }), deps);
+
+    const [, payload] = vi.mocked(deps.send).mock.calls[0];
+    expect(JSON.parse(payload)).toEqual({
+      title: "Not going ahead: Track water as well as food",
+      body: "A duplicate of the Meal groups request.",
+      url: "/settings/feature-requests#r1",
+    });
+  });
+
+  it("sends nothing for a request that isn't due one (US3.3)", async () => {
+    const deps = setup({
+      apply: vi.fn(async () => [synced({ notify: false })]),
+    });
+
+    const response = await handleFeatureRequestSync(
+      post({ requests: [UPDATE] }),
+      deps,
+    );
+
+    expect(await response.json()).toEqual({ updated: 1, notified: 0 });
+    expect(deps.devices).not.toHaveBeenCalled();
+    expect(deps.send).not.toHaveBeenCalled();
+  });
+
+  it("shortens a long goal in the title", async () => {
+    const deps = setup({
+      apply: vi.fn(async () => [
+        synced({ goal_text: `${"word ".repeat(30)}end\nsecond line` }),
+      ]),
+      devices: vi.fn(async () => [device("d1")]),
+    });
+
+    await handleFeatureRequestSync(post({ requests: [UPDATE] }), deps);
+
+    const { title } = JSON.parse(vi.mocked(deps.send).mock.calls[0][1]);
+    expect(title.length).toBeLessThanOrEqual(80);
+    expect(title.endsWith("…")).toBe(true);
+  });
+
+  it("forgets devices the push service says are gone, and still answers 200", async () => {
+    const deps = setup({
+      apply: vi.fn(async () => [synced()]),
+      devices: vi.fn(async () => [device("d1"), device("d2")]),
+      send: vi.fn(async (target) =>
+        target.subscription_id === "d1" ? "expired" : "sent",
+      ),
+    });
+
+    const response = await handleFeatureRequestSync(
+      post({ requests: [UPDATE] }),
+      deps,
+    );
+
+    expect(response.status).toBe(200);
+    expect(deps.deleteSubscriptions).toHaveBeenCalledWith(["d1"]);
+  });
+
+  it("still records the stages when notifying fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const deps = setup({
+      apply: vi.fn(async () => [synced()]),
+      devices: vi.fn(async () => {
+        throw new Error("database unavailable");
+      }),
+    });
+
+    const response = await handleFeatureRequestSync(
+      post({ requests: [UPDATE] }),
+      deps,
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ updated: 1, notified: 0 });
+  });
+});
 
 describe("handleFeatureRequestSync", () => {
   beforeEach(() => vi.clearAllMocks());
