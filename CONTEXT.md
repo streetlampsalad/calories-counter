@@ -131,3 +131,7 @@ _Avoid_: suggestion (that is a candidate Food), idea, ticket, feedback
 **Requester**:
 The User who submitted a Feature Request. Only they (and the Owner) may try it while its Toggle is in Testing.
 _Avoid_: author, reporter, submitter
+
+**Round**:
+One pass at building a Feature Request. The first Round is the request itself; each time the Requester gives feedback while trying it, another Round starts, behind the same Toggle.
+_Avoid_: iteration, revision, version
