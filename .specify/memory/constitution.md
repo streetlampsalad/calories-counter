@@ -14,7 +14,7 @@ Every acceptance scenario has a test that fails without the change, written befo
 
 ### III. Every merge leaves `main` deployable
 
-Each Slice is one pull request that passes `pnpm validate` in CI. A feature stays unreachable (no navigation link, no route) until its last Slice lands. There is no feature-flag system.
+Each Slice is one pull request that passes `pnpm validate` in CI. Every new Feature ships behind its own Toggle, off for everyone: the first Slice adds it, every Slice gates its new behaviour on it, and with the Toggle off the app behaves exactly as before (ADR 0008).
 
 ### IV. Migrations ship before the app
 
@@ -36,4 +36,4 @@ Every spec and every Bug or Chore carries a Risk assessment (`docs/agents/workfl
 
 This constitution changes only through a pull request with Human review. Adding or changing a principle also updates `AGENTS.md` or the ADR it summarises.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-08
+**Version**: 1.1.0 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-08 (III: Toggles, ADR 0008)

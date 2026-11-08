@@ -66,15 +66,15 @@ description: "Tasks for Toggles for every new Feature"
 
 ### Tests (write first, see them fail)
 
-- [ ] T011 [US3] Before editing, `grep -rn "unreachable until\|feature-flag\|feature flags" AGENTS.md .specify docs/agents .claude/skills/deliver` lists every line to change; after, it lists none outside superseded ADRs
+- [x] T011 [US3] Before editing, `grep -rn "unreachable until\|feature-flag\|feature flags" AGENTS.md .specify docs/agents .claude/skills/deliver` lists every line to change; after, it lists none outside superseded ADRs
 
 ### Implementation
 
-- [ ] T012 [US3] Principle III in `.specify/memory/constitution.md` (version 1.1.0) and the matching bullet in `AGENTS.md`: every merge leaves `main` deployable because every new Feature ships behind its Toggle, off for everyone (ADR 0008)
-- [ ] T013 [P] [US3] `docs/agents/workflow.md`: the Toggle in the flow (the first Slice adds it; Done for a Feature means in production behind its Toggle) and the Toggle terms
-- [ ] T014 [P] [US3] `.specify/templates/overrides/plan-template.md` (Constitution Check III) and `tasks-template.md` (the first Slice adds the Toggle; "Reachable after merge" becomes "Behind Toggle")
-- [ ] T015 [P] [US3] `.claude/skills/deliver/spec.md` and `change.md`: add the Toggle in the first Slice, gate with `useToggle` and `isToggleOn`, and answer 404 from new routes while off
-- [ ] T016 [P] [US3] `.claude/skills/deliver/triage.md`: accept when in doubt and record guesses in the spec's Assumptions; **Ask** only for product or risk decisions the Owner must make
+- [x] T012 [US3] Principle III in `.specify/memory/constitution.md` (version 1.1.0) and the matching bullet in `AGENTS.md`: every merge leaves `main` deployable because every new Feature ships behind its Toggle, off for everyone (ADR 0008)
+- [x] T013 [P] [US3] `docs/agents/workflow.md`: the Toggle in the flow (the first Slice adds it; Done for a Feature means in production behind its Toggle) and the Toggle terms
+- [x] T014 [P] [US3] `.specify/templates/overrides/plan-template.md` (Constitution Check III) and `tasks-template.md` (the first Slice adds the Toggle; "Reachable after merge" becomes "Behind Toggle")
+- [x] T015 [P] [US3] `.claude/skills/deliver/spec.md` and `change.md`: add the Toggle in the first Slice, gate with `useToggle` and `isToggleOn`, and answer 404 from new routes while off
+- [x] T016 [P] [US3] `.claude/skills/deliver/triage.md`: accept when in doubt and record guesses in the spec's Assumptions; **Ask** only for product or risk decisions the Owner must make
 
 **Checkpoint**: T011's `grep` lists nothing to change.
 

@@ -10,7 +10,7 @@ A mobile-first calorie tracker for a few friends (Next.js on Vercel, Supabase in
 
 Every change starts as an Issue and reaches `main` through a pull request (ADR 0007). To work on an Issue, run `/deliver #<n>`; `/deliver next` picks one. The process and its terms (Feature, Spec, Slice, Risk assessment, Human review, Done) are in `docs/agents/workflow.md`.
 
-- Every merge leaves `main` deployable, so a feature stays unreachable (no navigation link, no route) until its last Slice lands.
+- Every merge leaves `main` deployable, so every new Feature ships behind its own Toggle, off for everyone: its first Slice adds the Toggle in a migration and every Slice gates its new behaviour on it with `useToggle` or `isToggleOn` (ADR 0008).
 - Test first: a failing test for each acceptance criterion, then small commits. Iterate with `pnpm validate:fast` (the pre-push hook runs it).
 - `pnpm validate` is the full gate, which CI runs on every pull request. Locally it needs Docker, `pnpm db:start` and `pnpm env:local`, and its `db:reset` wipes local data and re-seeds from `supabase/seed.sql`. Read CI's result and fix any failure.
 - An Issue is done when its change is in production: pull requests say `Refs #<n>`, and `deploy.yml` closes the Issue.
