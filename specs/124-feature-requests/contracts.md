@@ -43,4 +43,4 @@ Called only by `scripts/workflow/feature-requests-sync.mjs` from `board.yml`.
 - For each, reads its Spec sub-issue, the Spec's sub-issues, its and its Spec's comments, and the open pull requests that refer to any of them; `stageFor(tree)` gives the stage (US2.1, D5).
 - `readyNote`: the `## Ready to try` section of the spec folder named in the Spec Issue's `### Spec folder`, read from `main`.
 - `latestComment`: the first line of the newest comment on the Feature or its Spec that is not "Claimed by /deliver".
-- POSTs them to `${PRODUCTION_URL}/api/feature-requests/sync`. With no `FEATURE_REQUESTS_SYNC_SECRET`, it warns and exits 0, like the board sync.
+- POSTs them to `${PRODUCTION_URL}/api/feature-requests/sync`. With no `FEATURE_REQUESTS_SYNC_SECRET`, it warns and exits 0, like the board sync. A 404 (the route is not deployed yet) is also a warning and exit 0, so the board never fails in the gap between merging Slice 2 and its deploy; any other error fails the step.
