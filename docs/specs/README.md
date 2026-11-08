@@ -35,7 +35,7 @@ Create one issue per row in the spec's **Issue breakdown** using the *Slice* iss
 | 013 | [Planned Entries](013-planned-entries.md) | 008, 010, 011 | Done | [#68](https://github.com/streetlampsalad/calories-counter/issues/68) |
 | 014 | [Selection and bulk delete](014-selection-and-bulk-delete.md) | 003, 008 | Done | [#72](https://github.com/streetlampsalad/calories-counter/issues/72) |
 | 015 | [Gestures, haptics and the picker keyboard](015-gestures-and-haptics.md) | 008, 013, 014 | Done | [#76](https://github.com/streetlampsalad/calories-counter/issues/76) |
-| 016 | [Daily Reminder](016-daily-reminder.md) | 009, 012 | In progress | [#84](https://github.com/streetlampsalad/calories-counter/issues/84) |
+| 016 | [Daily Reminder](016-daily-reminder.md) | 009, 012 | Done | [#84](https://github.com/streetlampsalad/calories-counter/issues/84) |
 | 017 | [Calories Burned and the Deficit](017-calories-burned-and-deficit.md) | 008, 009, 010 | Done | [#89](https://github.com/streetlampsalad/calories-counter/issues/89) |
 | 018 | [Calories Burned from Google Health](018-google-health-sync.md) | 017 | Draft | [#93](https://github.com/streetlampsalad/calories-counter/issues/93) |
 | 019 | [Day view stability and motion](019-day-view-stability-and-motion.md) | 008, 013, 015 | Done | [#95](https://github.com/streetlampsalad/calories-counter/issues/95) |
