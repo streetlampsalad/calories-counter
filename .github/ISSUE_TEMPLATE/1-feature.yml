@@ -33,6 +33,11 @@ body:
       label: Additional details
       description: Anything else that helps, such as how you would know it works or what it must not do.
   - type: input
+    id: follow-up-to
+    attributes:
+      label: Follow-up to
+      description: For a change to a feature still being tried behind its Toggle, the original Feature Issue, as #<n>. Leave blank for anything new.
+  - type: input
     id: requested-by
     attributes:
       label: Requested by

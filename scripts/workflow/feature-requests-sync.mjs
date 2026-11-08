@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { parseRefs } from "./board.mjs";
 import {
   latestComment,
+  newestPerRequest,
   readyNote,
   requestedBy,
   sendSync,
@@ -20,12 +21,15 @@ const thirtyDaysAgo = new Date(
 ).toISOString();
 
 // Open Features, and those closed recently enough that their last stage may not have reached the app.
-const features = [
-  ...restAll("issues?labels=feature&state=open&per_page=100"),
-  ...restAll(
-    `issues?labels=feature&state=closed&since=${thirtyDaysAgo}&per_page=100`,
-  ),
-].filter((issue) => !issue.pull_request && requestedBy(issue.body));
+// Only each request's newest is sent: a Round's follow-up Feature, else the request's own (spec 135).
+const features = newestPerRequest(
+  [
+    ...restAll("issues?labels=feature&state=open&per_page=100"),
+    ...restAll(
+      `issues?labels=feature&state=closed&since=${thirtyDaysAgo}&per_page=100`,
+    ),
+  ].filter((issue) => !issue.pull_request && requestedBy(issue.body)),
+);
 
 const openPulls =
   features.length > 0 ? restAll("pulls?state=open&per_page=100") : [];

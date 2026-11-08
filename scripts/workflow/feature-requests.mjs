@@ -18,6 +18,24 @@ export function requestedBy(body) {
 }
 
 /**
+ * Each request's newest Feature Issue: its latest Round's, else its own (spec 135 D1). A Round's
+ * Issue carries the same `### Requested by`, and the request follows only its newest.
+ * @template {{ number: number, body?: string | null }} T
+ * @param {T[]} issues
+ * @returns {T[]}
+ */
+export function newestPerRequest(issues) {
+  const newest = new Map();
+  for (const issue of issues) {
+    const id = requestedBy(issue.body);
+    if (!id) continue;
+    const kept = newest.get(id);
+    if (!kept || issue.number > kept.number) newest.set(id, issue);
+  }
+  return [...newest.values()];
+}
+
+/**
  * @typedef {{ state: "open" | "closed", stateReason: string | null, labels: string[], assigned: boolean }} FeatureFacts
  * @typedef {{ state: "open" | "closed", stateReason: string | null, labels: string[], subIssues: { state: string, labels: string[] }[] }} SpecFacts
  * @typedef {{ feature: FeatureFacts, spec: SpecFacts | null, openPullLabels: string[][] }} RequestTree

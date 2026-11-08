@@ -58,7 +58,7 @@ revoke all on function public.feature_requests_first_ready() from public, anon, 
 -- requests, so feedback counts towards the 2 at a time. Returns no Round when it may not start one.
 -- Only the server (service role) may call it, after checking the caller.
 create function public.start_feature_request_round(request_id uuid, requester_id uuid, feedback text)
-returns table (round_id uuid, round_number integer, goal text, feature_issue integer)
+returns table (round_id uuid, round_number integer, goal text, feature_issue integer, previous_stage text)
 language plpgsql
 security definer
 set search_path = ''
@@ -104,6 +104,7 @@ begin
   round_number := 1 + (select count(*)::integer from public.feature_request_rounds x where x.request_id = request.id);
   goal := request.goal;
   feature_issue := request.feature_issue;
+  previous_stage := request.stage;
   return next;
 end;
 $$;
