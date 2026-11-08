@@ -28,6 +28,13 @@ export type SyncedRequest = {
   notify: boolean;
 };
 
+// A Requester due the 14-day reminder to decide, as due_testing_reminders returns it (spec 135 US4).
+export type DueReminder = {
+  request_id: string;
+  requester_id: string;
+  goal_text: string;
+};
+
 // One of a Requester's devices, as the Reminder sender takes it.
 export type PushTarget = Omit<DueSubscription, "local_day">;
 
@@ -38,6 +45,8 @@ export type SyncDeps = {
   devices: (userIds: string[]) => Promise<PushTarget[]>;
   send: (target: PushTarget, payload: string) => Promise<SendResult>;
   deleteSubscriptions: (ids: string[]) => Promise<void>;
+  /** Requesters due a reminder to decide, each marked as reminded as it is returned. */
+  dueReminders: () => Promise<DueReminder[]>;
 };
 
 const TITLE_GOAL_MAX = 60;
@@ -67,22 +76,30 @@ export function notificationFor(request: SyncedRequest) {
   };
 }
 
+// After 14 days at Ready to try (spec 135 US4). Tapping it opens the request's card.
+export function reminderFor(request: DueReminder) {
+  return {
+    title: `Still trying: ${shortGoal(request.goal_text)}?`,
+    body: "Mark it ready, give feedback or remove it.",
+    url: `/settings/feature-requests#${request.request_id}`,
+  };
+}
+
+type Notice = { requesterId: string; payload: string };
+
 // Tells each Requester due a notification, on every device they subscribed. A failure here never
 // undoes the stages already recorded; it is logged and the count says how many were reached.
-async function notify(due: SyncedRequest[], deps: SyncDeps): Promise<number> {
+async function notify(due: Notice[], deps: SyncDeps): Promise<number> {
   if (due.length === 0) return 0;
   let reached = 0;
   try {
     const devices = await deps.devices([
-      ...new Set(due.map((r) => r.requester_id)),
+      ...new Set(due.map((notice) => notice.requesterId)),
     ]);
     const expired: string[] = [];
-    for (const request of due) {
-      const payload = JSON.stringify(notificationFor(request));
+    for (const { requesterId, payload } of due) {
       let sent = false;
-      for (const device of devices.filter(
-        (d) => d.user_id === request.requester_id,
-      )) {
+      for (const device of devices.filter((d) => d.user_id === requesterId)) {
         const result = await deps
           .send(device, payload)
           .catch(() => "failed" as const);
@@ -127,8 +144,29 @@ export async function handleFeatureRequestSync(
   }
 
   const notified = await notify(
-    synced.filter((request) => request.notify),
+    synced
+      .filter((request) => request.notify)
+      .map((request) => ({
+        requesterId: request.requester_id,
+        payload: JSON.stringify(notificationFor(request)),
+      })),
     deps,
   );
-  return reply(200, { updated: synced.length, notified });
+
+  // The board's nightly run makes this the reminders' schedule too (spec 135 D6).
+  let due: DueReminder[] = [];
+  try {
+    due = await deps.dueReminders();
+  } catch (error) {
+    console.error("could not find Requesters due a reminder", error);
+  }
+  const reminded = await notify(
+    due.map((request) => ({
+      requesterId: request.requester_id,
+      payload: JSON.stringify(reminderFor(request)),
+    })),
+    deps,
+  );
+
+  return reply(200, { updated: synced.length, notified, reminded });
 }

@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { handleFeatureRequestSync, type SyncDeps } from "./sync-handler";
+import {
+  handleFeatureRequestSync,
+  reminderFor,
+  type SyncDeps,
+} from "./sync-handler";
 
 const SECRET = "a-long-shared-secret";
 const UPDATE = {
@@ -37,6 +41,7 @@ function setup(overrides: Partial<SyncDeps> = {}) {
     devices: vi.fn(async () => []),
     send: vi.fn(async () => "sent" as const),
     deleteSubscriptions: vi.fn(async () => {}),
+    dueReminders: vi.fn(async () => []),
     ...overrides,
   };
   return deps;
@@ -74,7 +79,11 @@ describe("notifications (US3)", () => {
       deps,
     );
 
-    expect(await response.json()).toEqual({ updated: 1, notified: 1 });
+    expect(await response.json()).toEqual({
+      updated: 1,
+      notified: 1,
+      reminded: 0,
+    });
     expect(deps.devices).toHaveBeenCalledWith(["u1"]);
     expect(deps.send).toHaveBeenCalledTimes(2);
     const [, payload] = vi.mocked(deps.send).mock.calls[0];
@@ -116,7 +125,11 @@ describe("notifications (US3)", () => {
       deps,
     );
 
-    expect(await response.json()).toEqual({ updated: 1, notified: 0 });
+    expect(await response.json()).toEqual({
+      updated: 1,
+      notified: 0,
+      reminded: 0,
+    });
     expect(deps.devices).not.toHaveBeenCalled();
     expect(deps.send).not.toHaveBeenCalled();
   });
@@ -169,7 +182,11 @@ describe("notifications (US3)", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ updated: 1, notified: 0 });
+    expect(await response.json()).toEqual({
+      updated: 1,
+      notified: 0,
+      reminded: 0,
+    });
   });
 });
 
@@ -184,7 +201,11 @@ describe("handleFeatureRequestSync", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ updated: 1, notified: 0 });
+    expect(await response.json()).toEqual({
+      updated: 1,
+      notified: 0,
+      reminded: 0,
+    });
     expect(deps.apply).toHaveBeenCalledWith([UPDATE]);
   });
 
@@ -241,5 +262,74 @@ describe("handleFeatureRequestSync", () => {
       (await handleFeatureRequestSync(post({ requests: [UPDATE] }), deps))
         .status,
     ).toBe(500);
+  });
+});
+
+describe("the reminder to decide (spec 135 US4)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const due = {
+    request_id: "r9",
+    requester_id: "u1",
+    goal_text: "Track water as well as food",
+  };
+
+  it("asks the Requester to decide, opening the request (US4.1)", () => {
+    expect(reminderFor(due)).toEqual({
+      title: "Still trying: Track water as well as food?",
+      body: "Mark it ready, give feedback or remove it.",
+      url: "/settings/feature-requests#r9",
+    });
+  });
+
+  it("is sent to each of the Requester's devices on a sync, and counted (US4.1)", async () => {
+    const deps = setup({
+      apply: vi.fn(async () => []),
+      devices: vi.fn(async () => [device("d1"), device("d2")]),
+      dueReminders: vi.fn(async () => [due]),
+    });
+
+    const response = await handleFeatureRequestSync(
+      post({ requests: [] }),
+      deps,
+    );
+
+    expect(await response.json()).toEqual({
+      updated: 0,
+      notified: 0,
+      reminded: 1,
+    });
+    expect(deps.send).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(vi.mocked(deps.send).mock.calls[0][1])).toEqual(
+      reminderFor(due),
+    );
+  });
+
+  it("never fails the sync when the reminders can't be read", async () => {
+    const deps = setup({
+      dueReminders: vi.fn(async () => {
+        throw new Error("database down");
+      }),
+    });
+
+    const response = await handleFeatureRequestSync(
+      post({ requests: [UPDATE] }),
+      deps,
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      updated: 1,
+      notified: 0,
+      reminded: 0,
+    });
+  });
+
+  it("is not asked for before the secret is checked", async () => {
+    const deps = setup();
+
+    await handleFeatureRequestSync(post({ requests: [] }, "wrong"), deps);
+
+    expect(deps.dueReminders).not.toHaveBeenCalled();
   });
 });
