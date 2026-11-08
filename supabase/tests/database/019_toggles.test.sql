@@ -13,6 +13,9 @@ values
   ('owner@example.test', 'test', true),
   ('friend@example.test', 'test', false);
 
+-- Start from no Toggles, whatever the seed added (rolled back at the end).
+delete from public.toggles;
+
 insert into public.toggles (key, title, state)
 values
   ('feature-1', 'In testing', 'testing'),

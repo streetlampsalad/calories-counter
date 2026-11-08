@@ -76,7 +76,7 @@ When `/deliver` writes a spec for a new Feature, the spec's first Slice adds the
 - **A Toggle's key with no row**: off, so code merged before its migration ran shows nothing.
 - **Loading, error and offline**: the browser treats Toggles as off until they load; a failed save rolls back and says so; an offline save fails the same way.
 - **The Owner changes**: overrides of someone who is no longer the Owner stop counting, but are kept.
-- **A Toggle goes Live or Removed while a page is open**: the new state shows the next time Toggles are fetched (on focus or navigation); no live push.
+- **A Toggle goes Live or Removed while a page is open**: the new state shows the next time Toggles are fetched (on a screen that asks for them once the cached answer is a minute old, or after a reload); no live push.
 - **Two Toggles in Testing**: each has its own override; turning one on changes nothing else.
 
 ## Requirements *(mandatory)*
@@ -114,7 +114,7 @@ When `/deliver` writes a spec for a new Feature, the spec's first Slice adds the
 - Changing a Toggle's state from the app. Until Feature #115 adds Ready and Remove, a Toggle goes Live or Removed through a migration in the Chore that deletes its checks or its feature.
 - Letting a requester try their own feature (Feature #114).
 - Percentage rollouts, groups, or turning a feature on for another User.
-- Telling the app instantly when a Toggle changes (it refetches on focus).
+- Telling the app instantly when a Toggle changes (it fetches again once its cached answer is a minute old).
 
 ## Assumptions
 

@@ -50,7 +50,7 @@ Two Supabase tables hold each Toggle and each User's override, and one database 
 ## Migration Plan
 
 1. **Slice 1, `toggles`**: adds `allowed_emails.is_owner` with a default, the two tables with RLS, the trigger and the five functions. The deployed app never reads any of them, so it is safe minutes before the new app; the new app works with no Toggle rows.
-2. **Slice 2**: no migration. `supabase/seed.sql` (local and CI only) adds an Owner test User, `gus@example.test` with `is_owner`, and one Toggle `feature-0`, "Example feature", in Testing, for the e2e journey.
+2. **Slice 2**: no migration. `supabase/seed.sql` (local and CI only) adds an Owner test User, `liv@example.test` with `is_owner`, and one Toggle `feature-0`, "Example feature", in Testing, for the e2e journey.
 
 After Slice 1 deploys, the Owner sets `is_owner = true` on their Allowed Email in production in the Supabase dashboard (`human-step`).
 
@@ -85,7 +85,7 @@ supabase/
 ├── seed.sql                                    # Owner test User and an example Toggle
 └── tests/database/019_toggles.test.sql
 e2e/
-├── support/auth.ts                             # gus
+├── support/auth.ts                             # liv
 └── toggles.spec.ts
 docs and rules (Slice 3):
 ├── .specify/memory/constitution.md             # principle III

@@ -5,6 +5,7 @@ import { BurnedSection } from "@/features/settings/burned-section";
 import { GoalSection } from "@/features/settings/goal-section";
 import { ReminderSection } from "@/features/settings/reminder-section";
 import { SignOutForm } from "@/features/settings/sign-out-form";
+import { TryFeaturesSection } from "@/features/settings/try-features-section";
 import { formatVersion } from "@/features/settings/version";
 import { VibrationSection } from "@/features/settings/vibration-section";
 import { WeekStartSection } from "@/features/settings/week-start-section";
@@ -46,6 +47,7 @@ export default function SettingsPage() {
       <WeekStartSection />
       <ReminderSection />
       <VibrationSection />
+      <TryFeaturesSection />
       <Suspense fallback={<div className="h-32" />}>
         <About />
       </Suspense>
