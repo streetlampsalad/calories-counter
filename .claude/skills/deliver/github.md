@@ -12,15 +12,15 @@ Never pass `--paginate` in a cloud session: GitHub's `Link` header points the ne
 gh api user --jq .login
 ```
 
-In a cloud session this is the repo owner (`streetlampsalad`): the proxy acts with the owner's GitHub account, so GitHub records everything you do as the owner's. That is why removing `needs-human-review` and merging are your hard limits, not things GitHub stops.
+In a cloud session this is the repo owner (`streetlampsalad`): the proxy acts with the owner's GitHub account, so GitHub records everything you do as the owner's. That is why removing `needs-human-review` and merging are among your limits in [SKILL.md](SKILL.md): GitHub does not stop them.
 
 ## Read
 
 ```bash
 gh api "repos/$R/issues/<n>"                                  # labels, assignees, body, sub_issues_summary, issue_dependencies_summary
 gh api "repos/$R/issues/<n>/comments?per_page=100" --jq '.[] | {user: .user.login, body}'
-gh api "repos/$R/issues/<n>/sub_issues" --jq '.[] | {number, state}'
-gh api "repos/$R/issues/<n>/dependencies/blocked_by" --jq '.[] | {number, state}'
+gh api "repos/$R/issues/<n>/sub_issues?per_page=100" --jq '.[] | {number, state}'
+gh api "repos/$R/issues/<n>/dependencies/blocked_by?per_page=100" --jq '.[] | {number, state}'
 gh api "repos/$R/issues?state=open&labels=ready-for-agent&per_page=100" \
   --jq '.[] | select(.pull_request == null) | {number, title, labels: [.labels[].name], assignees: [.assignees[].login], blocked: .issue_dependencies_summary.blocked_by, created_at}'
 ```
