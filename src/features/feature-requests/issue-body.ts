@@ -1,3 +1,5 @@
+import type { Decision } from "./domain";
+
 // The Feature Issue a Feature Request becomes. Its headings are the Feature issue template's
 // (.github/ISSUE_TEMPLATE/1-feature.yml), which /deliver reads, so they must match it exactly.
 // The repo is public and agents read every Issue, so the User's words are kept from shaping it:
@@ -110,4 +112,49 @@ export function followUpBody(round: {
     round.id,
     "",
   ].join("\n");
+}
+
+// The clean-up Chore an agent delivers once a Requester has decided (spec 135 D4, ADR 0008). It
+// carries no User-written text, because agents act on it. It is created without ready-for-agent,
+// which is added only once the Toggle has left Testing, so no agent ever deletes the checks of a
+// feature still being tried.
+export const CHORE_LABELS = ["chore", "priority:P2"];
+export const CHORE_READY_LABELS = ["ready-for-agent"];
+
+const CHORE_RISKS = [
+  "Adds a third-party integration, secret, environment variable or dashboard step",
+  "Irreversible (drops or renames a column or table, or rewrites or deletes User data)",
+  "Cannot be proved in CI (real device, real external API)",
+  "Touches sign-in, RLS policies or what one User can see of another",
+  "Changes the guardrails (CI, deploy, hooks, rulesets, AGENTS.md, constitution, workflow)",
+  "Adds or upgrades a dependency",
+];
+
+export function cleanupChore(
+  decision: Decision,
+  featureIssue: number,
+): { title: string; body: string; labels: string[] } {
+  const key = `feature-${featureIssue}`;
+  return {
+    title: `Chore: Remove the Toggle for #${featureIssue}`,
+    body: [
+      "### What",
+      "",
+      `Feature #${featureIssue} is Live for everyone: its Requester marked it ready. Delete every \`useToggle("${key}")\`, \`isToggleOn("${key}")\` and \`toggle_is_on('${key}')\` check and the tests of the "off" path; keep the "on" path, and drop the Toggle setup from its tests. Keep the Toggle's row in \`public.toggles\`: a Feature Request's card reads it to say Live for everyone (spec 135 D11).`,
+      "",
+      "### Why",
+      "",
+      `The Toggle \`${key}\` is Live, so its checks are dead code (ADR 0008).`,
+      "",
+      "### Behaviour",
+      "",
+      "- [x] No User-visible behaviour changes. If it does, this is a Feature or a Bug instead.",
+      "",
+      "### Risk assessment",
+      "",
+      ...CHORE_RISKS.map((risk) => `- [ ] ${risk}`),
+      "",
+    ].join("\n"),
+    labels: CHORE_LABELS,
+  };
 }

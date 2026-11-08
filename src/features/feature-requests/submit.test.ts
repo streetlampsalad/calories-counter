@@ -13,6 +13,7 @@ function setup(overrides: Partial<SubmitDeps> = {}) {
   const issues: FeatureIssues = {
     create: vi.fn(async () => ({ number: 321 })),
     close: vi.fn(async () => {}),
+    addLabels: vi.fn(async () => {}),
   };
   const deps: SubmitDeps = {
     toggleOn: vi.fn(async () => true),

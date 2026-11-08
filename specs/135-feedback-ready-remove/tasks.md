@@ -48,15 +48,15 @@ description: "Tasks for Feedback, Ready and Remove for Feature Requests"
 
 ### Tests (write first, see them fail)
 
-- [ ] T011 [P] [US2] Vitest: `decide` creates the Chore first, then sets Live, closes the Chore again when the Toggle is no longer in Testing, and changes nothing when the Chore fails; the Chore's title and body, in `decide.test.ts`
-- [ ] T012 [P] [US2] Testing Library: the confirm sheet, Keep testing, and errors, in `decide-sheet.test.tsx`
-- [ ] T013 [US2] Playwright: `liv` marks a request ready and sees Live for everyone, in `e2e/feature-requests.spec.ts`
+- [x] T011 [P] [US2] pgTAP: only the server decides, once, for the Requester's own request, in `supabase/tests/database/024_feature_request_decisions.test.sql`; Vitest: `decide` creates the Chore first, then sets Live, closes the Chore again when the Toggle is no longer in Testing, and changes nothing when the Chore fails; the Chore's title and body, in `decide.test.ts`
+- [x] T012 [P] [US2] Testing Library: the confirm sheet, Keep testing, and errors, in `decide-sheet.test.tsx`
+- [x] T013 [US2] Playwright: `liv` marks a request ready and sees Live for everyone, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
 
-- [ ] T014 [US2] Migration `pnpm db:new feature_request_decisions` (`decision`, `cleanup_issue`), then `pnpm db:reset && pnpm db:types`
-- [ ] T015 [US2] `decide.ts` (shared with Slice 3), the Chore body in `issue-body.ts`, `markReady` in `actions.ts`, `useDecide` in `queries.ts`
-- [ ] T016 [US2] `decide-sheet.tsx` and It's ready on the card
+- [x] T014 [US2] Migration `pnpm db:new feature_request_decisions` (`decision`, `cleanup_issue`, `decide_feature_request()`), then `pnpm db:reset && pnpm db:types`
+- [x] T015 [US2] `decide.ts` (shared with Slice 3), the Chore body in `issue-body.ts`, `markReady` in `actions.ts`, `useDecide` in `queries.ts`
+- [x] T016 [US2] `decide-sheet.tsx` and It's ready on the card
 
 **Checkpoint**: `pnpm validate` passes.
 
@@ -93,7 +93,7 @@ description: "Tasks for Feedback, Ready and Remove for Feature Requests"
 
 ### Tests (write first, see them fail)
 
-- [ ] T020 [P] [US4] pgTAP: who is due, once per Round, and nobody Live, Removed, withdrawn or under 14 days, in `supabase/tests/database/024_testing_reminders.test.sql`
+- [ ] T020 [P] [US4] pgTAP: who is due, once per Round, and nobody Live, Removed, withdrawn or under 14 days, in `supabase/tests/database/025_testing_reminders.test.sql`
 - [ ] T021 [P] [US4] Vitest: the reminder's title, body and URL, and `reminded` in the response, in `sync-handler.test.ts`
 
 ### Implementation

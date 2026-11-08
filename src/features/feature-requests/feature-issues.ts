@@ -9,6 +9,7 @@ export type FeatureIssues = {
     labels: string[];
   }): Promise<{ number: number }>;
   close(number: number, comment: string): Promise<void>;
+  addLabels(number: number, labels: string[]): Promise<void>;
 };
 
 type Env = Record<string, string | undefined>;
@@ -63,6 +64,9 @@ export function gitHubFeatureIssues(
         state_reason: "not_planned",
       });
     },
+    async addLabels(number, labels) {
+      await call("POST", `issues/${number}/labels`, { labels });
+    },
   };
 }
 
@@ -71,6 +75,9 @@ const unavailableFeatureIssues: FeatureIssues = {
     throw new Error("GITHUB_FEATURE_REQUESTS_TOKEN is not set");
   },
   async close() {
+    throw new Error("GITHUB_FEATURE_REQUESTS_TOKEN is not set");
+  },
+  async addLabels() {
     throw new Error("GITHUB_FEATURE_REQUESTS_TOKEN is not set");
   },
 };
@@ -85,4 +92,5 @@ const fakeFeatureIssues: FeatureIssues = {
     return { number: fakeState.fakeFeatureIssueNumber };
   },
   async close() {},
+  async addLabels() {},
 };

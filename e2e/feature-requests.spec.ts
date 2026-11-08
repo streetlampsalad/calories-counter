@@ -317,4 +317,48 @@ test.describe("stages from the board workflow (Slice 2)", () => {
       },
     ]);
   });
+  test("marking a request ready turns it on for everyone (spec 135 US2.1)", async ({
+    page,
+  }) => {
+    const added = await adminClient()
+      .from("toggles")
+      .insert({ key: `feature-${MINE}`, title: "Water tracking" });
+    if (added.error) throw added.error;
+    const ready = await adminClient()
+      .from("feature_requests")
+      .update({ stage: "ready_to_try" })
+      .eq("feature_issue", MINE);
+    if (ready.error) throw ready.error;
+
+    await page.goto("/settings/feature-requests");
+    const card = page.getByRole("article", {
+      name: "See how much water I drink",
+      exact: true,
+    });
+    await card.getByRole("button", { name: "It's ready" }).click();
+    await page
+      .getByRole("dialog", { name: "Turn it on for everyone?" })
+      .getByRole("button", { name: "Turn it on for everyone" })
+      .click();
+
+    await expect(card).toContainText("Live for everyone");
+    await expect(card.getByRole("button", { name: "It's ready" })).toHaveCount(
+      0,
+    );
+    await expect(card.getByRole("switch", { name: "Try it" })).toHaveCount(0);
+
+    const toggle = await adminClient()
+      .from("toggles")
+      .select("state")
+      .eq("key", `feature-${MINE}`)
+      .single();
+    expect(toggle.data?.state).toBe("live");
+    const { data } = await adminClient()
+      .from("feature_requests")
+      .select("decision, cleanup_issue")
+      .eq("feature_issue", MINE)
+      .single();
+    expect(data?.decision).toBe("ready");
+    expect(data?.cleanup_issue).toBeGreaterThan(90000);
+  });
 });

@@ -41,21 +41,21 @@ Feedback adds a Round: a row in `feature_request_rounds` and a follow-up Feature
 | US1.9 | Vitest | `scripts/workflow/feature-template.test.mjs` (follow-up heading in the template, `triage.md` and `/deliver`'s `spec.md`) |
 | US1.10 | pgTAP | `supabase/tests/database/023_feature_request_rounds.test.sql` |
 | US1.11 | Vitest, Testing Library, Playwright | `src/features/feature-requests/stage.test.ts` (`canWithdraw`), `src/features/feature-requests/request-card.test.tsx`, `e2e/feature-requests.spec.ts`; the server's `markWithdrawn` update requires `first_ready_at is null` |
-| US2.1 | Vitest, Playwright | `src/features/feature-requests/decide.test.ts`, `e2e/feature-requests.spec.ts` |
+| US2.1 | Vitest, pgTAP, Playwright | `src/features/feature-requests/decide.test.ts`, `supabase/tests/database/024_feature_request_decisions.test.sql`, `e2e/feature-requests.spec.ts` |
 | US2.2 | Vitest | `src/features/feature-requests/decide.test.ts` |
-| US2.3 | Vitest, pgTAP | `src/features/feature-requests/decide.test.ts`, `supabase/tests/database/019_toggles.test.sql` (state moves forward only) |
+| US2.3 | Vitest, pgTAP | `src/features/feature-requests/decide.test.ts`, `supabase/tests/database/024_feature_request_decisions.test.sql` |
 | US2.4 | Testing Library | `src/features/feature-requests/decide-sheet.test.tsx` |
 | US3.1 | Vitest, Playwright | `src/features/feature-requests/decide.test.ts`, `e2e/feature-requests.spec.ts` |
 | US3.2 | Vitest | `src/features/feature-requests/decide.test.ts` (the removal Chore's body) |
 | US3.3 | Vitest | `src/features/feature-requests/decide.test.ts` |
-| US4.1 | pgTAP, Vitest | `supabase/tests/database/024_testing_reminders.test.sql`, `src/features/feature-requests/sync-handler.test.ts` |
-| US4.2 | pgTAP | `supabase/tests/database/024_testing_reminders.test.sql` |
-| US4.3 | pgTAP | `supabase/tests/database/024_testing_reminders.test.sql` |
+| US4.1 | pgTAP, Vitest | `supabase/tests/database/025_testing_reminders.test.sql`, `src/features/feature-requests/sync-handler.test.ts` |
+| US4.2 | pgTAP | `supabase/tests/database/025_testing_reminders.test.sql` |
+| US4.3 | pgTAP | `supabase/tests/database/025_testing_reminders.test.sql` |
 
 ## Migration Plan
 
 1. **Slice 1, `feature_request_rounds`**: the table, `first_ready_at` (set by a trigger the first time a request is Ready to try), `start_feature_request_round()`, and `create or replace` of `apply_feature_request_sync` and `can_try_toggle`. For requests without Rounds both answer as before, so the deployed app is unaffected. `first_ready_at` is backfilled from `stage_changed_at` for requests already at `ready_to_try`.
-2. **Slice 2, `feature_request_decisions`**: `decision` and `cleanup_issue`. New nullable columns.
+2. **Slice 2, `feature_request_decisions`**: `decision` and `cleanup_issue` (new nullable columns), and `decide_feature_request()`, which takes the Toggle out of Testing and records both in one transaction.
 3. **Slice 4, `testing_reminders`**: `testing_reminder_sent_at` and `due_testing_reminders()`.
 
 ## Project Structure
@@ -70,7 +70,7 @@ src/features/feature-requests/
 app/api/feature-requests/sync/route.ts  # reminders
 scripts/workflow/feature-requests-sync.mjs   # sends Round Issues too
 supabase/migrations/<timestamp>_feature_request_rounds.sql, _feature_request_decisions.sql, _testing_reminders.sql
-supabase/tests/database/023_feature_request_rounds.test.sql, 024_testing_reminders.test.sql
+supabase/tests/database/023_feature_request_rounds.test.sql, 024_feature_request_decisions.test.sql, 025_testing_reminders.test.sql
 .github/ISSUE_TEMPLATE/1-feature.yml, .claude/skills/deliver/triage.md, .claude/skills/deliver/spec.md
 e2e/feature-requests.spec.ts
 ```
