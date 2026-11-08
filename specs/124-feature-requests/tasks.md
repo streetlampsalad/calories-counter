@@ -20,10 +20,11 @@ description: "Tasks for Feature Requests from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T001 [P] [US1] pgTAP: own rows only, no writes through the API, the limit of 2 open, withdrawn not counted, in `supabase/tests/database/020_feature_requests.test.sql`
-- [ ] T002 [P] [US1] Vitest: `parseFeatureRequest` limits; `issueTitle` and `issueBody` headings, quoting, mention and cross-reference neutralising, in `src/features/feature-requests/domain.test.ts` and `issue-body.test.ts`
+- [ ] T001 [P] [US1] pgTAP: own rows only, no writes through the API, the limit of 2 open, withdrawn not counted, in `supabase/tests/database/020_feature_requests.test.sql`. pgTAP runs in one session, so it proves the limit but not the per-User lock against two sessions at once; the lock is checked by reading the trigger in review
+- [ ] T002 [P] [US1] Vitest: `parseFeatureRequest` limits; `issueTitle` and `issueBody` headings, `_Not given_` for an empty optional field, quoting, mention and cross-reference neutralising, in `src/features/feature-requests/domain.test.ts` and `issue-body.test.ts`
 - [ ] T003 [P] [US1] Vitest: `submitFeatureRequest` logic with fakes: Toggle off, limit, GitHub failure deletes the row, a failure to store the number closes the Issue again, success stores the number, in `src/features/feature-requests/submit.test.ts`
 - [ ] T004 [P] [US1] Testing Library: the form's validation, the gentle prompt, the public notice, the limit, notification offer, error keeps the text, in `src/features/feature-requests/request-form.test.tsx`; the Settings row in `src/features/settings/feature-requests-row.test.tsx`
+- [ ] T004a [P] [US1] Vitest: `.github/ISSUE_TEMPLATE/1-feature.yml` has an `Additional details` field and `.claude/skills/deliver/triage.md` reads the `### Additional details` section, in `scripts/workflow/feature-template.test.mjs` (FR-011)
 - [ ] T005 [US1] Playwright: `liv` with `feature-114` on submits a request and sees it Submitted; `cleo` sees no row and a 404, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
@@ -103,7 +104,7 @@ description: "Tasks for Feature Requests from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T029 [P] [US4] Vitest: `withdrawFeatureRequest` logic: allowed stages, sets `withdrawn_at` before closing both Issues with the comment, clears it again if GitHub fails, refuses others, in `src/features/feature-requests/withdraw.test.ts`; `canWithdraw` in `stage.test.ts`
+- [ ] T029 [P] [US4] Vitest: `withdrawFeatureRequest` logic: allowed stages, sets `withdrawn_at` before closing both Issues with the comment, clears it again if GitHub fails, refuses others, including a request a sync moved to Building after the screen loaded, in `src/features/feature-requests/withdraw.test.ts`; `canWithdraw` in `stage.test.ts`
 - [ ] T030 [P] [US4] Testing Library: Withdraw and its confirm dialog only at allowed stages; Withdrawn shown, in `request-card.test.tsx`
 - [ ] T031 [US4] Playwright: `liv` withdraws a Submitted request and it shows Withdrawn, in `e2e/feature-requests.spec.ts`
 
@@ -120,7 +121,7 @@ description: "Tasks for Feature Requests from inside the app"
 
 | Slice | Title | Covers | Tasks | Blocked by | Human review |
 |---|---|---|---|---|---|
-| 1 | Ask for a feature | US1.1–US1.10 | T001–T010 | — | Yes (GitHub token, RLS, Feature template) |
+| 1 | Ask for a feature | US1.1–US1.10 | T001–T010 (with T004a) | — | Yes (GitHub token, RLS, Feature template) |
 | 2 | Follow a request through its stages | US2.1–US2.6 | T011–T020 | Slice 1 | Yes (sync secret, `board.yml`, others' requests) |
 | 3 | Hear it's ready, and try it | US3.1–US3.7 | T021–T028 (with T023a) | Slice 2 | Yes (Toggle access, `/deliver`, real push) |
 | 4 | Withdraw a request | US4.1–US4.4 | T029–T033 | Slice 2 | No |
