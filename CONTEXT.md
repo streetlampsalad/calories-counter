@@ -121,3 +121,13 @@ _Avoid_: released, shipped, enabled
 **Removed**:
 A Toggle that is off for every User, whose feature is being deleted. A Removed Toggle never comes back.
 _Avoid_: disabled, killed, archived
+
+### Feature Requests
+
+**Feature Request**:
+What a User asks the app to do next, in their own words, which agents then build behind its own Toggle. Its stage (Submitted, Being reviewed, Planning, Building, Ready to try, Live for everyone, or Waiting for the owner, Not going ahead, Withdrawn, Removed) follows its Feature Issue on GitHub.
+_Avoid_: suggestion (that is a candidate Food), idea, ticket, feedback
+
+**Requester**:
+The User who submitted a Feature Request. Only they (and the Owner) may try it while its Toggle is in Testing.
+_Avoid_: author, reporter, submitter
