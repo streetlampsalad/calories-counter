@@ -48,7 +48,7 @@ description: "Tasks for Feature Requests from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T011 [P] [US2] Vitest: `stageFor` on every Issue tree in US2.1, Waiting for the owner winning per D5, and `latestComment`, in `scripts/workflow/feature-requests.test.mjs`
+- [ ] T011 [P] [US2] Vitest: `stageFor` on every Issue tree in US2.1 (including Submitted versus Being reviewed by `needs-triage` and assignee exactly as US2.1 states), Waiting for the owner winning per D5, and `latestComment`, in `scripts/workflow/feature-requests.test.mjs`
 - [ ] T012 [P] [US2] pgTAP: `apply_feature_request_sync` updates by Feature Issue, ignores unknown Issues and withdrawn requests (US4.3); `other_feature_requests` hides who asked and stages outside Submitted–Ready to try; `feature_requests_ahead` only for the owner of the request; only `service_role` may sync, in `supabase/tests/database/021_feature_request_sync.test.sql`
 - [ ] T013 [P] [US2] Vitest: the sync handler refuses a missing or wrong secret and a bad body, in `src/features/feature-requests/sync-handler.test.ts`
 - [ ] T014 [P] [US2] Vitest and Testing Library: stage labels, Live and Removed from the Toggle, in `stage.test.ts`; the card's stage, comment and reason, in `request-card.test.tsx`; the list's loading, empty and error states, in `request-list.test.tsx`
