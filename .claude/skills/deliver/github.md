@@ -61,4 +61,10 @@ gh api -X POST "repos/$R/issues/<pr>/labels" -f 'labels[]=needs-human-review'
 gh api "repos/$R/commits/<sha>/check-runs" --jq '.check_runs[] | {name, status, conclusion}'
 ```
 
-Open pull requests ready for review, never as drafts: marking a draft ready needs GraphQL.
+Open pull requests ready for review. Where you need a draft in a cloud session, use the proxy's own routes, which exist only there (locally, `gh pr ready` works):
+
+```bash
+gh api -X POST "repos/$R/pulls/<pr>/ccr/convert_to_draft"
+gh api -X POST "repos/$R/pulls/<pr>/ccr/ready_for_review"
+gh api "repos/$R/pulls/<pr>/ccr/review_threads"             # review threads, for answering review comments
+```

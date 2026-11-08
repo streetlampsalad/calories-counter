@@ -29,9 +29,11 @@ Checked on 2026-11-08 in a cloud session (`CLAUDE_CODE_REMOTE=true`, the Default
 | 5 | Blocked by (`POST issues/108/dependencies/blocked_by`, `issue_id=<id of 107>`) | Worked | A `GET issues/108` straight afterwards still showed `blocked_by: 0`; it read `1` a few seconds later. Harmless for the Dispatcher, which runs hourly. |
 | 6 | Close as not planned (`PATCH`, `state_reason=not_planned`) | Worked | Deleting an Issue needs GraphQL, so scratch Issues can only be closed. |
 | 7 | Push the branch | Worked | `git push -u origin claude/...`. |
-| 7 | Open the pull request (`POST pulls`) | _see below_ | |
-| 7 | Label the pull request (`POST issues/<pr>/labels`) | _see below_ | |
-| 8 | Read check runs (`GET commits/<sha>/check-runs`) | _see below_ | |
+| 7 | Open the pull request (`POST pulls`) | Worked | [#109](https://github.com/streetlampsalad/calories-counter/pull/109), opened ready for review, authored by `streetlampsalad`. |
+| 7 | Label the pull request (`POST issues/<pr>/labels`) | Worked | Added `needs-human-review`. |
+| 8 | Read check runs (`GET commits/<sha>/check-runs`) | Worked | Listed `validate`, `Merge gate`, `Claude review` and `sync` with their status. |
+| — | Draft and ready (`POST pulls/<pr>/ccr/convert_to_draft`, then `.../ccr/ready_for_review`) | Worked | Not in the Spike's list; tried because `github.md` said marking a draft ready needs GraphQL. Returned `{"draft":true}`, then `{"draft":false}`. **Recipe corrected.** |
+| — | Read review threads (`GET pulls/<pr>/ccr/review_threads`) | Worked | `[]` on a pull request with no review comments. |
 
 ## Identity: the proxy acts as the owner
 
@@ -47,7 +49,7 @@ I did not try either; both are hard limits in [`/deliver`](../../.claude/skills/
 The GraphQL refusal names routes the proxy adds on `api.github.com` for things REST cannot do:
 
 - `GET repos/{owner}/{repo}/pulls/{n}/ccr/review_threads`, and `POST .../ccr/comments/{comment_id}/resolve` (or `/unresolve`)
-- `POST repos/{owner}/{repo}/pulls/{n}/ccr/ready_for_review` and `.../ccr/convert_to_draft`
+- `POST repos/{owner}/{repo}/pulls/{n}/ccr/ready_for_review` and `.../ccr/convert_to_draft` (both tried, both work)
 - `PUT` or `DELETE repos/{owner}/{repo}/pulls/{n}/ccr/auto_merge`; the merge gate owns auto-merge, so `/deliver` never calls it
 
 ## If a token were ever needed
