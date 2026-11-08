@@ -2,7 +2,7 @@
 
 ## Server action `submitFeatureRequest`
 
-`src/app/(app)/settings/feature-requests/actions.ts`
+`src/features/feature-requests/actions.ts` (with the feature, so its client hooks import it directly)
 
 - Input: `{ goal: string, problem?: string, details?: string }`, validated by `parseFeatureRequest` (zod) in `src/features/feature-requests/domain.ts`.
 - Refuses with `{ ok: false, code: "not_found" }` unless `isToggleOn("feature-114")`.

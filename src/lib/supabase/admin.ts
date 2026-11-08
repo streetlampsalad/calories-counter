@@ -3,8 +3,9 @@ import { publicEnv } from "@/lib/env";
 import type { Database } from "./database.types";
 
 // A client that skips row level security, for the few server jobs that act on every User's rows
-// (the Reminder scheduler, ADR 0005). Import it only from route handlers; the secret key must never
-// reach the browser, and the build checks the client bundle for its name.
+// (the Reminder scheduler, ADR 0005), and for the rows Users may only read (Feature Requests, spec 124).
+// Import it only from route handlers and server actions; the secret key must never reach the browser,
+// and the build checks the client bundle for its name.
 export function createAdminClient() {
   const secretKey = process.env.SUPABASE_SECRET_KEY;
   if (!secretKey) throw new Error("SUPABASE_SECRET_KEY is not set");

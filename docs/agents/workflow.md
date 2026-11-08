@@ -6,7 +6,7 @@ How work moves from an idea to production ([ADR 0007](../adr/0007-spec-driven-pu
 
 - **Issue**: any GitHub issue on `streetlampsalad/calories-counter`. Every change has one before work starts.
 - **Issue type**: one of Feature, Spec, Slice, Bug, Chore or Spike, each with its own issue template and label.
-  - **Feature**: an idea for new or changed behaviour, not yet specified. Its template's headings (`### Problem`, `### Who has it`, `### Desired outcome`, `### Requested by`) are a contract, so an Issue created through the API reads the same.
+  - **Feature**: an idea for new or changed behaviour, not yet specified. Its template's headings (`### Problem`, `### Who has it`, `### Desired outcome`, `### Additional details`, `### Requested by`) are a contract, so an Issue created through the API reads the same.
   - **Spec**: the parent Issue for one spec-kit spec in `specs/<Spec issue number>-<name>/`. A sub-issue of the Feature it answers.
   - **Slice**: an Issue that exactly one pull request delivers. A Spec's Slices come from the user-story phases of its `tasks.md` and are its sub-issues.
   - **Bug**: wrong behaviour, with steps to reproduce. Fixed with a regression test; no spec.

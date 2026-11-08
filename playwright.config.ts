@@ -38,6 +38,8 @@ export default defineConfig({
       NOTES_READER: "fake",
       CALORIE_GUESSER: "fake",
       OFF_SOURCE: "fixture",
+      // Feature Requests create no real GitHub Issues in tests (spec 124).
+      FEATURE_ISSUES: "fake",
     },
     timeout: 60_000,
   },
