@@ -4,6 +4,7 @@ import {
   clearSavedAppearance,
   hasSavedAppearance,
   parseAppearance,
+  themeColor,
 } from "./appearance";
 
 afterEach(() => {
@@ -45,5 +46,17 @@ describe("saved choice", () => {
 
     expect(hasSavedAppearance()).toBe(false);
     expect(() => clearSavedAppearance()).not.toThrow();
+  });
+});
+
+describe("themeColor", () => {
+  it("matches the resolved theme (US2.2)", () => {
+    expect(themeColor("dark")).toBe("#0a0a0a");
+    expect(themeColor("light")).toBe("#ffffff");
+  });
+
+  it("is the Light colour for anything unknown", () => {
+    expect(themeColor(undefined)).toBe("#ffffff");
+    expect(themeColor("sepia")).toBe("#ffffff");
   });
 });

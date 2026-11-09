@@ -26,3 +26,10 @@ export function clearSavedAppearance() {
     // Nothing saved, so nothing to clear.
   }
 }
+
+// The browser's theme colour (status bar) for a resolved theme: the page background in each.
+export const THEME_COLORS = { light: "#ffffff", dark: "#0a0a0a" } as const;
+
+export function themeColor(resolved: string | null | undefined): string {
+  return resolved === "dark" ? THEME_COLORS.dark : THEME_COLORS.light;
+}

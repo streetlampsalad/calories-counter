@@ -45,14 +45,14 @@ description: "Tasks for Dark mode"
 
 ### Tests (write first, see them fail)
 
-- [ ] T008 [P] [US2] Vitest: `themeColor` for each resolved theme, in `src/lib/appearance.test.ts`
-- [ ] T009 [P] [US2] Testing Library: the toaster uses the resolved theme, in `src/components/ui/sonner.test.tsx`
-- [ ] T010 [US2] Playwright: Dark saved gives a dark background before hydration, the theme colour matches, and nothing saved leaves page, colour and toast unchanged, in `e2e/appearance.spec.ts`
+- [x] T008 [P] [US2] Vitest: `themeColor` for each resolved theme, in `src/lib/appearance.test.ts`
+- [x] T009 [P] [US2] Testing Library: the toaster uses the resolved theme, in `src/components/ui/sonner.test.tsx`
+- [x] T010 [US2] Playwright: Dark saved gives a dark background before hydration, the theme colour matches, and nothing saved leaves page, colour and toast unchanged, in `e2e/appearance.spec.ts`
 
 ### Implementation
 
-- [ ] T011 [US2] The `theme-color` meta driven by the resolved theme, in `src/app/layout.tsx` (the pre-paint script and `suppressHydrationWarning` arrive with the provider in Slice 1; this Slice proves them with T010)
-- [ ] T012 [US2] Sonner follows the resolved theme
+- [x] T011 [US2] The `theme-color` meta driven by the resolved theme, in `src/app/layout.tsx` (the pre-paint script and `suppressHydrationWarning` arrive with the provider in Slice 1; this Slice proves them with T010)
+- [x] T012 [US2] Sonner follows the resolved theme
 
 **Checkpoint**: `pnpm validate` passes and User Stories 1 and 2 both work.
 
