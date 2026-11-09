@@ -1,16 +1,9 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AboutSection } from "@/features/settings/about-section";
-import { AppearanceSection } from "@/features/settings/appearance-section";
-import { BurnedSection } from "@/features/settings/burned-section";
-import { FeatureRequestsRow } from "@/features/settings/feature-requests-row";
-import { GoalSection } from "@/features/settings/goal-section";
-import { ReminderSection } from "@/features/settings/reminder-section";
+import { SettingsHome } from "@/features/settings/settings-categories";
 import { SignOutForm } from "@/features/settings/sign-out-form";
-import { TryFeaturesSection } from "@/features/settings/try-features-section";
 import { formatVersion } from "@/features/settings/version";
-import { VibrationSection } from "@/features/settings/vibration-section";
-import { WeekStartSection } from "@/features/settings/week-start-section";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 
@@ -42,22 +35,13 @@ async function Account() {
 
 export default function SettingsPage() {
   return (
-    <main className="flex flex-1 flex-col gap-6">
-      <h1 className="font-semibold text-2xl tracking-tight">Settings</h1>
-      <GoalSection />
-      <BurnedSection />
-      <WeekStartSection />
-      <ReminderSection />
-      <VibrationSection />
-      <AppearanceSection />
-      <TryFeaturesSection />
-      <FeatureRequestsRow />
+    <SettingsHome>
       <Suspense fallback={<div className="h-32" />}>
         <About />
       </Suspense>
       <Suspense fallback={<div className="h-32" />}>
         <Account />
       </Suspense>
-    </main>
+    </SettingsHome>
   );
 }
