@@ -20,15 +20,15 @@ description: "Tasks for Settings in categories"
 
 ### Tests (write first, see them fail)
 
-- [ ] T001 [P] [US1] Testing Library: rows shown when on, single list when off, loading or failed, hidden empty categories, redirect when off, in `src/features/settings/settings-categories.test.tsx`
-- [ ] T002 [US1] Playwright: open each category, change a setting, go back, direct link redirects when off, in `e2e/settings-categories.spec.ts`
+- [x] T001 [P] [US1] Testing Library: rows shown when on, single list when off, loading or failed, hidden empty categories, redirect when off, in `src/features/settings/settings-categories.test.tsx`
+- [x] T002 [US1] Playwright: open each category, change a setting, go back, direct link redirects when off, in `e2e/settings-categories.spec.ts`
 
 ### Implementation
 
-- [ ] T003 [US1] Migration `pnpm db:new toggle_settings_categories` inserting the Toggle, then `pnpm db:reset && pnpm db:types`
-- [ ] T004 [US1] `src/features/settings/categories.ts` and the hub/gate component
-- [ ] T005 [US1] Pages `settings/tracking`, `settings/preferences`, `settings/features` with back links; `settings/page.tsx` uses the gate
-- [ ] T006 [US1] Keep Settings highlighted in the bottom navigation on category pages
+- [x] T003 [US1] Migration `pnpm db:new toggle_settings_categories` inserting the Toggle, then `pnpm db:reset && pnpm db:types`
+- [x] T004 [US1] `src/features/settings/categories.ts` and the hub/gate component
+- [x] T005 [US1] Pages `settings/tracking`, `settings/preferences`, `settings/features` with back links; `settings/page.tsx` uses the gate
+- [x] T006 [US1] Keep Settings highlighted in the bottom navigation on category pages
 
 **Checkpoint**: `pnpm validate` passes.
 
