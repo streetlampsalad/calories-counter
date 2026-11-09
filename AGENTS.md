@@ -32,6 +32,8 @@ Cloud sessions have no Docker, so `pnpm validate` runs only the fast checks ther
 | User journeys | `e2e/*.spec.ts` | Playwright (Pixel 7) |
 | Workflow scripts (merge gate, board) | `scripts/workflow/*.test.mjs` | Vitest |
 
+Unit tests run without a browser unless the file is `*.test.tsx`; a `*.test.ts` file that needs one (a hook, `localStorage`) starts with `// @vitest-environment jsdom`. An e2e test that holds a screen to a time budget is tagged `@performance`, so it is timed with nothing else running.
+
 Every new table gets pgTAP tests proving one User cannot read or change another User's rows.
 
 ## Database
