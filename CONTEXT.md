@@ -62,6 +62,10 @@ _Avoid_: log item, meal, consumption, record
 An Entry on a Day after today. It becomes an ordinary Entry when its Day arrives, with no confirming step, and until then no summary counts it.
 _Avoid_: future log, meal plan, scheduled entry
 
+**Meal time**:
+Breakfast, lunch, dinner or snack: an optional tag on an Entry saying when in the day it was eaten. Fixed to these four, and never stored on a Food.
+_Avoid_: meal, meal type, category, slot
+
 **Quantity**:
 The number of Portions in an Entry (e.g. 1.5).
 _Avoid_: amount, servings, count
