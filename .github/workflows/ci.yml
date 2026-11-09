@@ -1,4 +1,5 @@
-# The full gate (docs/adr/0007): every pull request into main must pass `pnpm validate` here.
+# The full gate (docs/adr/0007): every pull request into main must pass `pnpm validate` here, and
+# so must every push to main, unless its pull request already tested exactly that tree.
 name: CI
 
 on:
@@ -14,7 +15,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A push to main whose tree the merged pull request's CI already tested and passed skips the
+  # second `pnpm validate`. If main moved in between, the tree differs and validate runs (#161).
+  reuse:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    outputs:
+      reuse: ${{ steps.reuse.outputs.reuse }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts/workflow
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          # package.json names pnpm, which this job never installs, so skip its cache.
+          package-manager-cache: false
+
+      - id: reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: TREE="$(git rev-parse 'HEAD^{tree}')" node scripts/workflow/ci-reuse.mjs
+
   validate:
+    needs: reuse
+    # Runs unless the push reused a pull request's result; reuse is skipped for pull requests.
+    if: ${{ !cancelled() && needs.reuse.outputs.reuse != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -37,6 +70,22 @@ jobs:
       - run: pnpm env:local
 
       - run: pnpm validate
+
+      # A pull request's checkout is its merge with main, so this is the tree a push can reuse.
+      - name: Record the tree this pull request tested
+        if: github.event_name == 'pull_request'
+        id: tree
+        run: |
+          tree="$(git rev-parse 'HEAD^{tree}')"
+          echo "$tree" > tested-tree.txt
+          echo "tree=$tree" >> "$GITHUB_OUTPUT"
+
+      - if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tested-tree-${{ steps.tree.outputs.tree }}
+          path: tested-tree.txt
+          retention-days: 30
 
       - if: failure()
         uses: actions/upload-artifact@v4
