@@ -38,14 +38,6 @@ jobs:
         with:
           ref: ${{ env.SHA }}
 
-      # Deploys queue and can skip commits, so closing Issues walks back to the last success.
-      - name: Find the previous production deploy
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          previous="$(gh api "repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""')"
-          echo "PREVIOUS_SHA=$previous" >> "$GITHUB_ENV"
-
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v5
@@ -97,7 +89,7 @@ jobs:
             echo "::warning::AUTOMATION_TOKEN is not set, so delivered Issues stay open. Run scripts/setup-workflow.sh."
             exit 0
           fi
-          node scripts/workflow/close-deployed.mjs "$SHA" "$PREVIOUS_SHA"
+          node scripts/workflow/close-deployed.mjs "$SHA"
 
       # A production incident always gets a human (docs/adr/0007).
       - name: Open a P0 Bug

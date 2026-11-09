@@ -83,3 +83,53 @@ export function parentIsFinished(subIssues) {
     subIssues.length > 0 && subIssues.every((child) => child.state === "CLOSED")
   );
 }
+
+/** The comment close-deployed.mjs leaves, naming the pull request that delivered the Issue. */
+export function productionComment(sha, pull) {
+  return `In production as of ${sha.slice(0, 7)} (#${pull}).`;
+}
+
+/** The pull requests a deploy already closed this Issue for, from its comments. */
+export function deliveredBy(comments) {
+  return comments.flatMap((comment) => {
+    const match = comment.body.match(
+      /^In production (?:since|as of) [0-9a-f]{7} \(#(\d+)\)\.$/,
+    );
+    return match ? [Number(match[1])] : [];
+  });
+}
+
+/**
+ * The Issues a production deploy delivered: each open Issue whose newest merged pull request is
+ * in the deployed commit. `pulls` are merged pull requests, newest first; `issueOf` gives an open
+ * Issue, or null for one that is closed or missing. Specs and other parents close with their last
+ * sub-issue instead (board-sync.mjs). An Issue reopened after a pull request delivered it waits
+ * for a newer one, and `isDeployed`, a GitHub call, is asked only about pull requests that could
+ * close something.
+ */
+export function issuesToClose(pulls, issueOf, isDeployed) {
+  const newest = new Map();
+  for (const pull of pulls) {
+    for (const number of parseRefs(pull.body))
+      if (!newest.has(number)) newest.set(number, pull);
+  }
+
+  const closing = [];
+  for (const pull of pulls) {
+    const open = parseRefs(pull.body).filter((number) => {
+      if (newest.get(number) !== pull) return false;
+      const issue = issueOf(number);
+      return (
+        issue !== null &&
+        !issue.isPullRequest &&
+        !issue.labels.includes("spec") &&
+        issue.subIssues === 0 &&
+        !issue.deliveredBy.includes(pull.number)
+      );
+    });
+    if (open.length === 0 || !isDeployed(pull)) continue;
+    for (const number of open)
+      closing.push({ issue: number, pull: pull.number });
+  }
+  return closing;
+}
