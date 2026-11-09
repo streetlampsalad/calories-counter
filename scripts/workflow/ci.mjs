@@ -9,15 +9,17 @@ export function testedTreeName(tree) {
 
 /**
  * The id of the merged pull request's newest CI run if that run passed, else null. `runs` are the
- * CI runs for the pull request's head commit. A fork's pull request runs its own workflow file, so
- * its record is not trusted.
+ * CI runs for the pull request's head commit. Neither a fork's pull request nor a run from a fork
+ * counts: they run their own workflow file.
  */
 export function reusablePullRequestRun(pull, runs, repository) {
   if (!pull.merged_at || pull.head?.repo?.full_name !== repository) return null;
   const newest = [...runs].sort((a, b) =>
     b.created_at.localeCompare(a.created_at),
   )[0];
-  return newest?.status === "completed" && newest.conclusion === "success"
+  return newest?.status === "completed" &&
+    newest.conclusion === "success" &&
+    newest.head_repository?.full_name === repository
     ? newest.id
     : null;
 }

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { reusablePullRequestRun, testedTreeName } from "./ci.mjs";
 
@@ -13,6 +14,7 @@ const run = (id, created_at, overrides = {}) => ({
   created_at,
   status: "completed",
   conclusion: "success",
+  head_repository: { full_name: REPO },
   ...overrides,
 });
 
@@ -52,7 +54,7 @@ describe("reusablePullRequestRun", () => {
     ).toBeNull();
   });
 
-  it("reuses nothing for a pull request from a fork, or one that was not merged", () => {
+  it("reuses nothing for a pull request from a fork, from a fork's run, or not merged", () => {
     expect(
       reusablePullRequestRun(
         pull({ head: { repo: { full_name: "someone/calories-counter" } } }),
@@ -68,11 +70,29 @@ describe("reusablePullRequestRun", () => {
       ),
     ).toBeNull();
     expect(reusablePullRequestRun(pull(), [], REPO)).toBeNull();
+    expect(
+      reusablePullRequestRun(
+        pull(),
+        [
+          run(1, "2026-11-09T00:40:00Z", {
+            head_repository: { full_name: "someone/calories-counter" },
+          }),
+        ],
+        REPO,
+      ),
+    ).toBeNull();
   });
 });
 
 describe("testedTreeName", () => {
   it("names the artifact a pull request's CI records for the tree it tested", () => {
     expect(testedTreeName(TREE)).toBe("tested-tree-a1b2c3");
+  });
+
+  it("is the name ci.yml uploads, so reuse is not silently switched off", () => {
+    const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
+    expect(workflow).toContain(
+      `name: ${testedTreeName("${{ steps.tree.outputs.tree }}")}`,
+    );
   });
 });

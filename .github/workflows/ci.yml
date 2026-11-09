@@ -19,6 +19,8 @@ jobs:
   # second `pnpm validate`. If main moved in between, the tree differs and validate runs (#161).
   reuse:
     if: github.event_name == 'push'
+    # A failure here leaves no output, so validate runs; it must not fail CI and block the deploy.
+    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
