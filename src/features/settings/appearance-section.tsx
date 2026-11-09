@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import {
   APPEARANCES,
   type Appearance,
@@ -16,8 +17,12 @@ const LABELS: Record<Appearance, string> = {
 // Appearance (spec 147). The choice is kept on this phone.
 export function AppearanceSection() {
   const { theme, setTheme } = useTheme();
+  // The saved choice lives in this browser, so the server cannot know it. Showing it only after
+  // mount keeps the first client render equal to the server's, so React hydrates the radios right.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  const current = parseAppearance(theme);
+  const current = parseAppearance(mounted ? theme : undefined);
 
   return (
     <section className="flex flex-col gap-2">
