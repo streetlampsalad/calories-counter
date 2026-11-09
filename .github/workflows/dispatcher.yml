@@ -4,7 +4,7 @@ name: Dispatcher
 
 on:
   issues:
-    types: [opened, labeled, unlabeled, closed]
+    types: [opened, labeled, unlabeled, closed, reopened, unassigned]
 
 permissions:
   contents: read
@@ -35,9 +35,8 @@ jobs:
     if: needs.decide.outputs.wake == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # A burst of events, such as a Spec's Slices being created, starts one run: each new event
-    # cancels the wait before it. The wait also lets the run that caused the burst claim its next
-    # Issue first.
+    # A burst of events starts one run: each new event cancels the wait before it. Two runs can
+    # still overlap, so /deliver's claim checks that no other run claimed the Issue first.
     concurrency:
       group: dispatcher-wake
       cancel-in-progress: true
@@ -50,19 +49,21 @@ jobs:
           FIRE_URL: ${{ vars.DISPATCHER_FIRE_URL }}
           FIRE_TOKEN: ${{ secrets.DISPATCHER_FIRE_TOKEN }}
           EVENT: issues.${{ github.event.action }} on #${{ github.event.issue.number }}
+          # Neutral, so the run picks by next.md's order and not by the Issue that woke it.
+          TEXT: Woken by an Issue event. Choose the next Issue as /deliver next says.
         run: |
           if [ -z "$FIRE_URL" ] || [ -z "$FIRE_TOKEN" ]; then
             echo "::warning::DISPATCHER_FIRE_URL or DISPATCHER_FIRE_TOKEN is not set, so the Dispatcher waits for its hourly run."
             exit 0
           fi
-          status="$(curl -sS -o response.json -w '%{http_code}' -X POST "$FIRE_URL" \
+          status="$(curl -sS --max-time 30 -o response.json -w '%{http_code}' -X POST "$FIRE_URL" \
             -H "Authorization: Bearer $FIRE_TOKEN" \
             -H "anthropic-version: 2023-06-01" \
             -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
             -H "Content-Type: application/json" \
-            -d "$(jq -n --arg text "Woken by $EVENT" '{text: $text}')")"
+            -d "$(jq -n --arg text "$TEXT" '{text: $text}')")" || status="000"
           if [ "$status" != 200 ]; then
-            echo "::warning::The Dispatcher did not start (HTTP $status), so it waits for its hourly run: $(cat response.json)"
+            echo "::warning::The Dispatcher did not start for $EVENT (HTTP $status), so it waits for its hourly run: $(cat response.json 2>/dev/null)"
             exit 0
           fi
           echo "Started the Dispatcher for $EVENT"

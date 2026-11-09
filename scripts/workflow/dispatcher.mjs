@@ -16,7 +16,9 @@ export function wakesDispatcher(payload, owner) {
   const labels = (payload.issue?.labels ?? []).map((label) => label.name);
   const changed = payload.label?.name;
   switch (payload.action) {
+    // New Slices don't count: the run that creates them carries straight on to the first.
     case "opened":
+      if (labels.includes("slice")) return false;
       return (
         labels.includes(READY) ||
         (labels.includes(TRIAGE) &&
@@ -26,8 +28,11 @@ export function wakesDispatcher(payload, owner) {
       return changed === READY;
     case "unlabeled":
       return WAITING_FOR_HUMAN.includes(changed);
-    // A closed Issue can unblock the next Slice, or finish a Spec whose Feature then closes.
+    // A closed Issue can unblock the next Slice. An unassigned one is free to claim again (and can
+    // free the one Spec allowed in progress), and a reopened one can be a candidate again.
     case "closed":
+    case "unassigned":
+    case "reopened":
       return true;
     default:
       return false;

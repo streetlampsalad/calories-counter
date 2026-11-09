@@ -53,6 +53,22 @@ describe("wakesDispatcher", () => {
     ).toBe(true);
   });
 
+  it("wakes when an Issue is unassigned or reopened, which can make it a candidate again", () => {
+    expect(wakesDispatcher(event("unassigned"), OWNER)).toBe(true);
+    expect(wakesDispatcher(event("reopened"), OWNER)).toBe(true);
+  });
+
+  it("does not wake for new Slices, because the run that creates them goes on to the first", () => {
+    expect(
+      wakesDispatcher(
+        event("opened", {
+          labels: ["slice", "ready-for-agent", "priority:P2"],
+        }),
+        OWNER,
+      ),
+    ).toBe(false);
+  });
+
   it("sleeps through events that cannot give it work", () => {
     expect(wakesDispatcher(event("opened", { labels: ["chore"] }), OWNER)).toBe(
       false,
