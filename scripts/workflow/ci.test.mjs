@@ -91,8 +91,8 @@ describe("testedTreeName", () => {
 
   it("is the name ci.yml uploads, so reuse is not silently switched off", () => {
     const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
-    expect(workflow).toContain(
-      `name: ${testedTreeName("${{ steps.tree.outputs.tree }}")}`,
-    );
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the Actions expression ci.yml uses.
+    const tree = "${{ steps.tree.outputs.tree }}";
+    expect(workflow).toContain(`name: ${testedTreeName(tree)}`);
   });
 });
