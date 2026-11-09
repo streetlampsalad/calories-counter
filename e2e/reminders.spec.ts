@@ -105,7 +105,7 @@ test.beforeEach(async ({ page }) => {
 test("a new User has the Reminder off, with nothing to choose yet (AC-1)", async ({
   page,
 }) => {
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
 
   await expect(reminderSwitch(page)).not.toBeChecked();
   await expect(timeField(page)).toHaveCount(0);
@@ -114,7 +114,7 @@ test("a new User has the Reminder off, with nothing to choose yet (AC-1)", async
 test("turning it on subscribes this phone and saves the Reminder with the phone's time zone (AC-1, AC-2, AC-3)", async ({
   page,
 }) => {
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
   const write = settingsWritten(page);
 
   await reminderSwitch(page).click();
@@ -138,7 +138,7 @@ test("turning it on subscribes this phone and saves the Reminder with the phone'
 test("the time is kept across a reload, on a quarter hour (AC-1, AC-3)", async ({
   page,
 }) => {
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
   await reminderSwitch(page).click();
   await expect(timeField(page)).toBeVisible();
 
@@ -154,7 +154,7 @@ test("the time is kept across a reload, on a quarter hour (AC-1, AC-3)", async (
 test("turning it off switches the Reminder off and forgets this phone (AC-8)", async ({
   page,
 }) => {
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
   await reminderSwitch(page).click();
   await expect(timeField(page)).toBeVisible();
   await expect.poll(async () => (await saved()).subscriptions.length).toBe(1);
@@ -177,7 +177,7 @@ test("a Reminder turned on from another phone is offered here, not assumed (AC-3
     time_zone: "Australia/Sydney",
   });
 
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
 
   await expect(reminderSwitch(page)).not.toBeChecked();
   await expect(page.getByText(/on for your other phones/i)).toBeVisible();
@@ -193,7 +193,7 @@ test("refused notifications keep the switch off and say why (AC-2)", async ({
     });
     Notification.requestPermission = async () => "denied";
   });
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
 
   await reminderSwitch(page).click();
 
@@ -212,7 +212,7 @@ test("a phone that can't receive push says so and can't turn it on (AC-2)", asyn
   await page.addInitScript(() => {
     Reflect.deleteProperty(window, "PushManager");
   });
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
 
   await expect(
     page.getByText("This device can't show reminders."),
@@ -234,11 +234,12 @@ test("signing out removes this phone's subscription (AC-8)", async ({
       "127.0.0.1",
     ),
   );
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
   await reminderSwitch(page).click();
   await expect(timeField(page)).toBeVisible();
   await expect.poll(async () => (await saved()).subscriptions.length).toBe(1);
 
+  await page.goto("/settings");
   await page.getByRole("button", { name: "Sign out" }).click();
 
   await expect(page).toHaveURL(/\/sign-in/);

@@ -19,7 +19,7 @@ test.describe("the Owner", () => {
   test("asks for a feature from Settings and sees it Submitted (US1.1, US1.5)", async ({
     page,
   }) => {
-    await page.goto("/settings");
+    await page.goto("/settings/features");
     await page.getByRole("link", { name: /Feature requests/ }).click();
 
     await expect(page).toHaveURL(/\/settings\/feature-requests$/);

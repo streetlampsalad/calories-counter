@@ -10,7 +10,7 @@ test.describe("Appearance", () => {
   test.use({ storageState: authFile("liv") });
 
   test("is Light until a choice is made (US1.3)", async ({ page }) => {
-    await page.goto("/settings");
+    await page.goto("/settings/preferences");
 
     await expect(page.getByRole("radio", { name: "Light" })).toBeChecked();
     expect(await isDark(page)).toBe(false);
@@ -19,7 +19,7 @@ test.describe("Appearance", () => {
   test("Dark applies at once and after a reload, and Light returns (US1.4, US1.6)", async ({
     page,
   }) => {
-    await page.goto("/settings");
+    await page.goto("/settings/preferences");
     await page.getByRole("radio", { name: "Dark" }).check();
     await expect.poll(() => isDark(page)).toBe(true);
 
@@ -38,7 +38,7 @@ test.describe("Appearance", () => {
     page,
   }) => {
     await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/settings");
+    await page.goto("/settings/preferences");
     await page.getByRole("radio", { name: "System" }).check();
     await expect.poll(() => isDark(page)).toBe(true);
 
@@ -47,13 +47,13 @@ test.describe("Appearance", () => {
   });
 
   test("a second phone starts Light (US1.8)", async ({ page, browser }) => {
-    await page.goto("/settings");
+    await page.goto("/settings/preferences");
     await page.getByRole("radio", { name: "Dark" }).check();
     await expect.poll(() => isDark(page)).toBe(true);
 
     const other = await browser.newContext({ storageState: authFile("liv") });
     const otherPage = await other.newPage();
-    await otherPage.goto("/settings");
+    await otherPage.goto("/settings/preferences");
     await expect(otherPage.getByRole("radio", { name: "Light" })).toBeChecked();
     expect(await isDark(otherPage)).toBe(false);
     await other.close();
@@ -68,7 +68,7 @@ test.describe("first frame and chrome", () => {
   }) => {
     await page.addInitScript(() => localStorage.setItem("theme", "dark"));
     await page.route("**/_next/static/chunks/**", (route) => route.abort());
-    await page.goto("/settings", { waitUntil: "domcontentloaded" });
+    await page.goto("/settings/preferences", { waitUntil: "domcontentloaded" });
 
     expect(await isDark(page)).toBe(true);
     const bg = await page.evaluate(
@@ -94,7 +94,7 @@ test.describe("first frame and chrome", () => {
   test("nothing saved leaves the page and theme colours as today (US2.4)", async ({
     page,
   }) => {
-    await page.goto("/settings");
+    await page.goto("/settings/preferences");
     expect(await isDark(page)).toBe(false);
     const colours = await page.evaluate(() =>
       Array.from(

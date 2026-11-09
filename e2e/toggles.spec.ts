@@ -26,7 +26,7 @@ test.describe("the Owner", () => {
   test("turns on a Toggle in Testing and it stays on (US2.1, US2.2)", async ({
     page,
   }) => {
-    await page.goto("/settings");
+    await page.goto("/settings/features");
 
     await expect(section(page)).toBeVisible();
     await expect(exampleSwitch(page)).not.toBeChecked();
@@ -49,12 +49,11 @@ test.describe("a User who is not the Owner", () => {
   test.use({ storageState: authFile("cleo") });
 
   test("sees no Try new features section (US2.4)", async ({ page }) => {
-    await page.goto("/settings");
+    await page.goto("/settings/features");
 
     await expect(
-      page.getByRole("heading", { name: "Settings", level: 1 }),
+      page.getByRole("heading", { name: "Features", level: 1 }),
     ).toBeVisible();
-    await expect(page.getByRole("region", { name: "About" })).toBeVisible();
     await expect(section(page)).toHaveCount(0);
   });
 });
