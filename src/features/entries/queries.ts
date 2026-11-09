@@ -9,7 +9,7 @@ import {
 import { foodKeys } from "@/features/foods/queries";
 import { entryKeys, summaryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
-import { isMealTime } from "./meal-time";
+import { isMealTime, type MealTime } from "./meal-time";
 import type { Entry } from "./types";
 import type { FoodUsage } from "./usage";
 
@@ -218,6 +218,37 @@ export function useUpdateEntryQuantity() {
     onMutate: ({ entry, quantity }) =>
       patchDay(queryClient, entry.day, (current) =>
         current.map((e) => (e.id === entry.id ? { ...e, quantity } : e)),
+      ),
+    onError: (_error, { entry }, context) =>
+      queryClient.setQueryData(entryKeys.day(entry.day), context?.previous),
+    onSettled: (_data, _error, { entry }) =>
+      refreshAfterChange(queryClient, entry.day),
+  });
+}
+
+export function useUpdateEntryMealTime() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      entry,
+      mealTime,
+    }: {
+      entry: Entry;
+      mealTime: MealTime | null;
+    }) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("entries")
+        .update({ meal_time: mealTime })
+        .eq("id", entry.id)
+        .select("id");
+      // Row-level security hides other Users' Entries by matching no row, not by erroring.
+      if (error || !data?.length) throw new Error(SAVE_FAILED);
+    },
+    onMutate: ({ entry, mealTime }) =>
+      patchDay(queryClient, entry.day, (current) =>
+        current.map((e) => (e.id === entry.id ? { ...e, mealTime } : e)),
       ),
     onError: (_error, { entry }, context) =>
       queryClient.setQueryData(entryKeys.day(entry.day), context?.previous),

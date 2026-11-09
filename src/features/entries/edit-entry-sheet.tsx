@@ -9,7 +9,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useToggle } from "@/features/toggles/queries";
 import { formatEntryDetail } from "./domain";
+import type { MealTime } from "./meal-time";
+import { MealTimeChips } from "./meal-time-chips";
 import { QuantityPicker } from "./quantity-picker";
 import type { Entry } from "./types";
 
@@ -17,11 +20,19 @@ type Props = {
   /** The Entry being edited; null keeps the sheet closed. */
   entry: Entry | null;
   onChange: (entry: Entry, quantity: number) => void;
+  onChangeMealTime: (entry: Entry, mealTime: MealTime | null) => void;
   onRemove: (entry: Entry) => void;
   onClose: () => void;
 };
 
-export function EditEntrySheet({ entry, onChange, onRemove, onClose }: Props) {
+export function EditEntrySheet({
+  entry,
+  onChange,
+  onChangeMealTime,
+  onRemove,
+  onClose,
+}: Props) {
+  const mealTimesOn = useToggle("feature-173");
   return (
     <Sheet open={entry !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto">
@@ -47,6 +58,15 @@ export function EditEntrySheet({ entry, onChange, onRemove, onClose }: Props) {
                 onClose();
               }}
             />
+            {mealTimesOn ? (
+              <MealTimeChips
+                value={entry.mealTime ?? null}
+                onChange={(mealTime) => {
+                  onChangeMealTime(entry, mealTime);
+                  onClose();
+                }}
+              />
+            ) : null}
             <Button
               type="button"
               variant="outline"
