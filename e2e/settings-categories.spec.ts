@@ -40,8 +40,8 @@ test.describe("with the Toggle on", () => {
       }),
     ).toHaveAttribute("aria-current", "page");
     await page
+      .getByRole("main")
       .getByRole("link", { name: "Settings", exact: true })
-      .first()
       .click();
     await expect(page).toHaveURL(/\/settings$/);
 
