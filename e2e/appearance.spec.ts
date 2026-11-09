@@ -1,32 +1,13 @@
 import { expect, type Page, test } from "@playwright/test";
 import { authFile } from "./support/auth";
-import { userClient } from "./support/db";
 
-// Appearance (spec 147), behind Toggle feature-146. liv is the seeded Owner, who may turn it on
-// for herself. These tests change liv's Toggle, one at a time.
-test.describe.configure({ mode: "serial" });
-
-const TOGGLE = "feature-146";
-
-async function setToggle(on: boolean) {
-  const liv = await userClient("liv");
-  const { error } = await liv
-    .from("toggle_overrides")
-    .upsert(
-      { toggle_key: TOGGLE, enabled: on },
-      { onConflict: "toggle_key,user_id" },
-    );
-  if (error) throw error;
-}
+// Appearance (spec 147).
 
 const isDark = (page: Page) =>
   page.evaluate(() => document.documentElement.classList.contains("dark"));
 
-test.describe("with Appearance on", () => {
+test.describe("Appearance", () => {
   test.use({ storageState: authFile("liv") });
-
-  test.beforeEach(async () => setToggle(true));
-  test.afterAll(async () => setToggle(false));
 
   test("is Light until a choice is made (US1.3)", async ({ page }) => {
     await page.goto("/settings");
@@ -79,41 +60,12 @@ test.describe("with Appearance on", () => {
   });
 });
 
-test.describe("with Appearance off", () => {
-  test.use({ storageState: authFile("liv") });
-
-  test.beforeEach(async () => setToggle(false));
-
-  test("has no Appearance section (US1.2)", async ({ page }) => {
-    await page.goto("/settings");
-
-    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
-    await expect(page.getByText("Appearance")).toHaveCount(0);
-  });
-
-  test("clears a saved Dark once Toggles load off (US1.9)", async ({
-    page,
-  }) => {
-    await page.addInitScript(() => {
-      if (!sessionStorage.getItem("seeded")) {
-        localStorage.setItem("theme", "dark");
-        sessionStorage.setItem("seeded", "1");
-      }
-    });
-    await page.goto("/settings");
-
-    await expect.poll(() => isDark(page)).toBe(false);
-    expect(await page.evaluate(() => localStorage.getItem("theme"))).toBeNull();
-  });
-});
-
 test.describe("first frame and chrome", () => {
   test.use({ storageState: authFile("liv") });
 
   test("Dark saved is dark before hydration, with a matching theme colour (US2.1, US2.2)", async ({
     page,
   }) => {
-    await setToggle(true);
     await page.addInitScript(() => localStorage.setItem("theme", "dark"));
     await page.route("**/_next/static/chunks/**", (route) => route.abort());
     await page.goto("/settings", { waitUntil: "domcontentloaded" });
@@ -137,13 +89,11 @@ test.describe("first frame and chrome", () => {
         ),
       )
       .toEqual(expect.arrayContaining(["#0a0a0a"]));
-    await setToggle(false);
   });
 
   test("nothing saved leaves the page and theme colours as today (US2.4)", async ({
     page,
   }) => {
-    await setToggle(false);
     await page.goto("/settings");
     expect(await isDark(page)).toBe(false);
     const colours = await page.evaluate(() =>

@@ -6,7 +6,6 @@ import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 import { ThemeColor } from "@/components/theme-color";
 import { Toaster } from "@/components/ui/sonner";
-import { AppearanceCleanup } from "@/features/settings/appearance-section";
 import { makeQueryClient } from "@/lib/query-client";
 
 // Clears the 56px nav, the Add button above it, and the phone's gesture bar.
@@ -24,7 +23,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
-        <AppearanceCleanup />
         <ThemeColor />
         {children}
         {/* Bottom, just above the Add button and bottom nav: within thumb reach for Undo, and never

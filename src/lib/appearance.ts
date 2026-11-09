@@ -19,14 +19,6 @@ export function hasSavedAppearance(): boolean {
   }
 }
 
-export function clearSavedAppearance() {
-  try {
-    window.localStorage.removeItem(APPEARANCE_STORAGE_KEY);
-  } catch {
-    // Nothing saved, so nothing to clear.
-  }
-}
-
 // The browser's theme colour (status bar) for a resolved theme: the page background in each.
 export const THEME_COLORS = { light: "#ffffff", dark: "#0a0a0a" } as const;
 

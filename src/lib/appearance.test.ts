@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   APPEARANCE_STORAGE_KEY,
-  clearSavedAppearance,
   hasSavedAppearance,
   parseAppearance,
   themeColor,
@@ -27,25 +26,19 @@ describe("parseAppearance", () => {
 });
 
 describe("saved choice", () => {
-  it("is cleared", () => {
-    window.localStorage.setItem(APPEARANCE_STORAGE_KEY, "dark");
-    expect(hasSavedAppearance()).toBe(true);
-
-    clearSavedAppearance();
-
+  it("is found once saved", () => {
     expect(hasSavedAppearance()).toBe(false);
+    window.localStorage.setItem(APPEARANCE_STORAGE_KEY, "dark");
+
+    expect(hasSavedAppearance()).toBe(true);
   });
 
   it("never throws when storage is blocked (US1.7)", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("blocked");
     });
-    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
-      throw new Error("blocked");
-    });
 
     expect(hasSavedAppearance()).toBe(false);
-    expect(() => clearSavedAppearance()).not.toThrow();
   });
 });
 
