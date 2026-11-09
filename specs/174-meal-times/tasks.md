@@ -69,13 +69,13 @@ description: "Tasks for Meal times"
 
 ### Tests (write first, see them fail)
 
-- [ ] T014 [P] [US3] Testing Library: chips shown, change and clear, rollback, Toggle off, in `edit-entry-sheet.test.tsx`
-- [ ] T015 [US3] Playwright: change a tag and see the Entry move group, in `e2e/meal-times.spec.ts`
+- [x] T014 [P] [US3] Testing Library: chips shown, change and clear, rollback, Toggle off, in `edit-entry-sheet.test.tsx`
+- [x] T015 [US3] Playwright: change a tag and see the Entry move group, in `e2e/meal-times.spec.ts`
 
 ### Implementation
 
-- [ ] T016 [US3] Update-Meal-time mutation (optimistic, rolls back) in `queries.ts`
-- [ ] T017 [US3] Chips in `edit-entry-sheet.tsx`, gated by the Toggle
+- [x] T016 [US3] Update-Meal-time mutation (optimistic, rolls back) in `queries.ts`
+- [x] T017 [US3] Chips in `edit-entry-sheet.tsx`, gated by the Toggle
 
 **Checkpoint**: `pnpm validate` passes.
 

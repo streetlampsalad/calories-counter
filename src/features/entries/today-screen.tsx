@@ -25,6 +25,7 @@ import {
   useDayEntries,
   useRemoveEntries,
   useRemoveEntry,
+  useUpdateEntryMealTime,
   useUpdateEntryQuantity,
 } from "./queries";
 import { TodayPill } from "./today-pill";
@@ -61,6 +62,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
   const addEntries = useAddEntries();
   const removeEntries = useRemoveEntries();
   const updateQuantity = useUpdateEntryQuantity();
+  const updateMealTime = useUpdateEntryMealTime();
   const selection = useSelection();
   const [picking, setPicking] = useState(false);
   const [editing, setEditing] = useState<Entry | null>(null);
@@ -75,6 +77,21 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
       goToDay(shiftDay(day, direction === "next" ? 1 : -1));
     },
   });
+
+  function changeMealTime(entry: Entry, mealTime: MealTime | null) {
+    updateMealTime.mutate(
+      { entry, mealTime },
+      {
+        onError: (error) =>
+          toast.error(error.message, {
+            action: {
+              label: "Retry",
+              onClick: () => updateMealTime.mutate({ entry, mealTime }),
+            },
+          }),
+      },
+    );
+  }
 
   function changeQuantity(entry: Entry, quantity: number) {
     updateQuantity.mutate(
@@ -279,6 +296,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
       <EditEntrySheet
         entry={editing}
         onChange={changeQuantity}
+        onChangeMealTime={changeMealTime}
         onRemove={remove}
         onClose={() => setEditing(null)}
       />

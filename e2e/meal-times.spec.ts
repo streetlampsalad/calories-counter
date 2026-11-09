@@ -79,3 +79,53 @@ test("two Meal times show two groups with their calories (US2.1, US2.2, US2.4)",
   await expect(headings).toHaveText(["Breakfast100 kcal", "Lunch100 kcal"]);
   await expect(page.getByRole("heading", { name: /Dinner/ })).toHaveCount(0);
 });
+
+test("change a Meal time and see the Entry move group (US3.1, US3.2)", async ({
+  page,
+}) => {
+  const liv = await userClient("liv");
+  await clearDay(liv, DAY);
+  const food = await seedFood(liv, { portion: "1 slice", calories: 100 });
+  const { error } = await liv
+    .from("entries")
+    .insert({ day: DAY, food_id: food.id, quantity: 1, meal_time: "lunch" });
+  if (error) throw error;
+  // A second tagged Entry keeps the Day grouped when the first one is cleared.
+  const second = await seedFood(liv, { portion: "1 cup", calories: 50 });
+  const { error: secondError } = await liv.from("entries").insert({
+    day: DAY,
+    food_id: second.id,
+    quantity: 1,
+    meal_time: "breakfast",
+  });
+  if (secondError) throw secondError;
+
+  await page.goto(`/?day=${DAY}`);
+  await page
+    .getByRole("list", { name: "Entries" })
+    .getByRole("listitem")
+    .filter({ hasText: food.name })
+    .getByRole("button")
+    .click();
+  const sheet = page.getByRole("dialog", { name: "Edit entry" });
+  await expect(sheet.getByRole("button", { name: "Lunch" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await sheet.getByRole("button", { name: "Dinner" }).click();
+
+  const headings = page.getByRole("heading", { level: 3 });
+  await expect(headings).toHaveText(["Breakfast50 kcal", "Dinner100 kcal"]);
+
+  await page
+    .getByRole("list", { name: "Entries" })
+    .getByRole("listitem")
+    .filter({ hasText: food.name })
+    .getByRole("button")
+    .click();
+  await page
+    .getByRole("dialog", { name: "Edit entry" })
+    .getByRole("button", { name: "Dinner" })
+    .click();
+  await expect(headings).toHaveText(["Breakfast50 kcal", "Other100 kcal"]);
+});

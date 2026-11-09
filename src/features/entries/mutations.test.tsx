@@ -30,6 +30,7 @@ import {
   useAddEntry,
   useRemoveEntries,
   useRemoveEntry,
+  useUpdateEntryMealTime,
   useUpdateEntryQuantity,
 } from "./queries";
 import type { Entry } from "./types";
@@ -385,5 +386,67 @@ describe("useUpdateEntryQuantity", () => {
     const keys = invalidate.mock.calls.map(([filters]) => filters?.queryKey);
     expect(keys).toContainEqual(entryKeys.day(DAY));
     expect(keys).toContainEqual(summaryKeys.all);
+  });
+});
+
+describe("useUpdateEntryMealTime", () => {
+  beforeEach(() => updateSelect.mockReset());
+
+  it("changes the Meal time straight away and saves it (US3.2)", async () => {
+    let finish: (value: unknown) => void = () => {};
+    updateSelect.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const { queryClient, wrapper } = setup([toast, rice]);
+    const { result } = renderHook(() => useUpdateEntryMealTime(), { wrapper });
+
+    act(() => result.current.mutate({ entry: toast, mealTime: "dinner" }));
+
+    await waitFor(() =>
+      expect(cached(queryClient)?.[0].mealTime).toBe("dinner"),
+    );
+    finish({ data: [{ id: "e1" }], error: null });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(updateSelect).toHaveBeenCalledWith({ meal_time: "dinner" }, "e1");
+  });
+
+  it("clears the Meal time (US3.2)", async () => {
+    updateSelect.mockResolvedValue({ data: [{ id: "e1" }], error: null });
+    const tagged: Entry = { ...toast, mealTime: "lunch" };
+    const { queryClient, wrapper } = setup([tagged, rice]);
+    const { result } = renderHook(() => useUpdateEntryMealTime(), { wrapper });
+
+    act(() => result.current.mutate({ entry: tagged, mealTime: null }));
+
+    await waitFor(() => expect(cached(queryClient)?.[0].mealTime).toBeNull());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(updateSelect).toHaveBeenCalledWith({ meal_time: null }, "e1");
+  });
+
+  it("puts the old Meal time back when saving fails (US3.2)", async () => {
+    updateSelect.mockResolvedValue({
+      data: null,
+      error: { code: "08006", message: "down" },
+    });
+    const { queryClient, wrapper } = setup([toast, rice]);
+    const { result } = renderHook(() => useUpdateEntryMealTime(), { wrapper });
+
+    act(() => result.current.mutate({ entry: toast, mealTime: "dinner" }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(cached(queryClient)).toEqual([toast, rice]);
+  });
+
+  it("treats an update that touched no row as a failure", async () => {
+    updateSelect.mockResolvedValue({ data: [], error: null });
+    const { queryClient, wrapper } = setup([toast, rice]);
+    const { result } = renderHook(() => useUpdateEntryMealTime(), { wrapper });
+
+    act(() => result.current.mutate({ entry: toast, mealTime: "dinner" }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(cached(queryClient)).toEqual([toast, rice]);
   });
 });
