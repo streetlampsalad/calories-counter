@@ -1,6 +1,6 @@
 # Choosing the next Issue
 
-The Dispatcher runs `/deliver next` hourly and after each merge. Pick exactly one Issue.
+The Dispatcher runs `/deliver next` hourly, after each merge, and when an Issue event gives it work ([dispatcher.md](../../../docs/agents/dispatcher.md)). Pick exactly one Issue.
 
 ## Candidates
 

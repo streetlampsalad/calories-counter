@@ -25,7 +25,12 @@ These are hard guardrails, because this workflow can reach production with no hu
 
 ## 2. Claim it
 
-Assign yourself and comment `Claimed by /deliver`. Done when the assignment shows on the Issue. Then read the Issue, its comments, its parent and any Issue it is blocked by.
+Assign yourself and comment `Claimed by /deliver <tag>`, with a fresh random tag. Every Dispatcher run acts as the same GitHub user, so two runs can both assign themselves without either noticing. So check you got there first, with the claim recipe in [github.md](github.md): of the `Claimed by /deliver` comments posted since the Issue was last unassigned, the oldest wins.
+
+- **Yours is the oldest:** re-read the Issue. If it no longer qualifies (another run already delivered it, for example), unassign yourself and pick again.
+- **Another run's is older:** that run has the Issue. Delete your comment, leave the assignment as it is, and pick again (`/deliver #<n>`: stop).
+
+Done when you hold the claim on an Issue that still qualifies. Then read the Issue, its comments, its parent and any Issue it is blocked by.
 
 In a cloud session, before you change anything, put the `claude/*` branch you were given on the latest `main`: `git fetch origin main && git checkout -B <that branch> origin/main`. A run started by a merge begins with the merged pull request's branch checked out, and pull requests are squash-merged, so that branch's commits never reach `main`. Work built on it would repeat them in its own pull request.
 

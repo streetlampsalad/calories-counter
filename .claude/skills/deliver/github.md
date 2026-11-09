@@ -32,6 +32,15 @@ gh api -X POST "repos/$R/issues/<n>/assignees" -f 'assignees[]=<login>'
 gh api -X DELETE "repos/$R/issues/<n>/assignees" -f 'assignees[]=<login>'
 ```
 
+Claim, then check no other run claimed it first (SKILL.md step 2):
+
+```bash
+mine="$(gh api -X POST "repos/$R/issues/<n>/comments" -f body="Claimed by /deliver $(openssl rand -hex 4)" --jq .id)"
+since="$(gh api "repos/$R/issues/<n>/events?per_page=100" --jq '[.[] | select(.event == "unassigned") | .created_at] | last // ""')"
+first="$(gh api "repos/$R/issues/<n>/comments?per_page=100" --jq "[.[] | select((.body | startswith(\"Claimed by /deliver\")) and .created_at >= \"$since\")] | min_by(.id) | .id")"
+[ "$first" = "$mine" ] && echo "claim held" || { gh api -X DELETE "repos/$R/issues/comments/$mine"; echo "another run has it"; }
+```
+
 ## Labels and comments
 
 ```bash
