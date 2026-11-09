@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
+import { ThemeColor } from "@/components/theme-color";
 import { Toaster } from "@/components/ui/sonner";
 import { AppearanceCleanup } from "@/features/settings/appearance-section";
 import { makeQueryClient } from "@/lib/query-client";
@@ -24,6 +25,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <AppearanceCleanup />
+        <ThemeColor />
         {children}
         {/* Bottom, just above the Add button and bottom nav: within thumb reach for Undo, and never
           covering the header controls at the top of the screen. */}

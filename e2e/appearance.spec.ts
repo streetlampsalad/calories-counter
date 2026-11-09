@@ -106,3 +106,51 @@ test.describe("with Appearance off", () => {
     expect(await page.evaluate(() => localStorage.getItem("theme"))).toBeNull();
   });
 });
+
+test.describe("first frame and chrome", () => {
+  test.use({ storageState: authFile("liv") });
+
+  test("Dark saved is dark before hydration, with a matching theme colour (US2.1, US2.2)", async ({
+    page,
+  }) => {
+    await setToggle(true);
+    await page.addInitScript(() => localStorage.setItem("theme", "dark"));
+    await page.route("**/_next/static/chunks/**", (route) => route.abort());
+    await page.goto("/settings", { waitUntil: "domcontentloaded" });
+
+    expect(await isDark(page)).toBe(true);
+    const bg = await page.evaluate(
+      () => getComputedStyle(document.body).backgroundColor,
+    );
+    expect(bg).not.toBe("rgb(255, 255, 255)");
+
+    await page.unrouteAll();
+    await page.reload();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          Array.from(
+            document.querySelectorAll<HTMLMetaElement>(
+              'meta[name="theme-color"]',
+            ),
+          ).map((m) => m.content),
+        ),
+      )
+      .toEqual(expect.arrayContaining(["#0a0a0a"]));
+    await setToggle(false);
+  });
+
+  test("nothing saved leaves the page and theme colours as today (US2.4)", async ({
+    page,
+  }) => {
+    await setToggle(false);
+    await page.goto("/settings");
+    expect(await isDark(page)).toBe(false);
+    const colours = await page.evaluate(() =>
+      Array.from(
+        document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'),
+      ).map((m) => m.content),
+    );
+    expect(colours).toEqual(["#ffffff", "#0a0a0a"]);
+  });
+});
