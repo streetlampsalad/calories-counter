@@ -89,7 +89,7 @@ test("nothing buzzes after Vibration is turned off in Settings, and it stays off
 }) => {
   const day = "2001-07-12";
   const food = await arrange(day);
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
   await expect(vibrationSwitch(page)).toBeChecked();
 
   await vibrationSwitch(page).click();
@@ -106,7 +106,7 @@ test("nothing buzzes after Vibration is turned off in Settings, and it stays off
 test("turning Vibration back on makes it buzz again", async ({ page }) => {
   const day = "2001-07-13";
   const food = await arrange(day);
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
   await vibrationSwitch(page).click();
   await vibrationSwitch(page).click();
   await expect(vibrationSwitch(page)).toBeChecked();
@@ -201,7 +201,7 @@ test("a delete that fails is felt twice: firmly, then the double pulse", async (
 });
 
 test("the Vibration row is easy to tap", async ({ page }) => {
-  await page.goto("/settings");
+  await page.goto("/settings/preferences");
 
   const row = await page.getByText("Vibration", { exact: true }).boundingBox();
 
@@ -223,11 +223,11 @@ test.describe("on a phone that cannot vibrate", () => {
   }) => {
     const day = "2001-07-14";
     const food = await arrange(day);
-    await page.goto("/settings");
+    await page.goto("/settings/preferences");
     await expect(
-      page.getByRole("heading", { name: "Settings", level: 1 }),
+      page.getByRole("heading", { name: "Preferences", level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText("Week starts on")).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Dark" })).toBeVisible();
     await expect(vibrationSwitch(page)).toHaveCount(0);
 
     await page.goto(`/?day=${day}`);

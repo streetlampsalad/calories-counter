@@ -247,6 +247,7 @@ test("changing the week start in Settings updates the Summary without a reload",
     .getByRole("navigation", { name: "Main" })
     .getByRole("link", { name: "Settings" })
     .click();
+  await page.getByRole("link", { name: /Tracking/ }).click();
   const written = page.waitForResponse(
     (response) =>
       response.request().method() !== "GET" &&

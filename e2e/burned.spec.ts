@@ -87,7 +87,7 @@ test("nothing about Calories Burned shows until the User turns it on (AC-1, AC-2
   await expect(burnedRow(page)).toHaveCount(0);
   await expect(page.getByText(/deficit|surplus/i)).toHaveCount(0);
 
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   await expect(trackSwitch(page)).not.toBeChecked();
 });
 
@@ -95,7 +95,7 @@ test("turning the switch on shows the Burned row on Today (AC-1, AC-3)", async (
   page,
 }) => {
   await arrange({ tracking: false });
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   const written = page.waitForResponse(
     (response) =>
       response.request().method() !== "GET" &&
@@ -283,7 +283,7 @@ test("switching it off hides everything but keeps the figures (AC-2)", async ({
     entry: { day: PAST, calories: 1840 },
     burned: { day: PAST, calories: 2450 },
   });
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   await expect(trackSwitch(page)).toBeChecked();
   const written = page.waitForResponse(
     (response) =>
@@ -300,7 +300,7 @@ test("switching it off hides everything but keeps the figures (AC-2)", async ({
   const { data } = await kit.from("calories_burned").select("calories");
   expect(data).toEqual([{ calories: 2450 }]);
 
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   const back = page.waitForResponse(
     (response) =>
       response.request().method() !== "GET" &&

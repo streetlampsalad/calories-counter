@@ -41,7 +41,7 @@ async function logDay(day: string, calories: number, quantity = 1) {
 test("a new User has no Goal", async ({ page }) => {
   await startFresh();
 
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   await expect(
     page.getByRole("button", { name: "Daily goal: not set. Change" }),
@@ -53,7 +53,7 @@ test("setting a Goal shows it in Settings and keeps it after a reload", async ({
   page,
 }) => {
   await startFresh();
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   const saved = settingsWritten(page);
   await setGoal(page, "2200");
@@ -68,7 +68,7 @@ test("the Goal sheet opens with the numeric keypad focused", async ({
   page,
 }) => {
   await startFresh();
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   await page.getByRole("button", { name: /^Daily goal:/ }).click();
 
@@ -83,7 +83,7 @@ test("a Goal outside 500 to 10,000 is refused with a message", async ({
   page,
 }) => {
   await startFresh();
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   await setGoal(page, "499");
 
@@ -100,7 +100,7 @@ test("Today shows the total against the Goal, with what is left", async ({
 }) => {
   await startFresh();
   await logDay("2001-08-01", 100, 2);
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   const saved = settingsWritten(page);
   await setGoal(page, "2200");
   await saved;
@@ -119,7 +119,7 @@ test("Today shows the total against the Goal, with what is left", async ({
 test("a Day over the Goal says by how much", async ({ page }) => {
   await startFresh();
   await logDay("2001-08-02", 300, 2); // 600 kcal
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   const saved = settingsWritten(page);
   await setGoal(page, "500");
   await saved;
@@ -135,14 +135,14 @@ test("clearing the Goal takes the comparison away everywhere", async ({
 }) => {
   await startFresh();
   await logDay("2001-08-03", 100);
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   let saved = settingsWritten(page);
   await setGoal(page, "2000");
   await saved;
   await page.goto("/?day=2001-08-03");
   await expect(page.getByRole("progressbar")).toBeVisible();
 
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   saved = settingsWritten(page);
   await page.getByRole("button", { name: /^Daily goal:/ }).click();
   await goalDialog(page).getByRole("button", { name: "Clear goal" }).click();
@@ -168,7 +168,7 @@ test("a failed save puts the old Goal back and offers to retry", async ({
         })
       : route.continue(),
   );
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   await setGoal(page, "2200");
 
@@ -181,7 +181,7 @@ test("Settings fits a phone, and the Goal row is easy to hit", async ({
   page,
 }) => {
   await startFresh();
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   const box = await page
     .getByRole("button", { name: /^Daily goal:/ })
@@ -196,7 +196,7 @@ test("Settings fits a phone, and the Goal row is easy to hit", async ({
 test("weeks start on Monday until changed", async ({ page }) => {
   await startFresh();
 
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   await expect(page.getByRole("button", { name: "Monday" })).toHaveAttribute(
     "aria-pressed",
@@ -212,7 +212,7 @@ test("choosing Sunday is saved straight away and kept after a reload, and Monday
   page,
 }) => {
   await startFresh();
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   let saved = settingsWritten(page);
   await page.getByRole("button", { name: "Sunday" }).click();
@@ -245,7 +245,7 @@ test("changing the week start does not disturb the Goal, and vice versa", async 
   page,
 }) => {
   await startFresh();
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
   let saved = settingsWritten(page);
   await setGoal(page, "1900");
   await expect(page.getByText("1,900 kcal")).toBeVisible();
@@ -276,7 +276,7 @@ test("a failed week-start save goes back to the old choice", async ({
         })
       : route.continue(),
   );
-  await page.goto("/settings");
+  await page.goto("/settings/tracking");
 
   await page.getByRole("button", { name: "Sunday" }).click();
 
