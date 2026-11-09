@@ -1,7 +1,5 @@
 import type { Toggle } from "@/features/toggles/queries";
 
-export const SETTINGS_CATEGORIES_TOGGLE = "feature-167";
-
 export type SettingsCategoryId = "tracking" | "preferences" | "features";
 
 export type SettingsCategory = {
