@@ -1,10 +1,9 @@
 "use server";
 
-import { isToggleOn } from "@/features/toggles/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { type DecideResult, decide } from "./decide";
-import { type Decision, FEATURE_REQUESTS_TOGGLE, type Stage } from "./domain";
+import type { Decision, Stage } from "./domain";
 import { createFeatureIssues } from "./feature-issues";
 import { type FeedbackResult, giveFeedback as feedback } from "./feedback";
 import { type SubmitResult, submitFeatureRequest as submit } from "./submit";
@@ -22,7 +21,6 @@ export async function submitFeatureRequest(
   const admin = createAdminClient();
 
   return submit(input, {
-    toggleOn: () => isToggleOn(FEATURE_REQUESTS_TOGGLE),
     userId: async () => {
       const { data } = await supabase.auth.getClaims();
       return data?.claims.sub ?? null;
@@ -65,7 +63,6 @@ export async function withdrawFeatureRequest(
   const admin = createAdminClient();
 
   return withdraw(input, {
-    toggleOn: () => isToggleOn(FEATURE_REQUESTS_TOGGLE),
     userId: async () => {
       const { data } = await supabase.auth.getClaims();
       return data?.claims.sub ?? null;
@@ -104,7 +101,6 @@ export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
   const admin = createAdminClient();
 
   return feedback(input, {
-    toggleOn: () => isToggleOn(FEATURE_REQUESTS_TOGGLE),
     userId: async () => {
       const { data } = await supabase.auth.getClaims();
       return data?.claims.sub ?? null;
@@ -174,7 +170,6 @@ async function decideOn(
   const admin = createAdminClient();
 
   return decide(input, decision, {
-    toggleOn: () => isToggleOn(FEATURE_REQUESTS_TOGGLE),
     userId: async () => {
       const { data } = await supabase.auth.getClaims();
       return data?.claims.sub ?? null;

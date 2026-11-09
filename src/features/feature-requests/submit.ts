@@ -7,7 +7,6 @@ export type SubmitResult =
   | { ok: false; code: "not_found" | "invalid" | "limit" | "unavailable" };
 
 export type SubmitDeps = {
-  toggleOn: () => Promise<boolean>;
   userId: () => Promise<string | null>;
   insert: (row: {
     user_id: string;
@@ -29,7 +28,6 @@ export async function submitFeatureRequest(
   input: unknown,
   deps: SubmitDeps,
 ): Promise<SubmitResult> {
-  if (!(await deps.toggleOn())) return { ok: false, code: "not_found" };
   const userId = await deps.userId();
   if (!userId) return { ok: false, code: "not_found" };
 

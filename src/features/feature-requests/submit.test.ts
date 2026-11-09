@@ -16,7 +16,6 @@ function setup(overrides: Partial<SubmitDeps> = {}) {
     addLabels: vi.fn(async () => {}),
   };
   const deps: SubmitDeps = {
-    toggleOn: vi.fn(async () => true),
     userId: vi.fn(async () => USER),
     insert: vi.fn(async () => ({ id: ID })),
     setIssue: vi.fn(async () => {}),
@@ -51,17 +50,6 @@ describe("submitFeatureRequest", () => {
     });
     expect(deps.setIssue).toHaveBeenCalledWith(ID, 321);
     expect(deps.remove).not.toHaveBeenCalled();
-  });
-
-  it("refuses while the Toggle is off, before anything else (US1.2)", async () => {
-    const { deps, issues } = setup({ toggleOn: vi.fn(async () => false) });
-
-    expect(await submitFeatureRequest(VALID, deps)).toEqual({
-      ok: false,
-      code: "not_found",
-    });
-    expect(deps.insert).not.toHaveBeenCalled();
-    expect(issues.create).not.toHaveBeenCalled();
   });
 
   it("refuses with nobody signed in", async () => {

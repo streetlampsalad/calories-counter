@@ -23,7 +23,6 @@ export type RequestBefore = {
 };
 
 export type FeedbackDeps = {
-  toggleOn: () => Promise<boolean>;
   userId: () => Promise<string | null>;
   /**
    * Starts a Round on the caller's own request and puts it back at Submitted, in one transaction
@@ -56,7 +55,6 @@ export async function giveFeedback(
     feedback?: unknown;
   };
   if (typeof id !== "string" || !UUID.test(id)) return NOT_ALLOWED;
-  if (!(await deps.toggleOn())) return NOT_ALLOWED;
   const userId = await deps.userId();
   if (!userId) return NOT_ALLOWED;
 

@@ -5,7 +5,6 @@ export type WithdrawResult =
   | { ok: false; code: "not_allowed" | "unavailable" };
 
 export type WithdrawDeps = {
-  toggleOn: () => Promise<boolean>;
   userId: () => Promise<string | null>;
   /**
    * Marks the caller's own request withdrawn, in one update that also checks it is still at
@@ -36,7 +35,6 @@ export async function withdrawFeatureRequest(
 ): Promise<WithdrawResult> {
   const id = (input as { id?: unknown } | null)?.id;
   if (typeof id !== "string" || !UUID.test(id)) return NOT_ALLOWED;
-  if (!(await deps.toggleOn())) return NOT_ALLOWED;
   const userId = await deps.userId();
   if (!userId) return NOT_ALLOWED;
 

@@ -1,25 +1,14 @@
 import { expect, test } from "@playwright/test";
 import { authFile, TEST_USERS } from "./support/auth";
-import { adminClient, userClient } from "./support/db";
+import { adminClient } from "./support/db";
 
-// Feature Requests (spec 124), behind Toggle feature-114. liv is the seeded Owner, who may turn it
-// on for herself; GitHub is faked (FEATURE_ISSUES=fake). These tests change liv's requests, one at a time.
+// Feature Requests (spec 124). liv is the seeded Owner; GitHub is faked (FEATURE_ISSUES=fake). These tests change liv's requests, one at a time.
 test.describe.configure({ mode: "serial" });
 
-const TOGGLE = "feature-114";
-
-test.describe("the Owner, with Feature Requests on", () => {
+test.describe("the Owner", () => {
   test.use({ storageState: authFile("liv") });
 
   test.beforeEach(async () => {
-    const liv = await userClient("liv");
-    const { error } = await liv
-      .from("toggle_overrides")
-      .upsert(
-        { toggle_key: TOGGLE, enabled: true },
-        { onConflict: "toggle_key,user_id" },
-      );
-    if (error) throw error;
     const cleared = await adminClient()
       .from("feature_requests")
       .delete()
@@ -94,26 +83,6 @@ test.describe("the Owner, with Feature Requests on", () => {
   });
 });
 
-test.describe("a User without the Toggle", () => {
-  test.use({ storageState: authFile("cleo") });
-
-  test("has no way in, and the pages are not found (US1.2)", async ({
-    page,
-  }) => {
-    await page.goto("/settings");
-    await expect(page.getByRole("region", { name: "About" })).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /Feature requests/ }),
-    ).toHaveCount(0);
-
-    await page.goto("/settings/feature-requests");
-    await expect(page.getByText("This page could not be found.")).toBeVisible();
-
-    await page.goto("/settings/feature-requests/new");
-    await expect(page.getByText("This page could not be found.")).toBeVisible();
-  });
-});
-
 test.describe("stages from the board workflow (Slice 2)", () => {
   test.use({ storageState: authFile("liv") });
 
@@ -135,14 +104,6 @@ test.describe("stages from the board workflow (Slice 2)", () => {
   }
 
   test.beforeEach(async () => {
-    const liv = await userClient("liv");
-    const on = await liv
-      .from("toggle_overrides")
-      .upsert(
-        { toggle_key: "feature-114", enabled: true },
-        { onConflict: "toggle_key,user_id" },
-      );
-    if (on.error) throw on.error;
     await clear();
     const { error } = await adminClient()
       .from("feature_requests")
