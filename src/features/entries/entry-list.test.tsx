@@ -1,6 +1,12 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const toggleOn = vi.fn();
+vi.mock("@/features/toggles/queries", () => ({
+  useToggle: (key: string) => toggleOn(key),
+}));
+
 import { DailyTotal, EntryList } from "./entry-list";
 import type { Entry } from "./types";
 
@@ -17,7 +23,45 @@ const entry = (
   food: { id: name, name, portion, calories },
 });
 
+describe("EntryList Meal time", () => {
+  beforeEach(() => toggleOn.mockReset());
+
+  it("shows the Meal time on the row when the Toggle is on", () => {
+    toggleOn.mockReturnValue(true);
+    render(
+      <EntryList
+        entries={[{ ...entry("Toast", 1, 110), mealTime: "lunch" }]}
+      />,
+    );
+
+    expect(toggleOn).toHaveBeenCalledWith("feature-173");
+    expect(screen.getByRole("listitem")).toHaveTextContent(
+      "1 × 1 slice · 110 kcal · Lunch",
+    );
+  });
+
+  it("shows nothing for an Entry with no Meal time", () => {
+    toggleOn.mockReturnValue(true);
+    render(<EntryList entries={[entry("Toast", 1, 110)]} />);
+
+    expect(screen.getByRole("listitem")).not.toHaveTextContent("Lunch");
+  });
+
+  it("shows no Meal time when the Toggle is off", () => {
+    toggleOn.mockReturnValue(false);
+    render(
+      <EntryList
+        entries={[{ ...entry("Toast", 1, 110), mealTime: "lunch" }]}
+      />,
+    );
+
+    expect(screen.getByRole("listitem")).not.toHaveTextContent("Lunch");
+  });
+});
+
 describe("EntryList", () => {
+  beforeEach(() => toggleOn.mockReturnValue(false));
+
   it("shows each Entry as Food name, then Quantity × Portion and calories", () => {
     render(
       <EntryList

@@ -9,18 +9,20 @@ import {
 import { foodKeys } from "@/features/foods/queries";
 import { entryKeys, summaryKeys } from "@/lib/query-keys";
 import { createClient } from "@/lib/supabase/client";
+import { isMealTime } from "./meal-time";
 import type { Entry } from "./types";
 import type { FoodUsage } from "./usage";
 
 // An Entry plus the Food it refers to, joined so the calories are always the Food's current ones.
 export const ENTRY_SELECT =
-  "id, day, quantity, created_at, food:foods!inner(id, name, portion, calories)";
+  "id, day, quantity, created_at, meal_time, food:foods!inner(id, name, portion, calories)";
 
 type EntryRow = {
   id: string;
   day: string;
   quantity: number;
   created_at: string;
+  meal_time?: string | null;
   food: { id: string; name: string; portion: string; calories: number };
 };
 
@@ -29,6 +31,7 @@ export const toEntry = (row: EntryRow): Entry => ({
   day: row.day,
   quantity: Number(row.quantity),
   createdAt: row.created_at,
+  mealTime: isMealTime(row.meal_time) ? row.meal_time : null,
   food: row.food,
 });
 
@@ -83,6 +86,7 @@ const toRow = (entry: Entry) => ({
   day: entry.day,
   quantity: entry.quantity,
   created_at: entry.createdAt,
+  meal_time: entry.mealTime ?? null,
 });
 
 const newestFirst = (entries: Entry[]) =>

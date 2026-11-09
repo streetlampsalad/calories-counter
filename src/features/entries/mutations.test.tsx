@@ -101,7 +101,21 @@ describe("useAddEntry", () => {
       day: DAY,
       quantity: 1.5,
       created_at: "2026-11-03T08:00:00.000Z",
+      meal_time: null,
     });
+  });
+
+  it("saves the Meal time with the Entry, and Undo puts it back (US1.4, US1.8)", async () => {
+    insert.mockResolvedValue({ error: null });
+    const { wrapper } = setup([]);
+    const { result } = renderHook(() => useAddEntry(), { wrapper });
+
+    act(() => result.current.mutate({ ...toast, mealTime: "dinner" }));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "e1", meal_time: "dinner" }),
+    );
   });
 
   it("takes the Entry back off when saving fails", async () => {
@@ -234,6 +248,7 @@ describe("useAddEntries", () => {
         day: DAY,
         quantity: 1.5,
         created_at: "2026-11-03T08:00:00.000Z",
+        meal_time: null,
       },
       {
         id: "e2",
@@ -241,6 +256,7 @@ describe("useAddEntries", () => {
         day: DAY,
         quantity: 2,
         created_at: "2026-11-03T07:00:00.000Z",
+        meal_time: null,
       },
     ]);
   });

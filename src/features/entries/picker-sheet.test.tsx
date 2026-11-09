@@ -25,6 +25,11 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+const mealTimesOn = vi.fn();
+vi.mock("@/features/toggles/queries", () => ({
+  useToggle: () => mealTimesOn(),
+}));
+
 import { FoodPickerSheet } from "./picker-sheet";
 
 const food = (name: string, portion = "1 slice", calories = 100): Food => ({
@@ -38,12 +43,13 @@ const apple = food("Apple", "1 piece", 80);
 const toast = food("Sourdough toast", "1 slice", 110);
 const latte = food("Café latte", "250 ml", 120);
 
-function open() {
+function open(day = "2026-11-03") {
   const onPick = vi.fn();
   const onClose = vi.fn();
   render(
     <FoodPickerSheet
       today="2026-11-03"
+      day={day}
       open
       onPick={onPick}
       onClose={onClose}
@@ -56,6 +62,9 @@ describe("FoodPickerSheet", () => {
   beforeEach(() => {
     useFoods.mockReset();
     useFoodUsage.mockReset();
+    mealTimesOn.mockReset();
+    mealTimesOn.mockReturnValue(false);
+    vi.useRealTimers();
     useFoodUsage.mockReturnValue({ data: [] });
     useFoods.mockReturnValue({
       data: [apple, latte, toast],
@@ -171,7 +180,7 @@ describe("FoodPickerSheet", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "Add 1½" }));
 
-    expect(onPick).toHaveBeenCalledWith(toast, 1.5);
+    expect(onPick).toHaveBeenCalledWith(toast, 1.5, null);
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -250,6 +259,7 @@ describe("FoodPickerSheet: reopening", () => {
     const { rerender } = render(
       <FoodPickerSheet
         today="2026-11-03"
+        day="2026-11-03"
         open
         onPick={onPick}
         onClose={onClose}
@@ -267,6 +277,7 @@ describe("FoodPickerSheet: reopening", () => {
     rerender(
       <FoodPickerSheet
         today="2026-11-03"
+        day="2026-11-03"
         open={false}
         onPick={onPick}
         onClose={onClose}
@@ -275,6 +286,7 @@ describe("FoodPickerSheet: reopening", () => {
     rerender(
       <FoodPickerSheet
         today="2026-11-03"
+        day="2026-11-03"
         open
         onPick={onPick}
         onClose={onClose}
@@ -402,7 +414,7 @@ describe("FoodPickerSheet: most-logged first, and Recent", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "Add 2" }));
 
-    expect(onPick).toHaveBeenCalledWith(rice, 2);
+    expect(onPick).toHaveBeenCalledWith(rice, 2, null);
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -413,6 +425,7 @@ describe("FoodPickerSheet: most-logged first, and Recent", () => {
     const { unmount } = render(
       <FoodPickerSheet
         today="2026-11-03"
+        day="2026-11-03"
         open
         onPick={vi.fn()}
         onClose={vi.fn()}
@@ -444,5 +457,102 @@ describe("FoodPickerSheet: most-logged first, and Recent", () => {
     expect(
       screen.queryByRole("group", { name: "Recent" }),
     ).not.toBeInTheDocument();
+  });
+
+  describe("Meal time chips (spec 174)", () => {
+    const chips = () =>
+      screen.getAllByRole("button", {
+        name: /^(Breakfast|Lunch|Dinner|Snack)$/,
+      });
+
+    async function pickToast(onPick: ReturnType<typeof vi.fn>) {
+      await userEvent.click(
+        screen.getByRole("button", { name: /Sourdough toast/ }),
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Add 1" }));
+      return onPick;
+    }
+
+    beforeEach(() => {
+      useFoods.mockReturnValue({
+        data: [apple, latte, toast],
+        isPending: false,
+        isError: false,
+      });
+      useFoodUsage.mockReturnValue({ data: [] });
+      mealTimesOn.mockReturnValue(true);
+      vi.useFakeTimers({ toFake: ["Date"], now: new Date(2026, 10, 3, 8, 0) });
+    });
+
+    it("shows four chips of at least 44 px, none chosen on another Day (US1.1, US1.7)", () => {
+      open("2026-11-04");
+
+      expect(chips().map((chip) => chip.textContent)).toEqual([
+        "Breakfast",
+        "Lunch",
+        "Dinner",
+        "Snack",
+      ]);
+      for (const chip of chips()) {
+        expect(chip).toHaveAttribute("aria-pressed", "false");
+        expect(chip).toHaveClass("min-h-11");
+      }
+    });
+
+    it("pre-chooses the chip for the time of day on today (US1.2)", () => {
+      open();
+
+      expect(screen.getByRole("button", { name: "Breakfast" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    });
+
+    it("chooses one chip at a time, and tapping the chosen chip clears it (US1.3)", async () => {
+      open();
+
+      await userEvent.click(screen.getByRole("button", { name: "Dinner" }));
+      expect(screen.getByRole("button", { name: "Dinner" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByRole("button", { name: "Breakfast" })).toHaveAttribute(
+        "aria-pressed",
+        "false",
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: "Dinner" }));
+      for (const chip of chips())
+        expect(chip).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("passes the chosen Meal time with the pick (US1.4)", async () => {
+      const { onPick } = open();
+      await userEvent.click(screen.getByRole("button", { name: "Snack" }));
+
+      await pickToast(onPick);
+
+      expect(onPick).toHaveBeenCalledWith(toast, 1, "snack");
+    });
+
+    it("passes none when no chip is chosen (US1.5)", async () => {
+      const { onPick } = open();
+      await userEvent.click(screen.getByRole("button", { name: "Breakfast" }));
+
+      await pickToast(onPick);
+
+      expect(onPick).toHaveBeenCalledWith(toast, 1, null);
+    });
+
+    it("shows no chips and passes no Meal time when the Toggle is off (US1.6)", async () => {
+      mealTimesOn.mockReturnValue(false);
+      const { onPick } = open();
+
+      expect(
+        screen.queryByRole("button", { name: "Breakfast" }),
+      ).not.toBeInTheDocument();
+      await pickToast(onPick);
+      expect(onPick).toHaveBeenCalledWith(toast, 1, null);
+    });
   });
 });
