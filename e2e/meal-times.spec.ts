@@ -59,3 +59,23 @@ test("add an Entry with a chosen Meal time and see it on its row (US1.1, US1.3, 
       .filter({ hasText: food.name }),
   ).toContainText("Lunch");
 });
+
+test("two Meal times show two groups with their calories (US2.1, US2.2, US2.4)", async ({
+  page,
+}) => {
+  const liv = await userClient("liv");
+  await clearDay(liv, DAY);
+  const food = await seedFood(liv, { portion: "1 slice", calories: 100 });
+  for (const mealTime of ["lunch", "breakfast"]) {
+    const { error } = await liv
+      .from("entries")
+      .insert({ day: DAY, food_id: food.id, quantity: 1, meal_time: mealTime });
+    if (error) throw error;
+  }
+
+  await page.goto(`/?day=${DAY}`);
+
+  const headings = page.getByRole("heading", { level: 3 });
+  await expect(headings).toHaveText(["Breakfast100 kcal", "Lunch100 kcal"]);
+  await expect(page.getByRole("heading", { name: /Dinner/ })).toHaveCount(0);
+});

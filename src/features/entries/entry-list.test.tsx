@@ -59,6 +59,50 @@ describe("EntryList Meal time", () => {
   });
 });
 
+describe("EntryList grouped by Meal time", () => {
+  beforeEach(() => toggleOn.mockReset());
+
+  const tagged = [
+    { ...entry("Eggs", 2, 100), mealTime: "breakfast" as const },
+    { ...entry("Pasta", 1, 500), mealTime: "dinner" as const },
+    { ...entry("Apple", 1, 80), mealTime: "dinner" as const },
+    entry("Toast", 1, 110),
+  ];
+
+  it("groups under headings with computed calories, in order, with Other last", () => {
+    toggleOn.mockReturnValue(true);
+    render(<EntryList entries={tagged} />);
+
+    const headings = screen.getAllByRole("heading", { level: 3 });
+    expect(headings.map((h) => h.textContent)).toEqual([
+      "Breakfast200 kcal",
+      "Dinner580 kcal",
+      "Other110 kcal",
+    ]);
+    const names = screen
+      .getAllByRole("listitem")
+      .map((li) => li.textContent?.split("1")[0]);
+    expect(names).toHaveLength(4);
+    expect(screen.queryByRole("heading", { name: /Lunch/ })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /Snacks/ })).toBeNull();
+  });
+
+  it("shows no headings when no Entry has a Meal time", () => {
+    toggleOn.mockReturnValue(true);
+    render(<EntryList entries={[entry("Toast", 1, 110)]} />);
+
+    expect(screen.queryByRole("heading")).toBeNull();
+  });
+
+  it("shows one plain list when the Toggle is off", () => {
+    toggleOn.mockReturnValue(false);
+    render(<EntryList entries={tagged} />);
+
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+  });
+});
+
 describe("EntryList", () => {
   beforeEach(() => toggleOn.mockReturnValue(false));
 

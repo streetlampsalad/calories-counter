@@ -1,5 +1,7 @@
 "use client";
 
+import { Fragment } from "react";
+
 import { SelectionCheck } from "@/components/selection/selection-check";
 import { useLongPress } from "@/components/selection/use-long-press";
 import { goalProgress } from "@/features/settings/domain";
@@ -8,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useAnimatedNumber } from "./animated-number";
 import { dailyTotal, formatEntryDetail } from "./domain";
 import { useEntryRows } from "./entry-rows";
-import { mealTimeLabel } from "./meal-time";
+import { groupByMealTime, mealTimeLabel } from "./meal-time";
 import type { Entry } from "./types";
 
 const kcal = (value: number) => value.toLocaleString("en-AU");
@@ -193,6 +195,7 @@ function EntryRow({
 
 export function EntryList({ entries, onSelect, selection }: Props) {
   const rows = useEntryRows(entries);
+  const mealTimesOn = useToggle("feature-173");
 
   if (rows.length === 0) {
     return (
@@ -202,43 +205,71 @@ export function EntryList({ entries, onSelect, selection }: Props) {
     );
   }
 
+  // Grouped only when the Toggle is on and some Entry has a Meal time. A leaving row stays in its
+  // group while it collapses but no longer counts towards the heading.
+  const groups = mealTimesOn
+    ? groupByMealTime(
+        rows,
+        (row) => row.entry.mealTime,
+        (row) =>
+          row.leaving ? 0 : row.entry.quantity * row.entry.food.calories,
+      )
+    : [];
+  const sections = groups.length
+    ? groups.map((group) => ({ group, rows: group.items }))
+    : [{ group: null, rows }];
+
   return (
     <ul aria-label="Entries">
-      {rows.map(({ entry, leaving, animate }) => (
-        // A new Entry grows and fades in (it starts collapsed, from `starting:`), and a removed one
-        // collapses and fades out, so the rows around it glide into place (spec 019). Rows already
-        // on the page when it opened never animate, and a device that asks for reduced motion
-        // gets none of it.
-        <li
-          key={entry.id}
-          data-leaving={leaving ? "" : undefined}
-          inert={leaving}
-          aria-hidden={leaving ? true : undefined}
-          className={cn(
-            "grid border-b transition-[grid-template-rows,opacity] duration-200 ease-out last:border-b-0 motion-reduce:transition-none",
-            leaving
-              ? "grid-rows-[0fr] opacity-0"
-              : "grid-rows-[1fr] opacity-100",
-            animate && "starting:grid-rows-[0fr] starting:opacity-0",
-          )}
-        >
-          <div
-            className={cn(
-              "min-h-0 overflow-hidden transition-transform duration-200 ease-out motion-reduce:transition-none",
-              animate && "starting:-translate-y-2",
-            )}
-          >
-            {leaving ? (
-              <EntryRow entry={entry} />
-            ) : (
-              <EntryRow
-                entry={entry}
-                onSelect={onSelect}
-                selection={selection}
-              />
-            )}
-          </div>
-        </li>
+      {sections.map(({ group, rows: sectionRows }) => (
+        <Fragment key={group?.key ?? "all"}>
+          {group ? (
+            <li role="presentation" className="border-b pt-4 pb-1 first:pt-0">
+              <h3 className="flex items-baseline justify-between font-semibold text-sm">
+                <span>{group.heading}</span>
+                <span className="font-normal text-muted-foreground tabular-nums">
+                  {kcal(group.calories)} kcal
+                </span>
+              </h3>
+            </li>
+          ) : null}
+          {sectionRows.map(({ entry, leaving, animate }) => (
+            // A new Entry grows and fades in (it starts collapsed, from `starting:`), and a removed
+            // one collapses and fades out, so the rows around it glide into place (spec 019). Rows
+            // already on the page when it opened never animate, and a device that asks for reduced
+            // motion gets none of it.
+            <li
+              key={entry.id}
+              data-leaving={leaving ? "" : undefined}
+              inert={leaving}
+              aria-hidden={leaving ? true : undefined}
+              className={cn(
+                "grid border-b transition-[grid-template-rows,opacity] duration-200 ease-out last:border-b-0 motion-reduce:transition-none",
+                leaving
+                  ? "grid-rows-[0fr] opacity-0"
+                  : "grid-rows-[1fr] opacity-100",
+                animate && "starting:grid-rows-[0fr] starting:opacity-0",
+              )}
+            >
+              <div
+                className={cn(
+                  "min-h-0 overflow-hidden transition-transform duration-200 ease-out motion-reduce:transition-none",
+                  animate && "starting:-translate-y-2",
+                )}
+              >
+                {leaving ? (
+                  <EntryRow entry={entry} />
+                ) : (
+                  <EntryRow
+                    entry={entry}
+                    onSelect={onSelect}
+                    selection={selection}
+                  />
+                )}
+              </div>
+            </li>
+          ))}
+        </Fragment>
       ))}
     </ul>
   );

@@ -46,14 +46,14 @@ description: "Tasks for Meal times"
 
 ### Tests (write first, see them fail)
 
-- [ ] T009 [P] [US2] Vitest: grouping, order and subtotals, in `src/features/entries/meal-time.test.ts`
-- [ ] T010 [P] [US2] Testing Library: headings, no headings when untagged, Toggle off, in `entry-list.test.tsx`
-- [ ] T011 [US2] Playwright: two Meal times show two groups, in `e2e/meal-times.spec.ts`
+- [x] T009 [P] [US2] Vitest: grouping, order and subtotals, in `src/features/entries/meal-time.test.ts`
+- [x] T010 [P] [US2] Testing Library: headings, no headings when untagged, Toggle off, in `entry-list.test.tsx`
+- [x] T011 [US2] Playwright: two Meal times show two groups, in `e2e/meal-times.spec.ts`
 
 ### Implementation
 
-- [ ] T012 [US2] Group and subtotal helpers in `meal-time.ts`
-- [ ] T013 [US2] Grouped rendering in `entry-list.tsx`, working with `entry-rows.ts` (leaving rows) and bulk selection, gated by the Toggle
+- [x] T012 [US2] Group and subtotal helpers in `meal-time.ts`
+- [x] T013 [US2] Grouped rendering in `entry-list.tsx`, working with `entry-rows.ts` (leaving rows) and bulk selection, gated by the Toggle
 
 **Checkpoint**: `pnpm validate` passes.
 
