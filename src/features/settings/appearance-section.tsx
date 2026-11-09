@@ -1,17 +1,12 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect } from "react";
-import { useToggle, useToggles } from "@/features/toggles/queries";
+import { useEffect, useState } from "react";
 import {
   APPEARANCES,
   type Appearance,
-  clearSavedAppearance,
-  hasSavedAppearance,
   parseAppearance,
 } from "@/lib/appearance";
-
-export const APPEARANCE_TOGGLE = "feature-146";
 
 const LABELS: Record<Appearance, string> = {
   light: "Light",
@@ -19,13 +14,15 @@ const LABELS: Record<Appearance, string> = {
   system: "System",
 };
 
-// Appearance (spec 147), there only while its Toggle is on. The choice is kept on this phone.
+// Appearance (spec 147). The choice is kept on this phone.
 export function AppearanceSection() {
-  const on = useToggle(APPEARANCE_TOGGLE);
   const { theme, setTheme } = useTheme();
-  if (!on) return null;
+  // The saved choice lives in this browser, so the server cannot know it. Showing it only after
+  // mount keeps the first client render equal to the server's, so React hydrates the radios right.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  const current = parseAppearance(theme);
+  const current = parseAppearance(mounted ? theme : undefined);
 
   return (
     <section className="flex flex-col gap-2">
@@ -53,23 +50,4 @@ export function AppearanceSection() {
       </p>
     </section>
   );
-}
-
-// A saved choice is applied before Toggles can load, so nobody is stuck in Dark once the Toggle
-// is off for them: when Toggles have loaded off, the choice is cleared and the app goes Light.
-// A failed or slow load leaves it alone.
-export function AppearanceCleanup() {
-  const { data, isSuccess } = useToggles();
-  const { setTheme } = useTheme();
-  const off =
-    isSuccess &&
-    !(data?.find((toggle) => toggle.key === APPEARANCE_TOGGLE)?.isOn ?? false);
-
-  useEffect(() => {
-    if (!off || !hasSavedAppearance()) return;
-    setTheme("light");
-    clearSavedAppearance();
-  }, [off, setTheme]);
-
-  return null;
 }
