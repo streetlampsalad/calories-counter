@@ -21,15 +21,15 @@ description: "Tasks for Meal times"
 ### Tests (write first, see them fail)
 
 - [ ] T001 [P] [US1] Vitest: Meal time values and the clock default, in `src/features/entries/meal-time.test.ts`
-- [ ] T002 [P] [US1] Testing Library: chips, default, toggling, saved value, optimistic rollback, kept on edit, in `picker-sheet.test.tsx` and `mutations.test.tsx`
+- [ ] T002 [P] [US1] Testing Library: chips, default, toggling, saved value, optimistic rollback, kept on edit, in `picker-sheet.test.tsx` and `mutations.test.tsx`, including Undo after removing restoring the Meal time
 - [ ] T003 [P] [US1] pgTAP: check constraint and nullable, in `supabase/tests/database/entries-meal-time.test.sql`
 - [ ] T004 [US1] Playwright: add an Entry with a chosen Meal time, in `e2e/meal-times.spec.ts`
 
 ### Implementation
 
 - [ ] T005 [US1] Migration `pnpm db:new toggle_meal_times`, then `pnpm db:reset && pnpm db:types`
-- [ ] T006 [US1] `meal-time.ts`, `meal-time-chips.tsx`; `mealTime` on `Entry`, `ENTRY_SELECT` and the add mutation
-- [ ] T007 [US1] Chips in the picker and the tag on the Entry row, gated by `useToggle("feature-173")`
+- [ ] T006 [US1] `meal-time.ts`, `meal-time-chips.tsx`; `mealTime` on `Entry`, `ENTRY_SELECT`, `toRow` (so add, Undo and bulk add all write `meal_time`)
+- [ ] T007 [US1] Chips in the picker (`FoodPickerSheet` gains a `day` prop and `onPick` gains `mealTime`; `today-screen.tsx` `log()` passes them) and the tag on the Entry row, gated by `useToggle("feature-173")`
 - [ ] T008 [US1] Keep the `CONTEXT.md` term **Meal time** (added in the Spec pull request) in the UI copy
 
 **Checkpoint**: `pnpm validate` passes.
@@ -53,7 +53,7 @@ description: "Tasks for Meal times"
 ### Implementation
 
 - [ ] T012 [US2] Group and subtotal helpers in `meal-time.ts`
-- [ ] T013 [US2] Grouped rendering in `entry-list.tsx`, gated by the Toggle
+- [ ] T013 [US2] Grouped rendering in `entry-list.tsx`, working with `entry-rows.ts` (leaving rows) and bulk selection, gated by the Toggle
 
 **Checkpoint**: `pnpm validate` passes.
 

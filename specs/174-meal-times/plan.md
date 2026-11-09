@@ -59,7 +59,7 @@ specs/174-meal-times/
 ├── spec.md, plan.md, tasks.md
 src/features/entries/meal-time.ts            # values, labels, default for the clock, grouping and subtotals
 src/features/entries/meal-time-chips.tsx     # the chip row
-src/features/entries/{picker-sheet,edit-entry-sheet,entry-list,queries,types}.ts(x)
+src/features/entries/{today-screen,entry-rows,picker-sheet,edit-entry-sheet,entry-list,queries,types}.ts(x)
 supabase/migrations/<timestamp>_toggle_meal_times.sql
 supabase/tests/database/entries-meal-time.test.sql
 e2e/meal-times.spec.ts
