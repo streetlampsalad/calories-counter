@@ -239,6 +239,7 @@ test("signing out removes this phone's subscription (AC-8)", async ({
   await expect(timeField(page)).toBeVisible();
   await expect.poll(async () => (await saved()).subscriptions.length).toBe(1);
 
+  await page.goto("/settings");
   await page.getByRole("button", { name: "Sign out" }).click();
 
   await expect(page).toHaveURL(/\/sign-in/);
