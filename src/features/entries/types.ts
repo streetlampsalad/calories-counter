@@ -1,4 +1,6 @@
 // The part of a Food an Entry needs. Includes Archived Foods: history keeps counting them.
+import type { MealTime } from "./meal-time";
+
 export type EntryFood = {
   id: string;
   name: string;
@@ -12,5 +14,7 @@ export type Entry = {
   day: string;
   quantity: number;
   createdAt: string;
+  /** Optional tag (spec 174); stored even while the Toggle is off. */
+  mealTime?: MealTime | null;
   food: EntryFood;
 };

@@ -17,6 +17,7 @@ import { isPlanned, lastPlannableDay, parseDay, shiftDay } from "./days";
 import { addedMessage, formatQuantity, removedEntriesMessage } from "./domain";
 import { EditEntrySheet } from "./edit-entry-sheet";
 import { DailyTotal, EntryList } from "./entry-list";
+import type { MealTime } from "./meal-time";
 import { FoodPickerSheet } from "./picker-sheet";
 import {
   useAddEntries,
@@ -139,13 +140,14 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
   }
 
   // The Entry shows up at once; the toast offers Undo, and a failed save takes it back off.
-  function log(food: Food, quantity: number) {
+  function log(food: Food, quantity: number, mealTime: MealTime | null) {
     haptic("tap");
     const entry: Entry = {
       id: crypto.randomUUID(),
       day,
       quantity,
       createdAt: new Date().toISOString(),
+      mealTime,
       food: {
         id: food.id,
         name: food.name,
@@ -284,6 +286,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
       <FoodPickerSheet
         open={picking}
         today={today}
+        day={day}
         onPick={log}
         onClose={() => setPicking(false)}
       />

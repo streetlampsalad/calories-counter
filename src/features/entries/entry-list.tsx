@@ -3,10 +3,12 @@
 import { SelectionCheck } from "@/components/selection/selection-check";
 import { useLongPress } from "@/components/selection/use-long-press";
 import { goalProgress } from "@/features/settings/domain";
+import { useToggle } from "@/features/toggles/queries";
 import { cn } from "@/lib/utils";
 import { useAnimatedNumber } from "./animated-number";
 import { dailyTotal, formatEntryDetail } from "./domain";
 import { useEntryRows } from "./entry-rows";
+import { mealTimeLabel } from "./meal-time";
 import type { Entry } from "./types";
 
 const kcal = (value: number) => value.toLocaleString("en-AU");
@@ -140,6 +142,7 @@ function EntryRow({
     onPress: () =>
       selection?.selecting ? selection.onToggle(entry) : onSelect?.(entry),
   });
+  const mealTimesOn = useToggle("feature-173");
   const selecting = selection?.selecting ?? false;
   const picked = selecting && selection?.isSelected(entry.id) === true;
 
@@ -149,6 +152,9 @@ function EntryRow({
         <span className="font-medium">{entry.food.name}</span>
         <span className="text-muted-foreground text-sm">
           {formatEntryDetail(entry)}
+          {mealTimesOn && entry.mealTime
+            ? ` · ${mealTimeLabel(entry.mealTime)}`
+            : ""}
         </span>
       </span>
       {/* At the end, so starting selection never shifts the text (bug #83). */}
@@ -162,6 +168,9 @@ function EntryRow({
         <span className="font-medium">{entry.food.name}</span>
         <span className="text-muted-foreground text-sm">
           {formatEntryDetail(entry)}
+          {mealTimesOn && entry.mealTime
+            ? ` · ${mealTimeLabel(entry.mealTime)}`
+            : ""}
         </span>
       </div>
     );

@@ -14,8 +14,11 @@ import { filterFoods, formatFoodDetail } from "@/features/foods/domain";
 import { FoodSearchBox } from "@/features/foods/food-search-box";
 import { useFoods } from "@/features/foods/queries";
 import type { Food } from "@/features/foods/types";
+import { useToggle } from "@/features/toggles/queries";
 import { cn } from "@/lib/utils";
 import { shiftDay } from "./days";
+import { defaultMealTime, type MealTime } from "./meal-time";
+import { MealTimeChips } from "./meal-time-chips";
 import { QuantityPicker } from "./quantity-picker";
 import { useFoodUsage } from "./queries";
 import { rankFoodsByUsage, recentFoods, USAGE_WINDOW_DAYS } from "./usage";
@@ -24,8 +27,10 @@ type Props = {
   open: boolean;
   /** The device's date: Foods are ranked by what was eaten up to it, not what is planned after. */
   today: string;
-  /** The chosen Food and how many Portions of it. */
-  onPick: (food: Food, quantity: number) => void;
+  /** The Day being logged to: today pre-chooses a Meal time from the clock. */
+  day: string;
+  /** The chosen Food, how many Portions of it, and the Meal time (null when none or Toggle off). */
+  onPick: (food: Food, quantity: number, mealTime: MealTime | null) => void;
   onClose: () => void;
 };
 
@@ -37,7 +42,8 @@ function Message({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
+export function FoodPickerSheet({ open, today, day, onPick, onClose }: Props) {
+  const mealTimesOn = useToggle("feature-173");
   const { data: foods, isPending, isError, refetch } = useFoods();
   const { data: usage } = useFoodUsage(
     shiftDay(today, -USAGE_WINDOW_DAYS),
@@ -47,6 +53,7 @@ export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [recentId, setRecentId] = useState<string | null>(null);
+  const [mealTime, setMealTime] = useState<MealTime | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   // Every time the picker is opened it starts fresh, not on the last search and open Food.
@@ -55,8 +62,9 @@ export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
       setQuery("");
       setOpenId(null);
       setRecentId(null);
+      setMealTime(day === today ? defaultMealTime(new Date()) : null);
     }
-  }, [open]);
+  }, [open, day, today]);
 
   // Most-logged Foods first; while no one is searching, the latest few are one tap away above.
   const ranked = foods ? rankFoodsByUsage(foods, usage ?? []) : undefined;
@@ -65,7 +73,7 @@ export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
   const recentChoice = recent.find((food) => food.id === recentId);
 
   function pick(food: Food, quantity: number) {
-    onPick(food, quantity);
+    onPick(food, quantity, mealTimesOn ? mealTime : null);
     onClose();
   }
 
@@ -89,6 +97,10 @@ export function FoodPickerSheet({ open, today, onPick, onClose }: Props) {
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-6">
+          {mealTimesOn ? (
+            <MealTimeChips value={mealTime} onChange={setMealTime} />
+          ) : null}
+
           {foods && foods.length > 0 ? (
             <FoodSearchBox
               value={query}
