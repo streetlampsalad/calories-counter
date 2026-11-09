@@ -108,6 +108,10 @@ _Avoid_: range, window, timeframe
 A User's choice of Light, Dark or System for how the app looks, kept on one phone and not with the User. System follows the phone's own light or dark setting.
 _Avoid_: theme, colour scheme, skin
 
+**Settings category**:
+A named group of settings (Tracking, Preferences or Features) that has its own page linked from Settings. Fixed in code, not stored.
+_Avoid_: tab, section, menu
+
 ### Toggles
 
 **Toggle**:
