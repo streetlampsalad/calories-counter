@@ -6,7 +6,10 @@ The Dispatcher is a Claude Code routine (a scheduled cloud agent) that keeps wor
 
 - **Repository**: `streetlampsalad/calories-counter`
 - **Environment**: a cloud environment whose setup script is `cd /home/user/calories-counter && bash scripts/cloud-setup.sh`. Setup runs outside the repo, so a bare `bash scripts/cloud-setup.sh` fails with "No such file or directory". Pasting the script's contents fails too, at `.nvmrc`.
-- **Triggers**: hourly, and a GitHub trigger for a pull request closed into `main` with "Is merged" true.
+- **Triggers**:
+  - hourly;
+  - a GitHub trigger for a pull request closed into `main` with "Is merged" true;
+  - an API trigger. Its fire URL is the repository variable `DISPATCHER_FIRE_URL` and its token is the secret `DISPATCHER_FIRE_TOKEN`. [`.github/workflows/dispatcher.yml`](../../.github/workflows/dispatcher.yml) fires it when an Issue event gives the Dispatcher work: a Feature or Bug opened for triage, `ready-for-agent` added, an Issue closed (which can unblock the next Slice), or `needs-human-review` or `human-step` removed. Only the owner's events count, and it waits two minutes so a burst of events starts one run. Generating a new token revokes the old one, so update the secret whenever you do.
 - **Allowed tools**: Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch, Agent, Task and Skill. `/deliver` runs its self-review in a subagent, which needs `Agent` (`Task` in older sessions).
 - **Connectors**: Context7 only. A new routine gets every account connector, so remove the rest. Supabase and Vercel especially: the guard hook (`.claude/hooks/guard.mjs`) sees only shell commands and file edits, not MCP tools, so they would let a run reach production around it.
 - **Prompt**: the block below, verbatim
