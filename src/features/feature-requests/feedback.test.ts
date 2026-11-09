@@ -20,7 +20,6 @@ function setup(overrides: Partial<FeedbackDeps> = {}) {
     addLabels: vi.fn(async () => {}),
   };
   const deps: FeedbackDeps = {
-    toggleOn: vi.fn(async () => true),
     userId: vi.fn(async () => USER),
     startRound: vi.fn(async () => ({
       roundId: ROUND,
@@ -73,14 +72,7 @@ describe("giveFeedback", () => {
     expect(deps.startRound).not.toHaveBeenCalled();
   });
 
-  it("refuses while Feature Requests are off for the caller, or they are signed out (FR-001)", async () => {
-    const off = setup({ toggleOn: vi.fn(async () => false) });
-    expect(await giveFeedback(VALID, off.deps)).toEqual({
-      ok: false,
-      code: "not_allowed",
-    });
-    expect(off.deps.startRound).not.toHaveBeenCalled();
-
+  it("refuses when they are signed out (FR-001)", async () => {
     const signedOut = setup({ userId: vi.fn(async () => null) });
     expect(await giveFeedback(VALID, signedOut.deps)).toEqual({
       ok: false,

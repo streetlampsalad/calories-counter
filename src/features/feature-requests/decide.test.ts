@@ -13,7 +13,6 @@ function setup(overrides: Partial<DecideDeps> = {}) {
     addLabels: vi.fn(async () => {}),
   };
   const deps: DecideDeps = {
-    toggleOn: vi.fn(async () => true),
     userId: vi.fn(async () => USER),
     find: vi.fn(async () => ({ featureIssue: 801 })),
     record: vi.fn(async () => true),
@@ -161,12 +160,7 @@ describe("decide: It's ready", () => {
     expect(issues.create).not.toHaveBeenCalled();
   });
 
-  it("refuses while Feature Requests are off, signed out, or for an id that is not one", async () => {
-    const off = setup({ toggleOn: vi.fn(async () => false) });
-    expect(await decide({ id: ID }, "ready", off.deps)).toEqual({
-      ok: false,
-      code: "not_allowed",
-    });
+  it("refuses when signed out, or for an id that is not one", async () => {
     const signedOut = setup({ userId: vi.fn(async () => null) });
     expect(await decide({ id: ID }, "ready", signedOut.deps)).toEqual({
       ok: false,
@@ -177,7 +171,6 @@ describe("decide: It's ready", () => {
       ok: false,
       code: "not_allowed",
     });
-    expect(off.deps.find).not.toHaveBeenCalled();
     expect(bad.deps.find).not.toHaveBeenCalled();
   });
 });

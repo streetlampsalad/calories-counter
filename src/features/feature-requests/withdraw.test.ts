@@ -12,7 +12,6 @@ function setup(overrides: Partial<WithdrawDeps> = {}) {
     addLabels: vi.fn(async () => {}),
   };
   const deps: WithdrawDeps = {
-    toggleOn: vi.fn(async () => true),
     userId: vi.fn(async () => USER),
     markWithdrawn: vi.fn(async () => ({ featureIssue: 200, specIssue: 201 })),
     unmarkWithdrawn: vi.fn(async () => {}),
@@ -87,11 +86,8 @@ describe("withdrawFeatureRequest", () => {
     expect(deps.unmarkWithdrawn).toHaveBeenCalledWith(ID);
   });
 
-  it("refuses while the Toggle is off, or with nobody signed in", async () => {
-    for (const overrides of [
-      { toggleOn: vi.fn(async () => false) },
-      { userId: vi.fn(async () => null) },
-    ]) {
+  it("refuses with nobody signed in", async () => {
+    for (const overrides of [{ userId: vi.fn(async () => null) }]) {
       const { deps } = setup(overrides);
       expect(await withdrawFeatureRequest({ id: ID }, deps)).toEqual({
         ok: false,

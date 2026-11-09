@@ -7,7 +7,6 @@ export type DecideResult =
   | { ok: false; code: "not_allowed" | "unavailable" };
 
 export type DecideDeps = {
-  toggleOn: () => Promise<boolean>;
   userId: () => Promise<string | null>;
   /**
    * The caller's own request, if it may be decided now: not withdrawn, not decided, Ready to try
@@ -49,7 +48,6 @@ export async function decide(
 ): Promise<DecideResult> {
   const id = (input as { id?: unknown } | null)?.id;
   if (typeof id !== "string" || !UUID.test(id)) return NOT_ALLOWED;
-  if (!(await deps.toggleOn())) return NOT_ALLOWED;
   const userId = await deps.userId();
   if (!userId) return NOT_ALLOWED;
 

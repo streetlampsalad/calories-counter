@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-// Every part of Feature Requests sits behind this Toggle (spec 124, ADR 0008).
-export const FEATURE_REQUESTS_TOGGLE = "feature-114";
-
 // The repository each Feature Request becomes a Feature Issue on. It is public.
 export const REPOSITORY = "streetlampsalad/calories-counter";
 

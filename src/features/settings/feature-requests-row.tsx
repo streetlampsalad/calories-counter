@@ -2,14 +2,9 @@
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { FEATURE_REQUESTS_TOGGLE } from "@/features/feature-requests/domain";
-import { useToggle } from "@/features/toggles/queries";
 
-// The way into Feature Requests (spec 124), there only while its Toggle is on for this User.
+// The way into Feature Requests (spec 124), there for every User.
 export function FeatureRequestsRow() {
-  const on = useToggle(FEATURE_REQUESTS_TOGGLE);
-  if (!on) return null;
-
   return (
     <section className="flex flex-col gap-2">
       <Link

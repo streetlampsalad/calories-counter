@@ -10,8 +10,8 @@ values
 
 select is(
   (select state from public.toggles where key = 'feature-114'),
-  'testing',
-  'the feature ships behind Toggle feature-114, in Testing'
+  'live',
+  'the Toggle feature-114 is Live, so Feature Requests are on for everyone'
 );
 
 -- The server (service role) writes rows; a goal must say something.

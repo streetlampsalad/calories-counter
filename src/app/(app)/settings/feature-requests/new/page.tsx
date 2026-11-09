@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { FeatureRequestsGate } from "@/features/feature-requests/gate";
 import { RequestForm } from "@/features/feature-requests/request-form";
 
 export default function NewFeatureRequestPage() {
@@ -9,9 +8,7 @@ export default function NewFeatureRequestPage() {
         Request a feature
       </h1>
       <Suspense fallback={<div className="h-64" />}>
-        <FeatureRequestsGate>
-          <RequestForm />
-        </FeatureRequestsGate>
+        <RequestForm />
       </Suspense>
     </main>
   );
