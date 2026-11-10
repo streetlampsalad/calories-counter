@@ -10,7 +10,12 @@ import {
   submitFeatureRequest,
   withdrawFeatureRequest,
 } from "./actions";
-import type { Decision, FeatureRequestInput, Stage } from "./domain";
+import type {
+  Decision,
+  FeatureRequestInput,
+  FeedbackSet,
+  Stage,
+} from "./domain";
 
 export type FeatureRequest = {
   id: string;
@@ -180,7 +185,7 @@ export function useGiveFeedback() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { id: string; feedback: string }) => {
+    mutationFn: async (input: { id: string; sets: FeedbackSet[] }) => {
       let result: Awaited<ReturnType<typeof giveFeedback>>;
       try {
         result = await giveFeedback(input);
@@ -193,7 +198,9 @@ export function useGiveFeedback() {
             ? "You already have 2 requests being worked on. Try again once one is ready."
             : result.code === "not_allowed"
               ? "Feedback can't be given on this request any more."
-              : "Couldn't send your feedback. Check your connection and try again.",
+              : result.code === "invalid"
+                ? "Some of your feedback couldn't be sent as it is. Check each set and try again."
+                : "Couldn't send your feedback. Check your connection and try again.",
         );
     },
     onSettled: () =>

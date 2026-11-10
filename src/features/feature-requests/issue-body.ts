@@ -1,5 +1,5 @@
 import { cutTitle, quote } from "@/lib/issue-text";
-import type { Decision } from "./domain";
+import type { Decision, FeedbackCategory, FeedbackSet } from "./domain";
 
 // The Feature Issue a Feature Request becomes. Its headings are the Feature issue template's
 // (.github/ISSUE_TEMPLATE/1-feature.yml), which /deliver reads, so they must match it exactly.
@@ -51,18 +51,30 @@ export function issueBody(request: {
 // A Round (spec 135 US1.3): the Requester's feedback is the Problem, the original goal still the
 // outcome, and `### Follow-up to` tells triage to change the feature behind its existing Toggle.
 // `### Requested by` is the request's own id, so the sync finds the request from either Issue.
+// Each feedback set is quoted under its own bold heading, numbered within its category, so triage
+// sees which parts are bugs and which are enhancements (spec 193 D8).
 export function followUpBody(round: {
   id: string;
   goal: string;
-  feedback: string;
+  sets: FeedbackSet[];
   featureIssue: number;
   round: number;
 }): string {
+  const seen: Record<FeedbackCategory, number> = { bug: 0, enhancement: 0 };
+  const problem = round.sets.flatMap((set) => {
+    seen[set.category] += 1;
+    return [
+      `**${CATEGORY_NAME[set.category]} ${seen[set.category]}**`,
+      "",
+      quote(set.text),
+      "",
+    ];
+  });
+
   return [
     "### Problem",
     "",
-    quote(round.feedback),
-    "",
+    ...problem,
     "### Who has it",
     "",
     "The requester.",
@@ -73,7 +85,7 @@ export function followUpBody(round: {
     "",
     "### Additional details",
     "",
-    `Round ${round.round} of #${round.featureIssue}.`,
+    `Round ${round.round} of #${round.featureIssue}. ${counts(seen)}.`,
     "",
     "### Follow-up to",
     "",
@@ -84,6 +96,22 @@ export function followUpBody(round: {
     round.id,
     "",
   ].join("\n");
+}
+
+const CATEGORY_NAME: Record<FeedbackCategory, string> = {
+  bug: "Bug",
+  enhancement: "Enhancement",
+};
+
+// "1 bug, 2 enhancements", leaving out a category with none.
+function counts(seen: Record<FeedbackCategory, number>): string {
+  return (["bug", "enhancement"] as const)
+    .filter((category) => seen[category] > 0)
+    .map(
+      (category) =>
+        `${seen[category]} ${category}${seen[category] === 1 ? "" : "s"}`,
+    )
+    .join(", ");
 }
 
 // The clean-up Chore an agent delivers once a Requester has decided (spec 135 D4, ADR 0008). It

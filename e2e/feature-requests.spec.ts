@@ -235,7 +235,7 @@ test.describe("stages from the board workflow (Slice 2)", () => {
     ).toBeChecked();
   });
 
-  test("feedback on a request Ready to try starts another Round (spec 135 US1.3)", async ({
+  test("feedback in sets on a request Ready to try starts another Round (spec 135 US1.3, spec 193 US1.6)", async ({
     page,
   }) => {
     const added = await adminClient()
@@ -256,28 +256,44 @@ test.describe("stages from the board workflow (Slice 2)", () => {
     await card.getByRole("button", { name: "Give feedback" }).click();
     const sheet = page.getByRole("dialog", { name: "What should change?" });
     await expect(sheet).toContainText("posted publicly on GitHub");
-    await sheet
-      .getByRole("textbox", { name: "What should change?" })
+    const set = (n: number) => sheet.getByRole("group", { name: `Set ${n}` });
+
+    await set(1)
+      .getByRole("textbox", { name: "Set 1" })
+      .fill("The glass button does nothing");
+    await set(1).getByRole("radio", { name: "Bug" }).check();
+    await sheet.getByRole("button", { name: "Add another set" }).click();
+    await set(2)
+      .getByRole("textbox", { name: "Set 2" })
       .fill("Let me add half a glass");
+    await sheet.getByRole("button", { name: "Add another set" }).click();
+    await set(3)
+      .getByRole("textbox", { name: "Set 3" })
+      .fill("Remember my usual glass size");
     await sheet.getByRole("button", { name: "Send feedback" }).click();
 
     await expect(sheet).toBeHidden();
     await expect(card).toContainText("Submitted");
     await expect(card.getByRole("list", { name: "Rounds" })).toContainText(
-      "Let me add half a glass",
+      "The glass button does nothing",
     );
     await expect(card.getByRole("switch", { name: "Try it" })).toBeVisible();
     await expect(card.getByRole("button", { name: "Withdraw" })).toHaveCount(0);
 
     const { data } = await adminClient()
       .from("feature_requests")
-      .select("stage, feature_request_rounds (feedback, feature_issue)")
+      .select("stage, feature_request_rounds (feedback, sets, feature_issue)")
       .eq("feature_issue", MINE)
       .single();
     expect(data?.stage).toBe("submitted");
     expect(data?.feature_request_rounds).toEqual([
       {
-        feedback: "Let me add half a glass",
+        feedback: "The glass button does nothing",
+        sets: [
+          { category: "bug", text: "The glass button does nothing" },
+          { category: "enhancement", text: "Let me add half a glass" },
+          { category: "enhancement", text: "Remember my usual glass size" },
+        ],
         feature_issue: expect.any(Number),
       },
     ]);

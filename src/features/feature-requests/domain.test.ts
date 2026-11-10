@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   countOpen,
   MAX_OPEN,
+  MAX_SETS,
   parseFeatureRequest,
+  parseSets,
   wantsMoreDetail,
 } from "./domain";
 
@@ -85,5 +87,65 @@ describe("countOpen", () => {
         { stage: "not_going_ahead", withdrawnAt: null },
       ]),
     ).toBe(3);
+  });
+});
+
+describe("parseSets", () => {
+  it("accepts 1 to 5 sets in order, trimmed, each an enhancement or a bug (FR-001)", () => {
+    expect(MAX_SETS).toBe(5);
+    expect(
+      parseSets([
+        { category: "bug", text: "  The glass button does nothing " },
+        { category: "enhancement", text: "Let me add half a glass" },
+      ]),
+    ).toEqual({
+      ok: true,
+      value: [
+        { category: "bug", text: "The glass button does nothing" },
+        { category: "enhancement", text: "Let me add half a glass" },
+      ],
+    });
+  });
+
+  it("says which set needs more, under 10 characters (US1.5)", () => {
+    expect(
+      parseSets([
+        { category: "bug", text: "The glass button does nothing" },
+        { category: "enhancement", text: " more " },
+      ]),
+    ).toEqual({
+      ok: false,
+      errors: [
+        undefined,
+        "Set 2: say what should change, in at least 10 characters.",
+      ],
+    });
+  });
+
+  it("refuses a set over 4,000 characters, or with another category (US1.8)", () => {
+    const result = parseSets([
+      { category: "enhancement", text: "x".repeat(4001) },
+      { category: "wish", text: "Let me add half a glass" },
+    ]);
+    expect(result).toEqual({
+      ok: false,
+      errors: [
+        "Set 1: keep this under 4,000 characters.",
+        "Set 2: choose Enhancement or Bug.",
+      ],
+    });
+    expect(
+      parseSets([{ category: "enhancement", text: "x".repeat(4000) }]).ok,
+    ).toBe(true);
+  });
+
+  it("refuses no set, more than 5, or something that is not a list (US1.8)", () => {
+    const set = { category: "enhancement", text: "Let me add half a glass" };
+    expect(parseSets([]).ok).toBe(false);
+    expect(parseSets(Array(6).fill(set)).ok).toBe(false);
+    expect(parseSets(Array(5).fill(set)).ok).toBe(true);
+    expect(parseSets("Let me add half a glass").ok).toBe(false);
+    expect(parseSets(undefined).ok).toBe(false);
+    expect(parseSets([null]).ok).toBe(false);
   });
 });
