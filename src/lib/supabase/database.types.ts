@@ -69,14 +69,14 @@ isOneToOne: false
                   ]
                 },"feature_request_rounds": {
                   Row: {
-                    "created_at": string,"feature_issue": number | null,"feedback": string,"id": string,"request_id": string
+                    "created_at": string,"feature_issue": number | null,"feedback": string,"id": string,"request_id": string,"sets": Json | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"feature_issue"?: number | null,"feedback": string,"id"?: string,"request_id": string
+                    "created_at"?: string,"feature_issue"?: number | null,"feedback": string,"id"?: string,"request_id": string,"sets"?: Json | null
                   }
                   Update: {
-                    "created_at"?: string,"feature_issue"?: number | null,"feedback"?: string,"id"?: string,"request_id"?: string
+                    "created_at"?: string,"feature_issue"?: number | null,"feedback"?: string,"id"?: string,"request_id"?: string,"sets"?: Json | null
                   }
                   Relationships: [
                     {
@@ -297,6 +297,10 @@ isOneToOne: false
                            },
 "start_feature_request_round":
 { Args: { "feedback": string,"request_id": string,"requester_id": string }; Returns: {
+              "feature_issue": number,"goal": string,"previous_latest_comment": string,"previous_ready_note": string,"previous_stage": string,"previous_stage_changed_at": string,"round_id": string,"round_number": number
+            }[]
+                           } |
+{ Args: { "request_id": string,"requester_id": string,"sets": Json }; Returns: {
               "feature_issue": number,"goal": string,"previous_latest_comment": string,"previous_ready_note": string,"previous_stage": string,"previous_stage_changed_at": string,"round_id": string,"round_number": number
             }[]
                            },
