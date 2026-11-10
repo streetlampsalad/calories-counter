@@ -3,6 +3,7 @@
 ## `giveFeedback({ id, sets })` (changed)
 
 - `sets`: 1–5 of `{ category: "enhancement" | "bug", text }`, each text 10–4,000 characters after trimming, else `invalid`. All other checks, results and the undo are as in spec 135.
+- A legacy `{ id, feedback }` input (a tab open on the old client) is treated as one Enhancement set.
 - Starts the Round with the new `start_feature_request_round(request_id, requester_id, sets)`; `StartedRound` is unchanged.
 
 ## Follow-up Issue (changed)

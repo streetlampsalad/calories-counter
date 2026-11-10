@@ -72,7 +72,7 @@ The request's card lists each Round, and under a Round each set with its categor
 - **FR-003**: A Round MUST still create exactly one follow-up Feature Issue, with each set under its own category heading in `### Problem` and the counts in `### Additional details`.
 - **FR-004**: The card MUST list each Round's sets with their categories, and a Round with no sets as one note.
 - **FR-005**: Everything else in spec 135's Give feedback (who may, when, the limit, the public notice, the undo, the sync following the newest Round) MUST be unchanged.
-- **FR-006**: The migration MUST keep the app deployed before it working (ADR 0003).
+- **FR-006**: The migration MUST keep the app deployed before it working (ADR 0003), and `giveFeedback` MUST still accept a single legacy `feedback` string (as one Enhancement set) so a browser tab left open on the old client keeps working.
 
 ### Key Entities
 
@@ -128,11 +128,11 @@ Guesses made: up to 5 pieces per Round; they are sent all at once and not saved 
 | Adds a third-party integration, secret, environment variable or dashboard step | No | Reuses the existing GitHub token | |
 | Irreversible: drops or renames a column or table, or rewrites or deletes User data | No | One nullable column added; no data touched | |
 | Cannot be proved in CI (real device, real external API, Gemini or Google Health) | No | GitHub is faked as in spec 135 | |
-| Touches sign-in, RLS policies or what one User can see of another | No | No policy changes: the new column sits under the Rounds policy that already limits reads to the Requester, and a pgTAP test proves it | |
+| Touches sign-in, RLS policies or what one User can see of another | Yes | No policy changes, but Slice 1 adds a `security definer` function that writes Rounds (granted to `service_role` only, as in spec 135), which the merge gate flags; the new column sits under the Rounds policy limiting reads to the Requester, and a pgTAP test proves it | 1 |
 | Changes the guardrails (CI, deploy, hooks, rulesets, AGENTS.md, constitution, workflow) | No | No workflow file changes (D9) | |
 | Contradicts an ADR or needs a new one | No | | |
 | Size L or XL | No | Size M: one column and function, an Issue body, an action and a sheet | |
 
 **Size**: M
 
-**Human review**: Not needed
+**Human review**: Needed for the spec and Slice 1

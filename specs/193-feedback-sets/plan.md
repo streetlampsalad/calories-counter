@@ -37,7 +37,7 @@ A Round gains an ordered list of sets, each text plus a category. The Give feedb
 | US1.5 | Vitest, Testing Library | `src/features/feature-requests/domain.test.ts`, `src/features/feature-requests/feedback-sheet.test.tsx` |
 | US1.6 | Vitest, Playwright | `src/features/feature-requests/issue-body.test.ts`, `src/features/feature-requests/feedback.test.ts`, `e2e/feature-requests.spec.ts` |
 | US1.7 | Vitest, Testing Library | `src/features/feature-requests/feedback.test.ts`, `src/features/feature-requests/feedback-sheet.test.tsx` |
-| US1.8 | Vitest, pgTAP | `src/features/feature-requests/feedback.test.ts`, `supabase/tests/database/026_feedback_sets.test.sql` |
+| US1.8, FR-006 | Vitest, pgTAP | `src/features/feature-requests/feedback.test.ts`, `supabase/tests/database/026_feedback_sets.test.sql` |
 | US1.9 | Vitest, Testing Library | `src/features/feature-requests/feedback.test.ts`, `src/features/feature-requests/feedback-sheet.test.tsx` |
 | US2.1 | Testing Library | `src/features/feature-requests/request-card.test.tsx` |
 | US2.2 | Testing Library | `src/features/feature-requests/request-card.test.tsx` |
