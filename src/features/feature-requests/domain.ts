@@ -78,25 +78,48 @@ export function parseFeatureRequest(input: unknown): ParseResult {
   return { ok: false, errors };
 }
 
-// Feedback that starts a Round (spec 135 US1.2).
+// Feedback that starts a Round (spec 135 US1.2) comes in sets, each an enhancement or a bug
+// (spec 193): 1 to MAX_SETS of them, each 10 to 4,000 characters.
 export const FEEDBACK_MIN = 10;
 export const FEEDBACK_MAX = 4000;
-const FEEDBACK_SHORT = "Say what should change, in at least 10 characters.";
+export const MAX_SETS = 5;
+export const SET_CATEGORIES = ["enhancement", "bug"] as const;
+export type FeedbackCategory = (typeof SET_CATEGORIES)[number];
+export type FeedbackSet = { category: FeedbackCategory; text: string };
 
-const feedbackSchema = z
-  .string(FEEDBACK_SHORT)
-  .trim()
-  .min(FEEDBACK_MIN, FEEDBACK_SHORT)
-  .max(FEEDBACK_MAX, "Keep this under 4,000 characters.");
+const setSchema = (n: number) =>
+  z.object({
+    category: z.enum(SET_CATEGORIES, `Set ${n}: choose Enhancement or Bug.`),
+    text: z
+      .string(`Set ${n}: say what should change, in at least 10 characters.`)
+      .trim()
+      .min(
+        FEEDBACK_MIN,
+        `Set ${n}: say what should change, in at least 10 characters.`,
+      )
+      .max(FEEDBACK_MAX, `Set ${n}: keep this under 4,000 characters.`),
+  });
 
-// Checked in the sheet for its message, and again in the server action.
-export function parseFeedback(
-  input: unknown,
-): { ok: true; value: string } | { ok: false; error: string } {
-  const result = feedbackSchema.safeParse(input);
-  return result.success
-    ? { ok: true, value: result.data }
-    : { ok: false, error: result.error.issues[0]?.message ?? FEEDBACK_SHORT };
+export type ParseSetsResult =
+  | { ok: true; value: FeedbackSet[] }
+  | { ok: false; errors: (string | undefined)[] };
+
+// Checked in the sheet for each set's message, and again in the server action. `errors` has one
+// entry per set, undefined for a set that is fine; it is empty when the list itself is wrong.
+export function parseSets(input: unknown): ParseSetsResult {
+  if (!Array.isArray(input) || input.length < 1 || input.length > MAX_SETS)
+    return { ok: false, errors: [] };
+
+  const value: FeedbackSet[] = [];
+  const errors = input.map((set, index) => {
+    const result = setSchema(index + 1).safeParse(set);
+    if (result.success) {
+      value.push(result.data);
+      return undefined;
+    }
+    return result.error.issues[0]?.message;
+  });
+  return errors.some(Boolean) ? { ok: false, errors } : { ok: true, value };
 }
 
 export function wantsMoreDetail(input: Partial<FeatureRequestInput>): boolean {

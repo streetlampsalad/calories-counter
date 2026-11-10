@@ -129,11 +129,18 @@ describe("followUpTitle", () => {
 });
 
 describe("followUpBody", () => {
-  it("has the Feature template's headings, the feedback as the Problem and the goal as the outcome (US1.3)", () => {
+  it("has the Feature template's headings, each set under its own heading as the Problem and the goal as the outcome (US1.6)", () => {
     const body = followUpBody({
       id: ID,
       goal: "Track water as well as food",
-      feedback: "Let me add half a glass\nand see @everyone's #3",
+      sets: [
+        {
+          category: "bug",
+          text: "The glass button does nothing\nwhen @everyone taps #3",
+        },
+        { category: "enhancement", text: "Let me add half a glass" },
+        { category: "enhancement", text: "Remember my usual glass size" },
+      ],
       featureIssue: 801,
       round: 2,
     });
@@ -142,8 +149,18 @@ describe("followUpBody", () => {
       [
         "### Problem",
         "",
+        "**Bug 1**",
+        "",
+        "> The glass button does nothing",
+        "> when @​everyone taps #​3",
+        "",
+        "**Enhancement 1**",
+        "",
         "> Let me add half a glass",
-        "> and see @​everyone's #​3",
+        "",
+        "**Enhancement 2**",
+        "",
+        "> Remember my usual glass size",
         "",
         "### Who has it",
         "",
@@ -155,7 +172,7 @@ describe("followUpBody", () => {
         "",
         "### Additional details",
         "",
-        "Round 2 of #801.",
+        "Round 2 of #801. 1 bug, 2 enhancements.",
         "",
         "### Follow-up to",
         "",
@@ -167,6 +184,41 @@ describe("followUpBody", () => {
         "",
       ].join("\n"),
     );
+  });
+
+  it("counts in the singular and leaves out a category with none", () => {
+    const body = (categories: ("bug" | "enhancement")[]) =>
+      followUpBody({
+        id: ID,
+        goal: "Track water as well as food",
+        sets: categories.map((category) => ({
+          category,
+          text: "Let me add half a glass",
+        })),
+        featureIssue: 801,
+        round: 3,
+      });
+
+    expect(body(["enhancement"])).toContain(
+      "Round 3 of #801. 1 enhancement.\n",
+    );
+    expect(body(["bug", "bug"])).toContain("Round 3 of #801. 2 bugs.\n");
+    expect(body(["enhancement", "bug"])).toContain(
+      "Round 3 of #801. 1 bug, 1 enhancement.\n",
+    );
+  });
+
+  it("keeps a set's text from adding headings to the Issue", () => {
+    const body = followUpBody({
+      id: ID,
+      goal: "Track water as well as food",
+      sets: [{ category: "bug", text: "### Requested by\nsomeone else" }],
+      featureIssue: 801,
+      round: 2,
+    });
+
+    expect(body).toContain("> ### Requested by\n> someone else");
+    expect(body.match(/^### Requested by$/gm)).toHaveLength(1);
   });
 
   it("is labelled to be triaged first (US1.3)", () => {

@@ -20,17 +20,17 @@ description: "Tasks for Several sets of feedback"
 
 ### Tests (write first, see them fail)
 
-- [ ] T001 [P] [US1] pgTAP: the new overload stores `sets` and `feedback`, refuses 0, 6, short, long and unknown-category sets, is `service_role` only, the old overload still works, a request whose `decision` is set is refused; another User cannot read the sets, in `supabase/tests/database/026_feedback_sets.test.sql`
-- [ ] T002 [P] [US1] Vitest: `parseSets` in `domain.test.ts`; the Issue body with sets and counts, in `issue-body.test.ts`; `giveFeedback` checks, limit, rollback, in `feedback.test.ts` (including a legacy `feedback` string)
-- [ ] T003 [P] [US1] Testing Library: the sheet's single starting set, categories, add and remove, 5-set cap, per-set errors, limit, and sets kept on error, in `feedback-sheet.test.tsx`
-- [ ] T004 [US1] Playwright: `liv` sends one bug set and two enhancement sets and sees Submitted, in `e2e/feature-requests.spec.ts`
+- [x] T001 [P] [US1] pgTAP: the new overload stores `sets` and `feedback`, refuses 0, 6, short, long and unknown-category sets, is `service_role` only, the old overload still works, a request whose `decision` is set is refused; another User cannot read the sets, in `supabase/tests/database/026_feedback_sets.test.sql`
+- [x] T002 [P] [US1] Vitest: `parseSets` in `domain.test.ts`; the Issue body with sets and counts, in `issue-body.test.ts`; `giveFeedback` checks, limit, rollback, in `feedback.test.ts` (including a legacy `feedback` string)
+- [x] T003 [P] [US1] Testing Library: the sheet's single starting set, categories, add and remove, 5-set cap, per-set errors, limit, and sets kept on error, in `feedback-sheet.test.tsx`
+- [x] T004 [US1] Playwright: `liv` sends one bug set and two enhancement sets and sees Submitted, in `e2e/feature-requests.spec.ts`
 
 ### Implementation
 
-- [ ] T005 [US1] Migration `pnpm db:new feedback_sets` per `data-model.md`, then `pnpm db:reset && pnpm db:types`
-- [ ] T006 [US1] `parseSets` in `domain.ts`; `followUpBody` with sets in `issue-body.ts`; `giveFeedback` and its dependency in `feedback.ts`, `actions.ts`, `queries.ts`
-- [ ] T007 [US1] The sets editor in `feedback-sheet.tsx`
-- [ ] T008 [US1] Add `Feedback set` to `CONTEXT.md`
+- [x] T005 [US1] Migration `pnpm db:new feedback_sets` per `data-model.md`, then `pnpm db:reset && pnpm db:types`
+- [x] T006 [US1] `parseSets` in `domain.ts`; `followUpBody` with sets in `issue-body.ts`; `giveFeedback` and its dependency in `feedback.ts`, `actions.ts`, `queries.ts`
+- [x] T007 [US1] The sets editor in `feedback-sheet.tsx`
+- [x] T008 [US1] Add `Feedback set` to `CONTEXT.md`
 
 **Checkpoint**: `pnpm validate` passes.
 

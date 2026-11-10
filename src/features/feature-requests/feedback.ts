@@ -1,4 +1,4 @@
-import { parseFeedback, type Stage } from "./domain";
+import { type FeedbackSet, parseSets, type Stage } from "./domain";
 import type { FeatureIssues } from "./feature-issues";
 import { FOLLOW_UP_LABELS, followUpBody, followUpTitle } from "./issue-body";
 
@@ -26,13 +26,14 @@ export type FeedbackDeps = {
   userId: () => Promise<string | null>;
   /**
    * Starts a Round on the caller's own request and puts it back at Submitted, in one transaction
-   * that checks it may have one and counts the caller's open requests. Null when it may not.
+   * that checks it may have one and counts the caller's open requests. Null when it may not;
+   * "invalid" when the database refuses the sets (it counts characters as code points).
    */
   startRound: (
     id: string,
     userId: string,
-    feedback: string,
-  ) => Promise<StartedRound | "limit" | null>;
+    sets: FeedbackSet[],
+  ) => Promise<StartedRound | "limit" | "invalid" | null>;
   setRoundIssue: (roundId: string, number: number) => Promise<void>;
   /** Deletes the Round and puts the request back as it was, together. */
   undoRound: (roundId: string, before: RequestBefore) => Promise<void>;
@@ -44,24 +45,31 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NOT_ALLOWED = { ok: false, code: "not_allowed" } as const;
 const UNAVAILABLE = { ok: false, code: "unavailable" } as const;
 
-// Starts another Round (spec 135 US1): the Round is recorded first, then its follow-up Feature
-// Issue is created. Either both exist or neither does, as when a request is submitted.
+// Starts another Round (spec 135 US1) with the Requester's feedback sets (spec 193): the Round is
+// recorded first, then its one follow-up Feature Issue is created. Either both exist or neither
+// does, as when a request is submitted.
 export async function giveFeedback(
   input: unknown,
   deps: FeedbackDeps,
 ): Promise<FeedbackResult> {
-  const { id, feedback } = (input ?? {}) as {
+  const { id, sets, feedback } = (input ?? {}) as {
     id?: unknown;
+    sets?: unknown;
     feedback?: unknown;
   };
   if (typeof id !== "string" || !UUID.test(id)) return NOT_ALLOWED;
   const userId = await deps.userId();
   if (!userId) return NOT_ALLOWED;
 
-  const parsed = parseFeedback(feedback);
+  // A tab left open on the client before spec 193 still sends one feedback string (FR-006).
+  const parsed = parseSets(
+    sets === undefined && typeof feedback === "string"
+      ? [{ category: "enhancement", text: feedback }]
+      : sets,
+  );
   if (!parsed.ok) return { ok: false, code: "invalid" };
 
-  let started: StartedRound | "limit" | null;
+  let started: StartedRound | "limit" | "invalid" | null;
   try {
     started = await deps.startRound(id, userId, parsed.value);
   } catch (error) {
@@ -70,6 +78,7 @@ export async function giveFeedback(
   }
   if (started === null) return NOT_ALLOWED;
   if (started === "limit") return { ok: false, code: "limit" };
+  if (started === "invalid") return { ok: false, code: "invalid" };
   const round = started;
   const undo = () =>
     deps
@@ -88,7 +97,7 @@ export async function giveFeedback(
       body: followUpBody({
         id,
         goal: round.goal,
-        feedback: parsed.value,
+        sets: parsed.value,
         featureIssue: round.featureIssue,
         round: round.round,
       }),
