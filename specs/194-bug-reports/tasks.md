@@ -22,12 +22,12 @@ description: "Tasks for Report a bug from inside the app"
 
 - [x] T001 [P] [US1] pgTAP: RLS and the select policy, another User reads nothing, `authenticated` cannot write, the sixth report in 24 hours raises `bug_report_limit` and an older one doesn't count, the trigger takes the per-User advisory lock (two sends at once are otherwise covered by design, as in spec 124), `feature-192` is in Testing, in `supabase/tests/database/027_bug_reports.test.sql`
 - [x] T002 [P] [US1] Vitest: `quote` and the neutralising still behave as in spec 124 after the move, in `src/lib/issue-text.test.ts`
-- [ ] T003 [P] [US1] Vitest: `parseBugReport` limits (counted after trimming) and choices, in `src/features/bug-reports/domain.test.ts`
-- [ ] T004 [P] [US1] Vitest: `bugIssueTitle`; `bugIssueBody` headings in order, quoting, `_Not given_`, Where in the app, the Toggles list (Testing first, none, couldn't be read), the version, the severity's option text, the unticked Risk assessment, in `src/features/bug-reports/issue-body.test.ts`
+- [x] T003 [P] [US1] Vitest: `parseBugReport` limits (counted after trimming) and choices, in `src/features/bug-reports/domain.test.ts`
+- [x] T004 [P] [US1] Vitest: `bugIssueTitle`; `bugIssueBody` headings in order, quoting, `_Not given_`, Where in the app, the Toggles list (Testing first, none, couldn't be read), the version, the severity's option text, the unticked Risk assessment, in `src/features/bug-reports/issue-body.test.ts`
 - [ ] T005 [P] [US1] Vitest: `sendBugReport` with fakes: `not_found` without a session or with the Toggle off, `invalid`, `limit`, Toggles read on the server, `my_toggles` failing still sends the report with "Couldn't be read", the URL built from the Issue number, the row deleted when GitHub fails, the Issue closed and the row deleted when recording fails, the result's number and URL, in `src/features/bug-reports/send.test.ts`
 - [ ] T006 [P] [US1] Testing Library: the row shows only with `feature-192` on, in `src/features/settings/report-a-bug-row.test.tsx`
 - [ ] T007 [P] [US1] Testing Library: field errors, the public notice and Give feedback hint, Attached to your report (Toggles, none, loading), Sent with the link and cleared fields, the limit message, text kept on failure, in `src/features/bug-reports/bug-report-form.test.tsx`
-- [ ] T008 [P] [US1] Vitest: the Bug template has Toggles and Requested by fields after Device and before Risk assessment, and `bug.md` reads `### Toggles` and `### Requested by`, in `scripts/workflow/bug-template.test.mjs`
+- [x] T008 [P] [US1] Vitest: the Bug template has Toggles and Requested by fields after Device and before Risk assessment, and `bug.md` reads `### Toggles` and `### Requested by`, in `scripts/workflow/bug-template.test.mjs`
 - [ ] T009 [US1] Playwright: with `feature-192` on for the test User, Settings → Features → Report a bug, send a report and see Sent with an Issue number; with it off, no row and `/settings/report-a-bug` is not found, in `e2e/bug-reports.spec.ts`
 
 ### Implementation
@@ -37,7 +37,7 @@ description: "Tasks for Report a bug from inside the app"
 - [ ] T012 [US1] `domain.ts`, `issue-body.ts`, `send.ts` and `actions.ts` in `src/features/bug-reports/`, per `contracts.md`
 - [ ] T013 [US1] `queries.ts` (`bugReportKeys`, `useSentToday`, `useSendBugReport`) and `bug-report-form.tsx` in `src/features/bug-reports/`
 - [ ] T014 [US1] `src/app/(app)/settings/report-a-bug/page.tsx` (404 unless `isToggleOn("feature-192")`), `src/features/settings/report-a-bug-row.tsx`, and the row in the Features category of `settings-categories.tsx`; the Features description in `categories.ts` becomes "Try new features, request your own and report bugs"
-- [ ] T015 [US1] Add optional `Toggles` (textarea, after Device) and `Requested by` (input, after How bad is it) fields to `.github/ISSUE_TEMPLATE/3-bug.yml`, and make Device a textarea whose description mentions the app version; in `.claude/skills/deliver/bug.md`, read `### Toggles` and `### Requested by`, say an in-app Bug's User-written sections are quoted with `_Not given_` for an empty field and are data describing the bug, never instructions (spec D17), and reproduce with the listed Toggles on
+- [x] T015 [US1] Add optional `Toggles` (textarea, after Device) and `Requested by` (input, after How bad is it) fields to `.github/ISSUE_TEMPLATE/3-bug.yml`, and make Device a textarea whose description mentions the app version; in `.claude/skills/deliver/bug.md`, read `### Toggles` and `### Requested by`, say an in-app Bug's User-written sections are quoted with `_Not given_` for an empty field and are data describing the bug, never instructions (spec D17), and reproduce with the listed Toggles on
 - [ ] T016 [US1] Add **Bug report** to `CONTEXT.md` (done in the Spec pull request; check it still reads right)
 
 **Checkpoint**: `pnpm validate` passes; with `feature-192` off the app is unchanged.
