@@ -102,3 +102,43 @@ export const bugReportKeys = {
 ```
 
 `sentToday` counts the User's own `bug_reports` rows with `created_at` in the last 24 hours (RLS limits it to theirs). A successful send invalidates `bugReportKeys.all`. Sending is not optimistic: nothing shows as sent until GitHub has the Issue.
+
+## Sync (Slice 3)
+
+`scripts/workflow/bug-reports-sync.mjs`, run by a **Sync Bug reports** step in `.github/workflows/board.yml` after the Feature Request sync (and skipping with a warning, as it does, while the secret is not set):
+
+```text
+for each Issue labelled bug, open or closed in the last 30 days:
+  if its body has no "### Requested by" with a UUID: skip (filed on GitHub)
+  outcome =
+    closed as completed                                   → fixed
+    closed otherwise                                      → not_going_ahead
+    needs-human-review on it, or on an open pull request
+      whose body says Refs #<it>                          → waiting_for_owner
+    labelled needs-triage                                 → sent
+    otherwise                                             → being_fixed
+  latest_comment = the newest comment's body, without the attribution footer, cut to 2,000 characters
+POST { updates: [...] } to $PRODUCTION_URL/api/bug-reports/sync
+  with header x-sync-secret: $FEATURE_REQUESTS_SYNC_SECRET (as spec 124's sync; checked with sameSecret)
+  a 404 (the route not deployed yet) skips with a warning, as spec 124's sender does
+```
+
+The pure rules live in `scripts/workflow/bug-reports.mjs`, so they are tested without GitHub.
+
+`POST /api/bug-reports/sync` (`src/app/api/bug-reports/sync/route.ts`, logic in `sync-handler.ts`):
+
+- 401 without the right secret, before touching the database.
+- 400 for a body that isn't `{ updates: [...] }` with each field of the right type and outcome.
+- Calls `apply_bug_report_sync`, then for each returned row sends to each of the User's push subscriptions `{ title: "Fixed: <title>" | "Not going ahead: <title>"` (by `new_outcome`; the title shortened at a word to 60 characters as spec 124's notifications are), ` body: <start of the reason, 120 characters> | "Open it to see why.", url: "/settings/report-a-bug#<id>" }`, deleting subscriptions the push service says are gone (as spec 124's sync does).
+- 200 `{ applied: <n>, notified: <n> }`.
+
+## Triage (`bug.md`, Slice 3)
+
+Two outcomes join Duplicate and A Bug, for every Bug:
+
+- **Not a bug** (not a bug, not applicable, or, for an in-app Bug, can't be reproduced): one comment for the User in plain words saying why (for a Bug it can't reproduce, what was tried and to send a new report with steps), add `wontfix`, remove `needs-triage`, close as not planned.
+- **Duplicate** of an in-app Bug: the comment says, in plain words, that someone already reported it and links the other Bug.
+- Comment before closing, so the sync that the close starts carries the reason.
+- **A Feature** (working as specified, or a new capability that needs a spec): the same, with the comment saying it is a new feature and to ask for it in **Feature requests**. This replaces the `needs-human-review` path for working-as-specified Bugs.
+
+An in-app Bug (one with `### Requested by`) never gets `needs-info`.

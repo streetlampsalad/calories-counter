@@ -68,9 +68,39 @@ description: "Tasks for Report a bug from inside the app"
 
 ---
 
+## Slice 3: User Story 3 - Hear what triage decided (Priority: P3)
+
+**Goal**: triage can turn a Bug down with a reason; each in-app Bug's outcome reaches the app, is listed under the form, and notifies on Fixed and Not going ahead.
+
+**Covers**: US3.1–US3.9, FR-010–FR-012
+
+**Behind Toggle**: `feature-192`
+
+### Tests (write first, see them fail)
+
+- [ ] T023 [P] [US3] pgTAP: `apply_bug_report_sync` is `service_role` only, ignores a mismatched Bug Issue number, returns a row only on a change into Fixed or Not going ahead and not on a repeat; another User reads none of the new columns, in `supabase/tests/database/028_bug_report_sync.test.sql`
+- [ ] T024 [P] [US3] Vitest: the outcome rules on sample Issues, pull requests and comments (each outcome, Bugs without `### Requested by` skipped, the footer stripped), in `scripts/workflow/bug-reports.test.mjs`
+- [ ] T025 [P] [US3] Vitest: `bug.md` has the Not a bug and A Feature outcomes with `wontfix` and closing as not planned, no longer sends working-as-specified Bugs to `needs-human-review`, and never gives an in-app Bug `needs-info`, in `scripts/workflow/bug-template.test.mjs`
+- [ ] T026 [P] [US3] Vitest: the sync handler refuses a wrong or missing secret, rejects a bad body, applies updates, notifies only the returned rows with the right title, body and URL, and deletes gone subscriptions, in `src/features/bug-reports/sync-handler.test.ts`
+- [ ] T027 [P] [US3] Testing Library: Your bug reports (newest first, each outcome, the reason, the Feature requests link on Not going ahead, "Bug #<n>" before a sync, loading, empty, error with Retry) in `src/features/bug-reports/report-list.test.tsx`; "Notify me about this report" in `bug-report-form.test.tsx`
+- [ ] T028 [US3] Playwright: send a report, post a sync with the test secret marking it Not going ahead, and see the reason and the Feature requests link, in `e2e/bug-reports.spec.ts`
+
+### Implementation
+
+- [ ] T029 [US3] Migration `pnpm db:new bug_report_sync` per `data-model.md`, then `pnpm db:reset && pnpm db:types`
+- [ ] T030 [US3] `scripts/workflow/bug-reports.mjs` (rules) and `bug-reports-sync.mjs` (the GitHub reads and its own POST to the new route, skipping on a 404 like `sendSync`, with `DRY_RUN=1`), and the **Sync Bug reports** step in `.github/workflows/board.yml`
+- [ ] T031 [US3] `sync-handler.ts` and `src/app/api/bug-reports/sync/route.ts`, reusing spec 124's push sender and subscription lookup
+- [ ] T032 [US3] `bugReportKeys.mine()` and `useBugReports` in `queries.ts`, `report-list.tsx` on the Report a bug page, and the notify offer in `bug-report-form.tsx`
+- [ ] T033 [US3] The Not a bug and A Feature outcomes, and no `needs-info` for in-app Bugs, in `.claude/skills/deliver/bug.md` per `contracts.md`
+
+**Checkpoint**: `pnpm validate` passes, and User Stories 1–3 all work.
+
+---
+
 ## Slices
 
 | Slice | Title | Covers | Tasks | Blocked by | Human review |
 |---|---|---|---|---|---|
 | 1 | Report a bug, with the Toggles attached | US1.1–US1.12 | T001–T016 | — | Yes (new table and RLS policy; Bug template and `bug.md`; real GitHub checked by the Owner) |
 | 2 | Device information attached | US2.1–US2.6 | T017–T022 | Slice 1 | Yes (device details published on GitHub; real phones checked by the Owner) |
+| 3 | Hear what triage decided | US3.1–US3.9 | T023–T033 | Slice 1 | Yes (`bug.md` and `board.yml`; a `security definer` sync function; real push checked by the Owner) |
