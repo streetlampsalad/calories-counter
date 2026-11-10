@@ -26,13 +26,14 @@ export type FeedbackDeps = {
   userId: () => Promise<string | null>;
   /**
    * Starts a Round on the caller's own request and puts it back at Submitted, in one transaction
-   * that checks it may have one and counts the caller's open requests. Null when it may not.
+   * that checks it may have one and counts the caller's open requests. Null when it may not;
+   * "invalid" when the database refuses the sets (it counts characters as code points).
    */
   startRound: (
     id: string,
     userId: string,
     sets: FeedbackSet[],
-  ) => Promise<StartedRound | "limit" | null>;
+  ) => Promise<StartedRound | "limit" | "invalid" | null>;
   setRoundIssue: (roundId: string, number: number) => Promise<void>;
   /** Deletes the Round and puts the request back as it was, together. */
   undoRound: (roundId: string, before: RequestBefore) => Promise<void>;
@@ -68,7 +69,7 @@ export async function giveFeedback(
   );
   if (!parsed.ok) return { ok: false, code: "invalid" };
 
-  let started: StartedRound | "limit" | null;
+  let started: StartedRound | "limit" | "invalid" | null;
   try {
     started = await deps.startRound(id, userId, parsed.value);
   } catch (error) {
@@ -77,6 +78,7 @@ export async function giveFeedback(
   }
   if (started === null) return NOT_ALLOWED;
   if (started === "limit") return { ok: false, code: "limit" };
+  if (started === "invalid") return { ok: false, code: "invalid" };
   const round = started;
   const undo = () =>
     deps

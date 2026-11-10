@@ -1,7 +1,7 @@
 -- Feedback sets (spec 193, Slice 1): a Round keeps 1 to 5 sets, each an enhancement or a bug; only
 -- the server starts one; the old single-feedback overload still works; the sets stay private.
 begin;
-select plan(24);
+select plan(28);
 
 -- Start from no requests, whatever earlier e2e runs left behind (rolled back at the end).
 delete from public.feature_requests;
@@ -130,6 +130,31 @@ select is(
   null, 'FR-006: and stores no sets'
 );
 
+-- FR-005: the same guards as the single-feedback overload.
+select is(
+  (select count(*)::integer from public.start_feature_request_round(
+     '11111111-0000-0000-0000-000000000002', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+     '[{"category": "bug", "text": "The glass button does nothing"}]'::jsonb)),
+  0, 'FR-005: no Round on someone else''s request'
+);
+update public.feature_requests set stage = 'ready_to_try' where feature_issue = 862;
+insert into public.feature_requests (user_id, goal, feature_issue, stage)
+values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Scan barcodes on packaged food', 863, 'building');
+select throws_ok(
+  $$ select * from public.start_feature_request_round('11111111-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+       '[{"category": "bug", "text": "The glass button does nothing"}]'::jsonb) $$,
+  '23514', 'feature_request_limit', 'FR-005: no Round while 2 other requests are being worked on'
+);
+delete from public.feature_requests where feature_issue = 863;
+update public.feature_requests set withdrawn_at = now() where feature_issue = 862;
+select is(
+  (select count(*)::integer from public.start_feature_request_round(
+     '11111111-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+     '[{"category": "bug", "text": "The glass button does nothing"}]'::jsonb)),
+  0, 'FR-005: no Round on a withdrawn request'
+);
+update public.feature_requests set withdrawn_at = null where feature_issue = 862;
+
 -- FR-005: never on a decided request.
 update public.feature_requests
 set stage = 'ready_to_try', decision = 'ready'
@@ -139,6 +164,14 @@ select is(
      '11111111-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
      '[{"category": "enhancement", "text": "Let me name my meals again"}]'::jsonb)),
   0, 'FR-005: no Round on a request whose decision is set'
+);
+update public.feature_requests set decision = null where feature_issue = 862;
+update public.toggles set state = 'live' where key = 'feature-862';
+select is(
+  (select count(*)::integer from public.start_feature_request_round(
+     '11111111-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+     '[{"category": "bug", "text": "The glass button does nothing"}]'::jsonb)),
+  0, 'FR-005: no Round once the Toggle has left Testing'
 );
 reset role;
 

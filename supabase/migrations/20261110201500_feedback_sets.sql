@@ -35,9 +35,13 @@ declare
   request public.feature_requests;
   checked jsonb;
 begin
+  -- Checked in two steps, so the array functions below only ever see an array.
   if start_feature_request_round.sets is null
     or jsonb_typeof(start_feature_request_round.sets) <> 'array'
-    or jsonb_array_length(start_feature_request_round.sets) not between 1 and 5
+  then
+    raise exception 'invalid_feedback_sets' using errcode = '22023';
+  end if;
+  if jsonb_array_length(start_feature_request_round.sets) not between 1 and 5
     or exists (
       select 1 from jsonb_array_elements(start_feature_request_round.sets) as s (value)
       where jsonb_typeof(s.value) <> 'object'

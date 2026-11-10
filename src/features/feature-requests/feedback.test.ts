@@ -143,6 +143,18 @@ describe("giveFeedback", () => {
     expect(deps.startRound).not.toHaveBeenCalled();
   });
 
+  it("answers invalid when the database refuses the sets, and creates nothing (US1.8)", async () => {
+    const { deps, issues } = setup({
+      startRound: vi.fn(async () => "invalid" as const),
+    });
+
+    expect(await giveFeedback(VALID, deps)).toEqual({
+      ok: false,
+      code: "invalid",
+    });
+    expect(issues.create).not.toHaveBeenCalled();
+  });
+
   it("says so when 2 other requests are being worked on (US1.7)", async () => {
     const { deps, issues } = setup({
       startRound: vi.fn(async () => "limit" as const),

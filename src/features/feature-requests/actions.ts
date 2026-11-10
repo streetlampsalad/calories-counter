@@ -113,6 +113,8 @@ export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
       });
       if (error?.code === "23514" && error.message === "feature_request_limit")
         return "limit";
+      if (error?.code === "22023" && error.message === "invalid_feedback_sets")
+        return "invalid";
       if (error) throw error;
       const round = data[0];
       return round
