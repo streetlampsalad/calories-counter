@@ -10,11 +10,12 @@ import {
   submitFeatureRequest,
   withdrawFeatureRequest,
 } from "./actions";
-import type {
-  Decision,
-  FeatureRequestInput,
-  FeedbackSet,
-  Stage,
+import {
+  type Decision,
+  type FeatureRequestInput,
+  type FeedbackSet,
+  parseSets,
+  type Stage,
 } from "./domain";
 
 export type FeatureRequest = {
@@ -34,6 +35,8 @@ export type FeatureRequest = {
 export type Round = {
   id: string;
   feedback: string;
+  // The Round's Feedback sets in the order sent; null for a Round sent before sets (spec 193).
+  sets: FeedbackSet[] | null;
   featureIssue: number | null;
   createdAt: string;
 };
@@ -52,6 +55,12 @@ export type OtherFeatureRequest = {
   featureIssue: number;
 };
 
+// Stored sets that are missing or malformed fall back to the Round's note.
+function roundSets(stored: unknown): FeedbackSet[] | null {
+  const parsed = parseSets(stored);
+  return parsed.ok ? parsed.value : null;
+}
+
 // The signed-in User's own Feature Requests, newest first.
 export function useMyFeatureRequests() {
   return useQuery({
@@ -60,7 +69,7 @@ export function useMyFeatureRequests() {
       const { data, error } = await createClient()
         .from("feature_requests")
         .select(
-          "id, goal, stage, feature_issue, latest_comment, ready_note, withdrawn_at, first_ready_at, created_at, feature_request_rounds (id, feedback, feature_issue, created_at)",
+          "id, goal, stage, feature_issue, latest_comment, ready_note, withdrawn_at, first_ready_at, created_at, feature_request_rounds (id, feedback, sets, feature_issue, created_at)",
         )
         .order("created_at", { ascending: false })
         .order("created_at", {
@@ -80,6 +89,7 @@ export function useMyFeatureRequests() {
         rounds: row.feature_request_rounds.map((round) => ({
           id: round.id,
           feedback: round.feedback,
+          sets: roundSets(round.sets),
           featureIssue: round.feature_issue,
           createdAt: round.created_at,
         })),

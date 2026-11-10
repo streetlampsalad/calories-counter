@@ -107,9 +107,25 @@ function Rounds({ rounds }: { rounds: Round[] }) {
         return (
           <li key={round.id} className="flex flex-col text-sm">
             <span className="font-medium">{name}</span>
-            <span className="line-clamp-2 text-muted-foreground">
-              {round.feedback}
-            </span>
+            {round.sets ? (
+              <ol aria-label={`${name} feedback`} className="flex flex-col">
+                {round.sets.map((set, setIndex) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: sets are fixed once sent, in order
+                  <li key={setIndex} className="flex flex-col">
+                    <span className="font-medium">
+                      {set.category === "bug" ? "Bug" : "Enhancement"}
+                    </span>
+                    <span className="line-clamp-3 whitespace-pre-line text-muted-foreground">
+                      {set.text}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <span className="line-clamp-2 text-muted-foreground">
+                {round.feedback}
+              </span>
+            )}
             {round.featureIssue ? (
               <a
                 href={issueUrl(round.featureIssue)}
