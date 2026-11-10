@@ -151,3 +151,9 @@ _Avoid_: iteration, revision, version
 **Feedback set**:
 One separate piece of a Requester's feedback within a Round: its text and whether it is an **Enhancement** (something they would like better) or a **Bug** (something broken). A Round holds one to five.
 _Avoid_: ticket, comment, note
+
+### Bug reports
+
+**Bug report**:
+What a User tells the Owner is broken, sent from inside the app. It becomes a public Bug Issue with the Toggles on for them and their device attached, and never their name or email.
+_Avoid_: ticket, feedback (that is a Feedback set in a Round), issue (that is GitHub's)
