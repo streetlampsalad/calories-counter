@@ -9,6 +9,20 @@ Code changes. Follow `AGENTS.md` for where tests go and how the database changes
 - **Chore that removes a Toggle** (ADR 0008): for a Feature that is Live, delete the Toggle checks, the "off" branches and the "off" tests, and keep the "on" path with its tests; for a Feature that is Removed, delete the feature's code and tests. Either way keep the `feature-<n>` row in `public.toggles`, which the Feature Request's card reads, and leave the schema to a later migration.
 - **Risk assessment**: tick the conditions in the Issue's checklist that apply. A tick means the pull request gets `needs-human-review`.
 
+## Who builds it
+
+Hand the build to the `implementer` subagent, which runs on a faster model, when the work is decided and only needs building: a Slice, or a Chore whose Issue spells out the change (removing a Toggle, an upgrade, a refactor it describes). Build it yourself, in this session, when it is mostly judgement: a Chore that changes the workflow, the guardrails or the agent instructions, or one whose Issue leaves the design open.
+
+The subagent starts with none of this conversation, so its brief carries everything: the Issue number and title, the branch, the spec folder, the scenarios copied verbatim and the task IDs in scope (for a Chore, the Issue's What and Why), any decision you have already made, and the commit attribution lines.
+
+When it reports back:
+
+1. Settle every point under **Open**: correct the spec in this pull request, or decide and record why.
+2. Check each scenario in scope has its test, and run `pnpm validate:fast` yourself.
+3. Finish anything left, in this session.
+
+When the `implementer` subagent type is not available (a session that did not load `.claude/agents/`), build it yourself, test first as below, and say so in the pull request.
+
 ## Build it test first
 
 Work red-green-refactor (the `/tdd` skill where it is installed): for each criterion, write the test, see it fail for the right reason, make it pass, and commit in small steps. Iterate with `pnpm validate:fast`. Mark each finished task `[x]` in `tasks.md` as you go.

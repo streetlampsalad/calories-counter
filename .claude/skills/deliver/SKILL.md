@@ -45,6 +45,8 @@ In a cloud session, before you change anything, put the `claude/*` branch you we
 | `bug` | [bug.md](bug.md) |
 | `spike` | [spike.md](spike.md) |
 
+Every path runs in this session, on the model the Dispatcher runs on, except the build of a Slice or a mechanical Chore: [change.md](change.md) hands that to the `implementer` subagent on a faster model. The thinking (triage, the spec, a Bug's cause, the review, the pull request) stays here.
+
 ## 4. Hand over
 
 Every path that produces a pull request ends here.

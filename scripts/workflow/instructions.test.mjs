@@ -50,3 +50,28 @@ describe("/deliver's routes", () => {
       expect(() => read(`.claude/skills/deliver/${file}`)).not.toThrow();
   });
 });
+
+// Issue #196: the thinking stays in /deliver's session; building a Slice goes to a faster model.
+describe("the implementer subagent", () => {
+  const path = ".claude/agents/implementer.md";
+
+  it("runs on the faster model and builds as change.md says", () => {
+    const agent = read(path);
+    const frontmatter = agent.split("---")[1];
+    expect(frontmatter).toMatch(/^name: implementer$/m);
+    expect(frontmatter).toMatch(/^model: sonnet$/m);
+    expect(frontmatter).toMatch(/^description: /m);
+    expect(agent).toContain(".claude/skills/deliver/change.md");
+  });
+
+  it("is what /deliver hands a build to, with a fallback when it is missing", () => {
+    const change = read(".claude/skills/deliver/change.md");
+    expect(change).toContain("`implementer`");
+    expect(change).toMatch(/not available/);
+    expect(deliver).toContain("`implementer`");
+  });
+
+  it("is named in the Dispatcher's settings", () => {
+    expect(read("docs/agents/dispatcher.md")).toContain("`implementer`");
+  });
+});
