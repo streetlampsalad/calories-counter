@@ -10,7 +10,12 @@ import {
   submitFeatureRequest,
   withdrawFeatureRequest,
 } from "./actions";
-import type { Decision, FeatureRequestInput, Stage } from "./domain";
+import type {
+  Decision,
+  FeatureRequestInput,
+  FeedbackSet,
+  Stage,
+} from "./domain";
 
 export type FeatureRequest = {
   id: string;
@@ -180,7 +185,7 @@ export function useGiveFeedback() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { id: string; feedback: string }) => {
+    mutationFn: async (input: { id: string; sets: FeedbackSet[] }) => {
       let result: Awaited<ReturnType<typeof giveFeedback>>;
       try {
         result = await giveFeedback(input);

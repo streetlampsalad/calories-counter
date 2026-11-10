@@ -95,7 +95,7 @@ export async function withdrawFeatureRequest(
   });
 }
 
-// Starts another Round on one of the caller's own requests (spec 135 US1).
+// Starts another Round on one of the caller's own requests (spec 135 US1), with its sets (spec 193).
 export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -105,11 +105,11 @@ export async function giveFeedback(input: unknown): Promise<FeedbackResult> {
       const { data } = await supabase.auth.getClaims();
       return data?.claims.sub ?? null;
     },
-    startRound: async (id, userId, text) => {
+    startRound: async (id, userId, sets) => {
       const { data, error } = await admin.rpc("start_feature_request_round", {
         request_id: id,
         requester_id: userId,
-        feedback: text,
+        sets,
       });
       if (error?.code === "23514" && error.message === "feature_request_limit")
         return "limit";
