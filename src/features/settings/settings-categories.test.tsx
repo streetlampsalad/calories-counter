@@ -29,6 +29,9 @@ vi.mock("./try-features-section", () => ({
 vi.mock("./feature-requests-row", () => ({
   FeatureRequestsRow: () => <p>feature-requests-row</p>,
 }));
+vi.mock("./report-a-bug-row", () => ({
+  ReportABugRow: () => <p>report-a-bug-row</p>,
+}));
 
 import type { SettingsCategory } from "./categories";
 import { SettingsCategoryPage, SettingsHome } from "./settings-categories";
@@ -57,6 +60,34 @@ describe("SettingsHome", () => {
     expect(screen.queryByText("goal-section")).not.toBeInTheDocument();
   });
 
+  it("describes Features as before while feature-192 is off (US1.2)", () => {
+    render(<SettingsHome>About and Account</SettingsHome>);
+
+    expect(
+      screen.getByText("Try new features and request your own"),
+    ).toBeInTheDocument();
+  });
+
+  it("adds reporting bugs to the Features description once feature-192 is on (T014)", () => {
+    query = {
+      data: [
+        {
+          key: "feature-192",
+          title: "Report a bug",
+          state: "testing",
+          isOn: true,
+          canSwitch: true,
+        },
+      ],
+      isPending: false,
+    };
+    render(<SettingsHome>About and Account</SettingsHome>);
+
+    expect(
+      screen.getByText("Try new features, request your own and report bugs"),
+    ).toBeInTheDocument();
+  });
+
   it("hides a category with no section visible (US1.7)", () => {
     const categories: SettingsCategory[] = [
       {
@@ -82,6 +113,12 @@ describe("SettingsHome", () => {
 });
 
 describe("SettingsCategoryPage", () => {
+  it("shows the Features sections including the Report a bug row", () => {
+    render(<SettingsCategoryPage id="features" />);
+
+    expect(screen.getByText("report-a-bug-row")).toBeInTheDocument();
+  });
+
   it("shows the category's sections and a link back to Settings (US1.3, US1.6)", () => {
     render(<SettingsCategoryPage id="tracking" />);
 

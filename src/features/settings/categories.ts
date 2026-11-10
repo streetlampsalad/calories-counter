@@ -6,6 +6,8 @@ export type SettingsCategory = {
   id: SettingsCategoryId;
   title: string;
   description: string;
+  // A longer description once a Toggle is on for the User, so the app is unchanged while it is off.
+  descriptionWithToggle?: { key: string; description: string };
   // Whether any section of this category shows to the User; a category with none is not listed.
   hasVisibleSection: (toggles: readonly Toggle[]) => boolean;
 };
@@ -29,9 +31,22 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
     id: "features",
     title: "Features",
     description: "Try new features and request your own",
+    descriptionWithToggle: {
+      key: "feature-192",
+      description: "Try new features, request your own and report bugs",
+    },
     hasVisibleSection: () => true,
   },
 ];
+
+export function categoryDescription(
+  category: SettingsCategory,
+  toggles: readonly Toggle[],
+): string {
+  const extra = category.descriptionWithToggle;
+  const on = extra && toggles.some((t) => t.key === extra.key && t.isOn);
+  return on ? extra.description : category.description;
+}
 
 export function visibleCategories(
   toggles: readonly Toggle[],

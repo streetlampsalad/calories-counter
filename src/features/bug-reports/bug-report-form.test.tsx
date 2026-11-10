@@ -1,0 +1,183 @@
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Toggle } from "@/features/toggles/queries";
+
+const mutate = vi.fn();
+let sentToday: { data?: number; isPending?: boolean; isError?: boolean };
+vi.mock("./queries", () => ({
+  useSentToday: () => sentToday,
+  useSendBugReport: () => ({ mutate, isPending: false }),
+}));
+
+let toggles: { data?: Toggle[]; isPending: boolean; isError: boolean };
+vi.mock("@/features/toggles/queries", () => ({
+  useToggles: () => toggles,
+}));
+
+import { BugReportForm } from "./bug-report-form";
+
+const toggle = (overrides: Partial<Toggle>): Toggle => ({
+  key: "feature-1",
+  title: "A feature",
+  state: "live",
+  isOn: true,
+  canSwitch: false,
+  ...overrides,
+});
+
+const wentWrong = () =>
+  screen.getByRole("textbox", { name: /What went wrong/ });
+const send = () => screen.getByRole("button", { name: "Send report" });
+const attached = () =>
+  screen.getByRole("region", { name: "Attached to your report" });
+
+describe("BugReportForm", () => {
+  beforeEach(() => {
+    mutate.mockReset();
+    sentToday = { data: 0 };
+    toggles = { data: [], isPending: false, isError: false };
+  });
+
+  it("says the report is posted publicly, and points feature feedback to Give feedback (US1.4)", () => {
+    render(<BugReportForm version="abc1234" />);
+
+    expect(screen.getByText(/posted publicly on GitHub/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Give feedback.* on its request instead/),
+    ).toBeInTheDocument();
+  });
+
+  it("doesn't send a short What went wrong, or no severity, and says what each needs (US1.3)", async () => {
+    render(<BugReportForm version="abc1234" />);
+
+    await userEvent.type(wentWrong(), "Broken");
+    await userEvent.click(send());
+
+    expect(mutate).not.toHaveBeenCalled();
+    expect(wentWrong()).toHaveAccessibleDescription(
+      expect.stringContaining("at least 10 characters"),
+    );
+    expect(wentWrong()).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("Choose how bad it is.")).toBeInTheDocument();
+  });
+
+  it("lists the Toggles on, Testing first, with the app version (US1.5)", () => {
+    toggles = {
+      data: [
+        toggle({ key: "feature-173", title: "Meal times", state: "live" }),
+        toggle({ key: "feature-192", title: "Report a bug", state: "testing" }),
+        toggle({ key: "feature-9", title: "Off one", isOn: false }),
+      ],
+      isPending: false,
+      isError: false,
+    };
+    render(<BugReportForm version="abc1234" />);
+
+    const items = within(attached()).getAllByRole("listitem");
+    expect(items.map((item) => item.textContent)).toEqual([
+      "Report a bug (feature-192): Testing",
+      "Meal times (feature-173): Live",
+    ]);
+    expect(
+      within(attached()).getByText(/App version: abc1234/),
+    ).toBeInTheDocument();
+    expect(within(attached()).queryByText(/Off one/)).not.toBeInTheDocument();
+  });
+
+  it("says No Toggles on when none are (US1.5)", () => {
+    render(<BugReportForm version="abc1234" />);
+    expect(within(attached()).getByText("No Toggles on")).toBeInTheDocument();
+  });
+
+  it("says Checking… while the Toggles load, and Couldn't be read on an error", () => {
+    toggles = { isPending: true, isError: false };
+    const { rerender } = render(<BugReportForm version="abc1234" />);
+    expect(within(attached()).getByText("Checking…")).toBeInTheDocument();
+
+    toggles = { isPending: false, isError: true };
+    rerender(<BugReportForm version="abc1234" />);
+    expect(
+      within(attached()).getByText("Couldn't be read"),
+    ).toBeInTheDocument();
+  });
+
+  it("sends what was typed and chosen, then says Sent with the link and clears the fields (US1.8)", async () => {
+    mutate.mockImplementation((_input, options) =>
+      options.onSuccess({
+        issue: 321,
+        url: "https://github.com/streetlampsalad/calories-counter/issues/321",
+      }),
+    );
+    render(<BugReportForm version="abc1234" />);
+
+    await userEvent.type(wentWrong(), "The Today total is wrong");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: /Where in the app/ }),
+      "today",
+    );
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "It's annoying, but I can work around it",
+      }),
+    );
+    await userEvent.click(send());
+
+    expect(mutate).toHaveBeenCalledWith(
+      {
+        whatWentWrong: "The Today total is wrong",
+        expected: "",
+        howItHappened: "",
+        screen: "today",
+        severity: "annoying",
+      },
+      expect.any(Object),
+    );
+    const sent = screen.getByRole("status");
+    expect(sent).toHaveTextContent("Sent");
+    expect(within(sent).getByRole("link", { name: /#321/ })).toHaveAttribute(
+      "href",
+      "https://github.com/streetlampsalad/calories-counter/issues/321",
+    );
+    expect(wentWrong()).toHaveValue("");
+    expect(
+      screen.getByRole("radio", {
+        name: "It's annoying, but I can work around it",
+      }),
+    ).not.toBeChecked();
+  });
+
+  it("keeps what was typed and says it couldn't be sent when sending fails (US1.10)", async () => {
+    mutate.mockImplementation((_input, options) =>
+      options.onError(
+        new Error(
+          "Couldn't send your report. Check your connection and try again.",
+        ),
+      ),
+    );
+    render(<BugReportForm version="abc1234" />);
+
+    await userEvent.type(wentWrong(), "The Today total is wrong");
+    await userEvent.click(
+      screen.getByRole("radio", { name: "I can't finish what I was doing" }),
+    );
+    await userEvent.click(send());
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't send your report. Check your connection and try again.",
+    );
+    expect(wentWrong()).toHaveValue("The Today total is wrong");
+  });
+
+  it("says they can send 5 a day and can't send after 5 (US1.9)", () => {
+    sentToday = { data: 5 };
+    render(<BugReportForm version="abc1234" />);
+
+    expect(
+      screen.getByText(/You can send 5 bug reports a day/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Send report" }),
+    ).not.toBeInTheDocument();
+  });
+});

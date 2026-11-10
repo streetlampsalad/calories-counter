@@ -1,3 +1,4 @@
+import { cutTitle, quote } from "@/lib/issue-text";
 import type { Decision, FeedbackCategory, FeedbackSet } from "./domain";
 
 // The Feature Issue a Feature Request becomes. Its headings are the Feature issue template's
@@ -11,40 +12,11 @@ export const ISSUE_LABELS = ["feature", "needs-triage", "priority:P2"];
 export const FOLLOW_UP_LABELS = ["feature", "needs-triage", "priority:P1"];
 
 const TITLE_PREFIX = "Feature: ";
-const TITLE_MAX = 70;
-const ZERO_WIDTH_SPACE = "​";
-const NOT_GIVEN = "_Not given_";
 
-function neutralise(text: string): string {
-  return text
-    .replace(/@(?=[\w-])/g, `@${ZERO_WIDTH_SPACE}`)
-    .replace(/#(?=\d)/g, `#${ZERO_WIDTH_SPACE}`);
-}
-
-function quote(text: string | undefined): string {
-  const trimmed = text?.trim();
-  if (!trimmed) return NOT_GIVEN;
-  return neutralise(trimmed)
-    .split(/\r?\n/)
-    .map((line) => (line.trim() ? `> ${line}` : ">"))
-    .join("\n");
-}
-
-function title(prefix: string, goal: string): string {
-  const line = (goal.trim().split(/\r?\n/)[0] ?? "").replace(/\s+/g, " ");
-  const room = TITLE_MAX - prefix.length;
-  if (line.length <= room) return prefix + neutralise(line);
-
-  const cut = line.slice(0, room - 1);
-  const atWord =
-    cut.lastIndexOf(" ") > 0 ? cut.slice(0, cut.lastIndexOf(" ")) : cut;
-  return `${prefix}${neutralise(atWord.trimEnd())}…`;
-}
-
-export const issueTitle = (goal: string) => title(TITLE_PREFIX, goal);
+export const issueTitle = (goal: string) => cutTitle(TITLE_PREFIX, goal);
 
 export const followUpTitle = (goal: string) =>
-  title(`${TITLE_PREFIX}Feedback on `, goal);
+  cutTitle(`${TITLE_PREFIX}Feedback on `, goal);
 
 export function issueBody(request: {
   id: string;
