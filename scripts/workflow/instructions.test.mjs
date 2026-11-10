@@ -64,7 +64,7 @@ describe("the implementer subagent", () => {
     expect(agent).toContain(".claude/skills/deliver/change.md");
   });
 
-  it("has no tool that reaches GitHub, MCP connectors or other subagents", () => {
+  it("has only the shell and file tools: no Agent, Skill, web or MCP tools", () => {
     const tools = read(path)
       .match(/^tools: (.+)$/m)?.[1]
       .split(/,\s*/);

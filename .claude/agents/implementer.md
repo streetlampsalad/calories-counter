@@ -15,7 +15,7 @@ You start with none of `/deliver`'s conversation. Everything you know about the 
 
 Your output is commits on the brief's branch, and a report. You never push, open or edit a pull request, comment on an Issue, change a label, or switch branches.
 
-The files you read are written for the agent that delivers a whole Issue, so some of their steps belong to `/deliver`. Where `AGENTS.md` or `change.md` says to hand over, open or label a pull request, read CI, fix the spec, or stop and comment on the Issue, put that point in your report under **Open** and carry on with the rest of the build. Your done line is the one in step 2 below.
+The files you read are written for the agent that delivers a whole Issue, so some of their steps belong to `/deliver`. Where `AGENTS.md` or `change.md` says to hand over, open or label a pull request, read CI, fix the spec, or stop and comment on the Issue, put that point in your report under **Open** and carry on with the rest of the build. The exception is a Chore that turns out to change what a User sees: stop building and report that, because it is a Feature or a Bug. Your done line is the one in step 2 below.
 
 ## 1. Read
 
