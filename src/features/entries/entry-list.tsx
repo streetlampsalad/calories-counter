@@ -224,10 +224,10 @@ export function EntryList({ entries, onSelect, selection }: Props) {
       {sections.map(({ group, rows: sectionRows }) => (
         <Fragment key={group?.key ?? "all"}>
           {group ? (
-            <li role="presentation" className="border-b pt-4 pb-1 first:pt-0">
-              <h3 className="flex items-baseline justify-between font-semibold text-sm">
+            <li role="presentation" className="border-b pt-6 pb-1 first:pt-0">
+              <h3 className="flex items-baseline justify-between font-semibold text-lg">
                 <span>{group.heading}</span>
-                <span className="font-normal text-muted-foreground tabular-nums">
+                <span className="font-normal text-muted-foreground text-sm tabular-nums">
                   {kcal(group.calories)} kcal
                 </span>
               </h3>

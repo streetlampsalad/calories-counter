@@ -20,12 +20,12 @@ description: "Tasks for Meal headings that stand out"
 
 ### Tests (write first, see them fail)
 
-- [ ] T001 [P] [US1] Testing Library: heading type classes, muted calories, level-3 role, none when off or untagged, in `entry-list.test.tsx`
-- [ ] T002 [US1] Playwright: a heading's computed font size exceeds an Entry name's, and nothing overflows at 360 px, in `e2e/meal-times.spec.ts`
+- [x] T001 [P] [US1] Testing Library: heading type classes, muted calories, level-3 role, none when off or untagged, in `entry-list.test.tsx`
+- [x] T002 [US1] Playwright: a heading's computed font size exceeds an Entry name's, and nothing overflows at 360 px, in `e2e/meal-times.spec.ts`
 
 ### Implementation
 
-- [ ] T003 [US1] Restyle the heading in `entry-list.tsx` (larger, semibold, more space above, calories muted and normal weight), gated as now
+- [x] T003 [US1] Restyle the heading in `entry-list.tsx` (larger, semibold, more space above, calories muted and normal weight), gated as now
 
 **Checkpoint**: `pnpm validate` passes.
 
