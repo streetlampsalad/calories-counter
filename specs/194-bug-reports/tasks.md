@@ -20,7 +20,7 @@ description: "Tasks for Report a bug from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T001 [P] [US1] pgTAP: RLS and the select policy, another User reads nothing, `authenticated` cannot write, the sixth report in 24 hours raises `bug_report_limit` and an older one doesn't count, the trigger takes the per-User advisory lock (two sends at once are otherwise covered by design, as in spec 124), `feature-192` is in Testing, in `supabase/tests/database/027_bug_reports.test.sql`
+- [x] T001 [P] [US1] pgTAP: RLS and the select policy, another User reads nothing, `authenticated` cannot write, the sixth report in 24 hours raises `bug_report_limit` and an older one doesn't count, the trigger takes the per-User advisory lock (two sends at once are otherwise covered by design, as in spec 124), `feature-192` is in Testing, in `supabase/tests/database/027_bug_reports.test.sql`
 - [x] T002 [P] [US1] Vitest: `quote` and the neutralising still behave as in spec 124 after the move, in `src/lib/issue-text.test.ts`
 - [ ] T003 [P] [US1] Vitest: `parseBugReport` limits (counted after trimming) and choices, in `src/features/bug-reports/domain.test.ts`
 - [ ] T004 [P] [US1] Vitest: `bugIssueTitle`; `bugIssueBody` headings in order, quoting, `_Not given_`, Where in the app, the Toggles list (Testing first, none, couldn't be read), the version, the severity's option text, the unticked Risk assessment, in `src/features/bug-reports/issue-body.test.ts`
@@ -32,7 +32,7 @@ description: "Tasks for Report a bug from inside the app"
 
 ### Implementation
 
-- [ ] T010 [US1] Migration `pnpm db:new bug_reports` per `data-model.md`, then `pnpm db:reset && pnpm db:types`
+- [x] T010 [US1] Migration `pnpm db:new bug_reports` per `data-model.md`, then `pnpm db:reset && pnpm db:types`
 - [x] T011 [US1] Move `quote`, `neutralise` and the title cutter from `src/features/feature-requests/issue-body.ts` to `src/lib/issue-text.ts`, unchanged, and import them back
 - [ ] T012 [US1] `domain.ts`, `issue-body.ts`, `send.ts` and `actions.ts` in `src/features/bug-reports/`, per `contracts.md`
 - [ ] T013 [US1] `queries.ts` (`bugReportKeys`, `useSentToday`, `useSendBugReport`) and `bug-report-form.tsx` in `src/features/bug-reports/`

@@ -33,6 +33,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"bug_reports": {
+                  Row: {
+                    "bug_issue": number | null,"created_at": string,"id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bug_issue"?: number | null,"created_at"?: string,"id"?: string,"user_id": string
+                  }
+                  Update: {
+                    "bug_issue"?: number | null,"created_at"?: string,"id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"calories_burned": {
                   Row: {
                     "calories": number,"day": string,"updated_at": string,"user_id": string
