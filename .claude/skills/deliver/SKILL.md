@@ -41,7 +41,8 @@ In a cloud session, before you change anything, put the `claude/*` branch you we
 | `feature` with `needs-triage`, or a `feature` a human marked `ready-for-agent` | [triage.md](triage.md) |
 | `spec` with no spec folder on `main` yet | [spec.md](spec.md), part A: write the spec |
 | `spec` whose spec folder is on `main` but has no Slice sub-issues | [spec.md](spec.md), part B: create the Slices, then run `/deliver next` |
-| `slice`, `bug` or `chore` | [change.md](change.md) |
+| `slice` or `chore` | [change.md](change.md) |
+| `bug` | [bug.md](bug.md) |
 | `spike` | [spike.md](spike.md) |
 
 ## 4. Hand over
@@ -49,10 +50,10 @@ In a cloud session, before you change anything, put the `claude/*` branch you we
 Every path that produces a pull request ends here.
 
 1. **Branch**: in a cloud session, the `claude/*` branch you were given, started from `main` in step 2; locally, `<type>/<issue>-<slug>` from an up-to-date `main`.
-2. **Self-review**: run `/code-review` against `main` in a subagent, fix every finding that holds up, and repeat until a pass finds nothing blocking.
-3. **Push and open the pull request** from [`.github/pull_request_template.md`](../../../.github/pull_request_template.md): `Refs #<issue>` on the first line (never a closing keyword: the Issue closes when the change is in production), what changed, how each criterion is tested, and the Risk assessment with every applicable box ticked.
+2. **Self-review**: have a subagent review the diff against `main` with every item of [review.md](review.md), the checklist the Claude review in CI applies (the `/code-review` skill, where it is installed, runs the review; review.md says what to check). Fix every finding that holds up, and repeat until a pass finds nothing blocking.
+3. **Push and open the pull request**, written as [pull-request.md](pull-request.md) says: `Refs #<issue>` on the first line, what changed, how each criterion is tested, and the Risk assessment with every applicable box ticked. A pull request that needs Human review also explains itself to the owner in `## For the reviewer`, in plain words and pseudocode.
 4. **Flag it** with `needs-human-review` when your Risk assessment ticked anything. The merge gate also flags guardrail files, dependencies, destructive migrations and new environment variables on its own.
-5. **Turn on Auto-fix** (in a cloud session, `/autofix-pr`), so CI failures and review comments get fixed without you waiting.
+5. **Turn on Auto-fix** (in a cloud session, `/autofix-pr`, or subscribe to the pull request's activity where that command is missing), so CI failures and review comments get fixed without you waiting. A fix that changes a risky part updates `## For the reviewer` with it.
 6. **Report** on the Issue: one comment with the pull request link, the Risk assessment result, and anything a human must do.
 
 Done when the pull request is open, CI has started, and the Issue comment is posted. Leave the merge to the merge gate and the deploy to `deploy.yml`.

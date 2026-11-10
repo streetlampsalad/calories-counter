@@ -1,6 +1,6 @@
 # Workflow
 
-How work moves from an idea to production ([ADR 0007](../adr/0007-spec-driven-pull-requests-gated-by-risk.md)). Product language lives in [`CONTEXT.md`](../../CONTEXT.md); this file holds the process language. Agents run it through the [`/deliver`](../../.claude/skills/deliver/SKILL.md) skill.
+How work moves from an idea to production ([ADR 0007](../adr/0007-spec-driven-pull-requests-gated-by-risk.md)). Product language lives in [`CONTEXT.md`](../../CONTEXT.md); this file holds the process language. Agents run it through two skills: [`/issue`](../../.claude/skills/issue/SKILL.md) writes an Issue, and [`/deliver`](../../.claude/skills/deliver/SKILL.md) carries one through to an open pull request. Each stage's steps are a file in `.claude/skills/deliver/`.
 
 ## Terms
 
@@ -16,7 +16,7 @@ How work moves from an idea to production ([ADR 0007](../adr/0007-spec-driven-pu
 - **Toggle**: the control every new Feature ships behind, keyed `feature-<Feature issue number>` ([ADR 0008](../adr/0008-every-new-feature-ships-behind-a-toggle.md)). Its states (Testing, Live, Removed) are product terms in [`CONTEXT.md`](../../CONTEXT.md).
 - **Spec pull request**: the pull request that adds a spec's `spec.md`, `plan.md` and `tasks.md`, before any Slice exists. Merging it approves the spec.
 - **Risk assessment**: the check of each risk condition (new integration, irreversible change, unprovable in CI, auth or RLS, guardrails, ADR conflict, Size L or XL) that decides whether work needs Human review. A spec holds it in `spec.md`; Slices, Bugs and Chores tick it in their template and pull request.
-- **Human review**: a human approves before the work proceeds, marked by the `needs-human-review` label, which an agent may add but never remove. On an Issue it means an agent waits for a human decision; on a pull request it means the merge waits until the owner reviews it and removes the label.
+- **Human review**: a human approves before the work proceeds, marked by the `needs-human-review` label, which an agent may add but never remove. On an Issue it means an agent waits for a human decision; on a pull request it means the merge waits until the owner reviews it and removes the label. Such a pull request explains itself to the owner in `## For the reviewer`: plain words, pseudocode for each risky part, what to read first and how to undo it.
 - **Human step**: a manual action only the repo owner can take, such as setting a secret or changing a dashboard. Marked by the `human-step` label. Not the same as Human review.
 - **Dispatcher**: the scheduled cloud agent that runs `/deliver next`: it claims the next unblocked Issue and delivers exactly one pull request for it ([dispatcher.md](dispatcher.md)).
 - **Done**: the change is in production, not merely merged.
@@ -28,7 +28,7 @@ _Avoid_: ticket, work item (say Issue, or the Issue type); "needs approval" (say
 1. **Feature** → the Dispatcher triages it: accepted (a Spec Issue is created as its sub-issue), rejected (`wontfix`), or asked about (`needs-human-review`).
 2. **Spec** → spec-kit spec, self-interview and Risk assessment, ending in a Spec pull request. It auto-merges unless it needs Human review.
 3. **Slices** → created from `tasks.md` once the Spec pull request merges, as sub-issues of the Spec with native "blocked by" links, each labelled `ready-for-agent`. The first Slice adds the Feature's Toggle in Testing, and every Slice gates its new behaviour on it, so each merge changes nothing anyone sees.
-4. **Slice, Bug, Chore** → test first, self-review, one pull request with `Refs #<issue>`, Auto-fix on. CI, the Claude review and the merge gate decide the merge.
+4. **Slice, Bug, Chore** → test first (a Bug starts from a red regression test), self-review against the same checklist the Claude review uses, one pull request with `Refs #<issue>`, Auto-fix on. CI, the Claude review and the merge gate decide the merge.
 5. **Deploy** → `deploy.yml` deploys after CI passes on `main`, then closes the delivered Issues. A Spec closes with its last Slice, and a Feature with its Spec. The Feature is then in production behind its Toggle, in Testing; it goes Live or is Removed later, and a Chore then deletes the Toggle checks or the feature's code. A failed deploy opens a P0 Bug with Human review.
 
 Only one Spec is written at a time; Bugs and Chores run alongside it.

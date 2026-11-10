@@ -1,12 +1,12 @@
-# Slice, Bug or Chore
+# Slice or Chore
 
 Code changes. Follow `AGENTS.md` for where tests go and how the database changes.
 
 ## Before you write code
 
 - **Slice**: read its spec folder (`spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`). Your scope is the Slice's scenarios and task IDs; the definition of done is every scenario it covers.
-- **Bug**: remove `needs-triage`, then reproduce it. If it does not reproduce, comment with what you tried, add `needs-info`, unassign yourself, and stop. The definition of done is a regression test that goes red on the bug, then green with the fix.
 - **Chore**: confirm no User-visible behaviour changes. If any does, it is a Feature or a Bug: comment, add `needs-human-review`, and stop.
+- **Chore that removes a Toggle** (ADR 0008): for a Feature that is Live, delete the Toggle checks, the "off" branches and the "off" tests, and keep the "on" path with its tests; for a Feature that is Removed, delete the feature's code and tests. Either way keep the `feature-<n>` row in `public.toggles`, which the Feature Request's card reads, and leave the schema to a later migration.
 - **Risk assessment**: tick the conditions in the Issue's checklist that apply. A tick means the pull request gets `needs-human-review`.
 
 ## Build it test first
