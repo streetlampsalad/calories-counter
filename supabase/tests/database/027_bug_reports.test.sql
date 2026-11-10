@@ -1,7 +1,7 @@
 -- Bug reports (spec 194, Slice 1): private to the User who sent them, written only by the server,
 -- and at most 5 in any 24 hours.
 begin;
-select plan(15);
+select plan(14);
 
 insert into auth.users (id, email)
 values

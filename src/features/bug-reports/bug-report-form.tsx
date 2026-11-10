@@ -133,7 +133,12 @@ export function BugReportForm({ version }: { version: string }) {
             </p>
           ) : null}
 
-          <Button type="submit" size="lg" disabled={send.isPending}>
+          <Button
+            type="submit"
+            size="lg"
+            className="h-12 text-base"
+            disabled={send.isPending}
+          >
             {send.isPending ? "Sending…" : "Send report"}
           </Button>
         </form>

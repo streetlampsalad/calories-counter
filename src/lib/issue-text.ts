@@ -17,14 +17,14 @@ export function quote(text: string | undefined): string {
   const trimmed = text?.trim();
   if (!trimmed) return NOT_GIVEN;
   return neutralise(trimmed)
-    .split(/\r?\n/)
+    .split(/\r\n|\r|\n/)
     .map((line) => (line.trim() ? `> ${line}` : ">"))
     .join("\n");
 }
 
 // A title: the prefix and the first line of the text, cut at a word to 70 characters with an ellipsis.
 export function cutTitle(prefix: string, text: string): string {
-  const line = (text.trim().split(/\r?\n/)[0] ?? "").replace(/\s+/g, " ");
+  const line = (text.trim().split(/\r\n|\r|\n/)[0] ?? "").replace(/\s+/g, " ");
   const room = TITLE_MAX - prefix.length;
   if (line.length <= room) return prefix + neutralise(line);
 

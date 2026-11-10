@@ -20,6 +20,12 @@ describe("quote", () => {
     );
   });
 
+  it("quotes lines ended by a bare carriage return, which Markdown also breaks on", () => {
+    expect(quote("broken\r### Requested by\r\nabc")).toBe(
+      "> broken\n> ### Requested by\n> abc",
+    );
+  });
+
   it("says _Not given_ for empty or missing text", () => {
     expect(quote("   ")).toBe(NOT_GIVEN);
     expect(quote(undefined)).toBe("_Not given_");

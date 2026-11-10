@@ -73,7 +73,9 @@ export async function sendBugReport(
     }));
   } catch (error) {
     deps.log("could not create the Bug Issue", error);
-    await deps.remove(id).catch(() => {});
+    await deps
+      .remove(id)
+      .catch((error) => deps.log(`could not remove Bug report ${id}`, error));
     return UNAVAILABLE;
   }
 
@@ -89,8 +91,12 @@ export async function sendBugReport(
         number,
         "Couldn't be recorded by the app; the reporter was asked to try again.",
       )
-      .catch(() => {});
-    await deps.remove(id).catch(() => {});
+      .catch((error) =>
+        deps.log(`could not close Bug Issue #${number}`, error),
+      );
+    await deps
+      .remove(id)
+      .catch((error) => deps.log(`could not remove Bug report ${id}`, error));
     return UNAVAILABLE;
   }
 
