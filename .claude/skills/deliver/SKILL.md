@@ -45,6 +45,8 @@ In a cloud session, before you change anything, put the `claude/*` branch you we
 | `bug` | [bug.md](bug.md) |
 | `spike` | [spike.md](spike.md) |
 
+Every path runs in this session, except the build of a Slice or a mechanical Chore, which [change.md](change.md) "Who builds it" hands to the `implementer` subagent.
+
 ## 4. Hand over
 
 Every path that produces a pull request ends here.

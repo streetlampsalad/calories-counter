@@ -50,3 +50,49 @@ describe("/deliver's routes", () => {
       expect(() => read(`.claude/skills/deliver/${file}`)).not.toThrow();
   });
 });
+
+// Issue #196: the thinking stays in /deliver's session; building a Slice goes to a faster model.
+describe("the implementer subagent", () => {
+  const path = ".claude/agents/implementer.md";
+
+  it("runs on the faster model and builds as change.md says", () => {
+    const agent = read(path);
+    const frontmatter = agent.split("---")[1];
+    expect(frontmatter).toMatch(/^name: implementer$/m);
+    expect(frontmatter).toMatch(/^model: sonnet$/m);
+    expect(frontmatter).toMatch(/^description: /m);
+    expect(agent).toContain(".claude/skills/deliver/change.md");
+  });
+
+  it("has only the shell and file tools: no Agent, Skill, web or MCP tools", () => {
+    const tools = read(path)
+      .match(/^tools: (.+)$/m)?.[1]
+      .split(/,\s*/);
+    expect(tools).toEqual(["Bash", "Read", "Write", "Edit", "Glob", "Grep"]);
+  });
+
+  it("is what /deliver hands a build to, with a fallback when it is missing", () => {
+    const change = read(".claude/skills/deliver/change.md");
+    const section = change.slice(
+      change.indexOf("## Who builds it"),
+      change.indexOf("## Build it test first"),
+    );
+    expect(section).toContain("`implementer`");
+    for (const part of [
+      "Issue number",
+      "branch",
+      "spec folder",
+      "scenarios",
+      "task IDs",
+      "Toggle key",
+      "attribution lines",
+    ])
+      expect(section).toContain(part);
+    expect(section).toContain("rejects `subagent_type: implementer`");
+    expect(deliver).toContain("`implementer`");
+  });
+
+  it("is named in the Dispatcher's settings", () => {
+    expect(read("docs/agents/dispatcher.md")).toContain("`implementer`");
+  });
+});
