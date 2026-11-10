@@ -64,10 +64,31 @@ describe("the implementer subagent", () => {
     expect(agent).toContain(".claude/skills/deliver/change.md");
   });
 
+  it("has no tool that reaches GitHub, MCP connectors or other subagents", () => {
+    const tools = read(path)
+      .match(/^tools: (.+)$/m)?.[1]
+      .split(/,\s*/);
+    expect(tools).toEqual(["Bash", "Read", "Write", "Edit", "Glob", "Grep"]);
+  });
+
   it("is what /deliver hands a build to, with a fallback when it is missing", () => {
     const change = read(".claude/skills/deliver/change.md");
-    expect(change).toContain("`implementer`");
-    expect(change).toMatch(/not available/);
+    const section = change.slice(
+      change.indexOf("## Who builds it"),
+      change.indexOf("## Build it test first"),
+    );
+    expect(section).toContain("`implementer`");
+    for (const part of [
+      "Issue number",
+      "branch",
+      "spec folder",
+      "scenarios",
+      "task IDs",
+      "Toggle key",
+      "attribution lines",
+    ])
+      expect(section).toContain(part);
+    expect(section).toContain("rejects `subagent_type: implementer`");
     expect(deliver).toContain("`implementer`");
   });
 

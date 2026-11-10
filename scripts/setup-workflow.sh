@@ -264,6 +264,7 @@ note "  triggers    hourly, plus GitHub: pull request closed into main, with Is 
 note "              plus API: generate its token, then"
 note "              gh variable set DISPATCHER_FIRE_URL --body <its fire URL>"
 note "              gh secret set DISPATCHER_FIRE_TOKEN   (paste the token)"
+note "  model       the most capable model offered (the implementer subagent picks its own)"
 note "  tools       add Agent, Task and Skill to the allowed tools"
 note "  connectors  Context7 only; remove the rest, Supabase and Vercel above all"
 note "  prompt      the Prompt block in docs/agents/dispatcher.md, verbatim"

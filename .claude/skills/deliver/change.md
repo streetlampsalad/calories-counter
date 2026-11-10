@@ -11,17 +11,23 @@ Code changes. Follow `AGENTS.md` for where tests go and how the database changes
 
 ## Who builds it
 
-Hand the build to the `implementer` subagent, which runs on a faster model, when the work is decided and only needs building: a Slice, or a Chore whose Issue spells out the change (removing a Toggle, an upgrade, a refactor it describes). Build it yourself, in this session, when it is mostly judgement: a Chore that changes the workflow, the guardrails or the agent instructions, or one whose Issue leaves the design open.
+The thinking stays in this session, on the model the Dispatcher runs on. Hand the build to the `implementer` subagent (`.claude/agents/implementer.md`), which runs on a faster model, when the work is decided and only needs building: a Slice, or a **mechanical Chore**, one whose Issue spells out the change (removing a Toggle, an upgrade, a refactor it describes). Build it yourself when it is mostly judgement: a Chore that changes the workflow, the guardrails or the agent instructions, or one whose Issue leaves the design open. Triage, specs, Spikes and Bugs never reach the `implementer`.
 
-The subagent starts with none of this conversation, so its brief carries everything: the Issue number and title, the branch, the spec folder, the scenarios copied verbatim and the task IDs in scope (for a Chore, the Issue's What and Why), any decision you have already made, and the commit attribution lines.
+The subagent starts with none of this conversation, so its brief carries all of it:
+
+- the Issue number and title, and the branch;
+- for a Slice: the spec folder, the scenarios in scope copied verbatim, the task IDs, the Toggle key (`feature-<Feature issue number>`) and whether this Slice adds it;
+- for a Chore: the Issue's What and Why, and for a Toggle removal, the Toggle key and whether the Feature is Live or Removed;
+- every decision you have already made;
+- the commit attribution lines.
 
 When it reports back:
 
-1. Settle every point under **Open**: correct the spec in this pull request, or decide and record why.
-2. Check each scenario in scope has its test, and run `pnpm validate:fast` yourself.
+1. Settle every point under **Open**: correct the spec in this pull request (and say so in its description), or decide and record why.
+2. Check each scenario in scope has its test, and run `pnpm validate:fast` yourself (`pnpm validate` where Docker exists).
 3. Finish anything left, in this session.
 
-When the `implementer` subagent type is not available (a session that did not load `.claude/agents/`), build it yourself, test first as below, and say so in the pull request.
+When the Agent tool rejects `subagent_type: implementer` (a session that did not load `.claude/agents/`), build it yourself, test first as below, and say so in the pull request.
 
 ## Build it test first
 
