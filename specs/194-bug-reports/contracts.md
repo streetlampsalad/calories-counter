@@ -33,7 +33,7 @@ create the Issue (createFeatureIssues()) with bugIssueTitle and bugIssueBody(id,
   on failure: delete the row, return unavailable
 set bug_issue on the row
   on failure: close the Issue as not planned with "Couldn't be recorded by the app; the reporter was asked to try again.", delete the row, return unavailable
-return ok with the Issue number and its html URL
+return ok with the Issue number and url = https://github.com/<REPOSITORY>/issues/<number>  (REPOSITORY from feature-requests/domain.ts)
 ```
 
 ## Bug Issue
@@ -60,7 +60,7 @@ Where in the app: Today  ← "Not given" when no screen was chosen; "Somewhere e
 - App version: abc1234
 - Model: Pixel 7              ← Slice 2 lines from here
 - Operating system: Android 16
-- Browser: Chrome 142.0.7444.0
+- Browser: Chrome 142
 - Opened as: Installed app
 - Screen: 412 × 915 at 2.6×
 - Appearance: System
@@ -68,8 +68,8 @@ Where in the app: Today  ← "Not given" when no screen was chosen; "Somewhere e
 
 ### Toggles
 
-- Meal times (`feature-173`): Testing
-- Feature requests (`feature-114`): Live
+- Report a bug (`feature-192`): Testing
+- Tag Entries with a Meal time. (`feature-173`): Live
                          ← or "No Toggles on", or "Couldn't be read"
 ### How bad is it
 
@@ -89,7 +89,7 @@ User-written text is quoted with `> ` on every line and has `@` and `#<digit>` b
 
 ## Device (Slice 2, `src/features/bug-reports/device.ts`)
 
-- `describeDevice(nav, win)` (browser): reads `navigator.userAgentData.getHighEntropyValues(["model", "platformVersion", "fullVersionList"])` where present, else parses `navigator.userAgent`; `matchMedia("(display-mode: standalone)")`; `screen.width`, `screen.height`, `devicePixelRatio`; the stored Appearance; `Intl.DateTimeFormat().resolvedOptions().timeZone`. Returns `{ model, os, browser, openedAs, screen, appearance, timeZone }`, each a string, "Unknown" where it can't tell.
+- `describeDevice(nav, win)` (browser), browser version major only (spec D1): reads `navigator.userAgentData.getHighEntropyValues(["model", "platformVersion"])` and the brands' major versions where present, else parses `navigator.userAgent`; `matchMedia("(display-mode: standalone)")`; `screen.width`, `screen.height`, `devicePixelRatio`; the stored Appearance; `Intl.DateTimeFormat().resolvedOptions().timeZone`. Returns `{ model, os, browser, openedAs, screen, appearance, timeZone }`, each a string, "Unknown" where it can't tell.
 - `parseDevice(value)` (server): keeps only those seven keys, string values only, each trimmed and cut to 100 characters; anything else is dropped. Returns `{}` for a non-object.
 
 ## Query keys

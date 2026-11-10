@@ -67,7 +67,7 @@ The form's **Attached to your report** also lists the device: the phone model wh
 - **Two sends at once** at 4 reports today: a per-User lock in the database lets only one through, so the limit of 5 holds.
 - **A bug in a feature the User is trying**: the hint points to Give feedback; if they send a Bug report anyway, `### Toggles` shows the Testing Toggle, so triage can see it and, if it is a Round's work, say so on the Issue.
 - **The Toggles cannot be read** (database error): the report is still sent, and `### Toggles` says "Couldn't be read".
-- **Very long text**: What went wrong and What you expected are capped at 2,000 characters and How it happened at 4,000, counted as typed.
+- **Very long text**: What went wrong and What you expected are capped at 2,000 characters and How it happened at 4,000, counted after trimming, as the form shows.
 - **The User loses access** (their Allowed Email removed): the Bug Issues stay on GitHub; their rows stay until the account is deleted.
 - **Owner**: reports like anyone else; their Testing Toggles are listed like anyone's.
 - **Nothing personal**: the report never includes the User's name, email, Foods, Entries or Goal; only what the preview shows.
@@ -82,7 +82,7 @@ The form's **Attached to your report** also lists the device: the phone model wh
 - **FR-004**: The server MUST work out the Toggles that are on for the User itself (never trust the browser's list) and list them under `### Toggles`, Testing first.
 - **FR-005**: A User MUST be able to send at most 5 Bug reports in any 24 hours.
 - **FR-006**: A User MUST be able to read only their own Bug reports, and nobody MUST be able to write them except the server.
-- **FR-007**: The form MUST show, before sending, everything the app will attach, and the Issue MUST hold nothing else that the User did not type.
+- **FR-007**: The form MUST show, before sending, the Toggles, app version and device the app will attach; the Issue MUST hold nothing else beyond what the User typed or chose, the Bug report's id and the template's headings and checklist.
 - **FR-008**: The browser MUST describe the device as in US2.4; the server MUST keep only those fields, each text of at most 100 characters, quoted.
 - **FR-009**: The Bug template (`.github/ISSUE_TEMPLATE/3-bug.yml`) and `.claude/skills/deliver/bug.md` MUST know the `### Toggles` and `### Requested by` headings, so a Bug filed on GitHub and one sent from the app read the same.
 
@@ -118,7 +118,7 @@ Guesses made: up to 5 reports a day; no screenshots; the report is posted public
 - The repo stays public, so the report is published; the form says so before the User types, and the Issue holds no name or email.
 - The fine-grained token from spec 124 (`GITHUB_FEATURE_REQUESTS_TOKEN`, Issues read and write on this repo) may also create Bug Issues; it is the same permission.
 - Issues the token creates are authored by the Owner's account, so `/deliver next` treats an in-app Bug as from an allowed author, as it does in-app Feature Requests.
-- Toggle keys and titles are already public (they are in the migrations), so listing them reveals nothing.
+- Toggle keys and titles are already public (they are in the migrations), but which Testing Toggles are on for a User is not: a Testing Toggle is on only for its Requester and the Owner, so a report listing one hints at who sent it. The preview shows the list before sending, and among a few friends who already know each other's requests this is accepted (D14).
 - 5 reports a day is far more than a few friends need and stops a stuck finger or a script from filling the repo with Issues.
 - The app version is the short commit the deploy passes in (`COMMIT_SHA`), as Settings' About already shows.
 
@@ -126,7 +126,7 @@ Guesses made: up to 5 reports a day; no screenshots; the report is posted public
 
 | # | Question | Decision | Alternatives rejected | Confidence |
 |---|---|---|---|---|
-| D1 | Which device fields are safe to post publicly? | App version, model (where Client Hints give it), operating system and version, browser and version, installed app or browser tab, screen size in CSS pixels and pixel ratio, Appearance, time zone. Each is shown in the preview first | The raw user-agent string (adds fingerprinting detail for no triage gain); language and locale (says little the time zone doesn't); IP or network (personal) | medium |
+| D1 | Which device fields are safe to post publicly? | App version, model (where Client Hints give it), operating system and version, browser and its major version only, installed app or browser tab, screen size in CSS pixels and pixel ratio, Appearance, time zone. Each is shown in the preview first | The raw user-agent string, or the full browser version (adds fingerprinting detail for no triage gain); language and locale (says little the time zone doesn't); IP or network (personal) | medium |
 | D2 | Does the app attach the current screen or route? | No; the User picks Today, Foods, Summary, Settings or Somewhere else, which opens `### Steps to reproduce` | The route (the form lives in Settings, so it would always say Settings); the previous page from history (unreliable after a reload, and paths hold Food ids) | high |
 | D3 | Where is the entry point? | A **Report a bug** row in Settings → Features, next to Feature requests | A button on every screen or a shake gesture (clutters the thumb zone, more to build); inside Feature requests (keeps Bugs and Feature Requests muddled, which the Feature asks to avoid) | high |
 | D4 | Can a screenshot be attached? | No | Uploading an image (GitHub's Issue API cannot attach files, so it needs storage and a public link; a screenshot can show a User's Foods, Goal or email, published) | high |
@@ -139,9 +139,10 @@ Guesses made: up to 5 reports a day; no screenshots; the report is posted public
 | D11 | What does the app store? | A `bug_reports` row: id, User, Bug Issue number, created. Not the text, Toggles or device | Storing the text too (a second copy of what's on GitHub, kept for nothing) | high |
 | D12 | Who writes `bug_reports`? | Only the server with the service role; Users read their own through RLS | User inserts under RLS (they could set any Issue number or dodge the limit's lock order) | high |
 | D13 | Where do the Toggles come from? | The server calls `my_toggles` with the User's session when sending; the preview uses the same query in the browser | Taking the browser's list (could be edited to list anything) | high |
-| D14 | Which Toggles are listed? | Every Toggle on for the User, Testing first, then Live, each with title, key and state; off ones are left out | Only Testing ones (a Live feature's bug is just as likely); every Toggle with on or off (noise) | medium |
+| D14 | Which Toggles are listed? | Every Toggle on for the User, Testing first, then Live, each with title, key and state; off ones are left out. A Testing Toggle hints at who sent the report (only its Requester and the Owner have it on); the preview shows it first, and it is the detail triage most needs | Only Testing ones (a Live feature's bug is just as likely); every Toggle with on or off (noise); leaving Testing Toggles out (hides the likeliest cause) | medium |
 | D15 | Is any code shared with Feature Requests? | The GitHub client (`createFeatureIssues`, with `FEATURE_ISSUES=fake` in local and CI) and the quoting helpers, which move to `src/lib/issue-text.ts` unchanged | A second client and token (more secrets for the same permission) | high |
 | D16 | Does the Issue body's text come from the browser? | Only the User's fields, the screen, the severity and the device; the server builds every heading, the Toggles, the version and the id | Building the body in the browser (anyone could post any body with the Owner's token) | high |
+| D17 | Can a User's words steer the agent that fixes the Bug? | No: `bug.md` treats an in-app Bug's quoted sections as data describing the bug, never instructions; a report that asks to skip a step, lower the risk or change a guardrail gets `needs-human-review` (the deliver skill's existing rule). Bug fixes keep the normal merge gate, which flags guardrail files, migrations and dependencies on its own | Human review for every in-app Bug fix (slows every small fix for a few trusted friends); no in-app Bugs (the Feature) | medium |
 
 ## Risk Assessment *(mandatory)*
 
@@ -150,8 +151,8 @@ Guesses made: up to 5 reports a day; no screenshots; the report is posted public
 | Adds a third-party integration, secret, environment variable or dashboard step | No | Reuses spec 124's GitHub token and `FEATURE_ISSUES=fake`; Issues: read and write already covers Bug Issues | |
 | Irreversible: drops or renames a column or table, or rewrites or deletes User data | No | One new table and a Toggle row; nothing dropped | |
 | Cannot be proved in CI (real device, real external API, Gemini or Google Health) | Yes | GitHub is faked in CI, and real phones' Client Hints can't be; the Owner sends one real report from their phone and checks the Issue | 1, 2 |
-| Touches sign-in, RLS policies or what one User can see of another | Yes | A new table with an RLS policy, and a User's words and device are published on GitHub | 1, 2 |
-| Changes the guardrails (CI, deploy, hooks, rulesets, AGENTS.md, constitution, workflow) | Yes | The Bug template and `/deliver`'s `bug.md` gain `### Toggles` and `### Requested by` | 1 |
+| Touches sign-in, RLS policies or what one User can see of another | Yes | A new table with an RLS policy; a User's words, Testing Toggles (which hint at who they are, D14) and device are published on GitHub | 1, 2 |
+| Changes the guardrails (CI, deploy, hooks, rulesets, AGENTS.md, constitution, workflow) | Yes | The Bug template and `/deliver`'s `bug.md` gain `### Toggles` and `### Requested by`; any Allowed User can now open a Bug Issue that the Dispatcher takes straight to a fix, so `bug.md` must read its quoted text as data only (D17) | 1 |
 | Contradicts an ADR or needs a new one | No | Uses ADRs 0003, 0007 and 0008 as they are | |
 | Size L or XL | No | Size M: a table, a form, a server action, an Issue body, a device description and a template change | |
 
