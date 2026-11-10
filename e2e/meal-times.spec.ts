@@ -129,3 +129,30 @@ test("change a Meal time and see the Entry move group (US3.1, US3.2)", async ({
     .click();
   await expect(headings).toHaveText(["Breakfast50 kcal", "Other100 kcal"]);
 });
+
+test("a Meal time heading is set larger than an Entry name and fits at 360 px (US1.1, US1.5)", async ({
+  page,
+}) => {
+  const liv = await userClient("liv");
+  await clearDay(liv, DAY);
+  const food = await seedFood(liv, { portion: "1 slice", calories: 100 });
+  const { error } = await liv
+    .from("entries")
+    .insert({ day: DAY, food_id: food.id, quantity: 1, meal_time: "lunch" });
+  if (error) throw error;
+
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto(`/?day=${DAY}`);
+
+  const heading = page.getByRole("heading", { level: 3 });
+  await expect(heading).toHaveText("Lunch100 kcal");
+  const fontSize = (locator: typeof heading) =>
+    locator.evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
+  const name = page.getByText(food.name, { exact: true });
+  expect(await fontSize(heading)).toBeGreaterThan(await fontSize(name));
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});

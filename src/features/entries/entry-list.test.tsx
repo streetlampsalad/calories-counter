@@ -87,6 +87,20 @@ describe("EntryList grouped by Meal time", () => {
     expect(screen.queryByRole("heading", { name: /Snacks/ })).toBeNull();
   });
 
+  it("sets a heading larger and bolder than an Entry, with muted calories", () => {
+    toggleOn.mockReturnValue(true);
+    render(<EntryList entries={tagged} />);
+
+    const heading = screen.getByRole("heading", { name: /Breakfast/ });
+    expect(heading).toHaveClass("text-lg", "font-semibold");
+    expect(screen.getByText("200 kcal")).toHaveClass(
+      "font-normal",
+      "text-muted-foreground",
+      "text-sm",
+    );
+    expect(heading.closest("li")).toHaveClass("pt-6");
+  });
+
   it("shows no headings when no Entry has a Meal time", () => {
     toggleOn.mockReturnValue(true);
     render(<EntryList entries={[entry("Toast", 1, 110)]} />);
