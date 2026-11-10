@@ -7,6 +7,7 @@ import { useToggles } from "@/features/toggles/queries";
 import { AppearanceSection } from "./appearance-section";
 import { BurnedSection } from "./burned-section";
 import {
+  categoryDescription,
   SETTINGS_CATEGORIES,
   type SettingsCategory,
   type SettingsCategoryId,
@@ -15,6 +16,7 @@ import {
 import { FeatureRequestsRow } from "./feature-requests-row";
 import { GoalSection } from "./goal-section";
 import { ReminderSection } from "./reminder-section";
+import { ReportABugRow } from "./report-a-bug-row";
 import { TryFeaturesSection } from "./try-features-section";
 import { VibrationSection } from "./vibration-section";
 import { WeekStartSection } from "./week-start-section";
@@ -38,6 +40,7 @@ const SECTIONS: Record<SettingsCategoryId, () => ReactNode> = {
     <>
       <TryFeaturesSection />
       <FeatureRequestsRow />
+      <ReportABugRow />
     </>
   ),
 };
@@ -68,7 +71,7 @@ export function SettingsHome({
                 <span className="flex flex-col">
                   <span className="font-medium text-lg">{category.title}</span>
                   <span className="text-muted-foreground text-sm">
-                    {category.description}
+                    {categoryDescription(category, toggles)}
                   </span>
                 </span>
                 <ChevronRight
