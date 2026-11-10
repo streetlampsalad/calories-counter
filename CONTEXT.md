@@ -147,3 +147,7 @@ _Avoid_: author, reporter, submitter
 **Round**:
 One pass at building a Feature Request. The first Round is the request itself; each time the Requester gives feedback while trying it, another Round starts, behind the same Toggle.
 _Avoid_: iteration, revision, version
+
+**Feedback set**:
+One separate piece of a Requester's feedback within a Round: its text and whether it is an **Enhancement** (something they would like better) or a **Bug** (something broken). A Round holds one to five.
+_Avoid_: ticket, comment, note
