@@ -46,12 +46,12 @@ description: "Tasks for Several sets of feedback"
 
 ### Tests (write first, see them fail)
 
-- [ ] T009 [P] [US2] Testing Library: the sets with categories, and a Round with no sets as one note, in `request-card.test.tsx`
-- [ ] T010 [P] [US2] pgTAP: another User reads none of a Requester's sets (added to `026_feedback_sets.test.sql`, or covered by T001)
+- [x] T009 [P] [US2] Testing Library: the sets with categories, and a Round with no sets as one note, in `request-card.test.tsx`
+- [x] T010 [P] [US2] pgTAP: another User reads none of a Requester's sets (added to `026_feedback_sets.test.sql`, or covered by T001)
 
 ### Implementation
 
-- [ ] T011 [US2] Load `sets` in `queries.ts`; list them under each Round in `request-card.tsx`
+- [x] T011 [US2] Load `sets` in `queries.ts`; list them under each Round in `request-card.tsx`
 
 **Checkpoint**: `pnpm validate` passes.
 

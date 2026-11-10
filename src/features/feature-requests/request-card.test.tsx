@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { FeatureRequest } from "./queries";
@@ -346,6 +346,7 @@ describe("RequestCard and Rounds (spec 135 US1)", () => {
             {
               id: "x1",
               feedback: "Let me add half a glass",
+              sets: null,
               featureIssue: 811,
               createdAt: "2026-11-08T00:00:00Z",
             },
@@ -365,6 +366,77 @@ describe("RequestCard and Rounds (spec 135 US1)", () => {
       "href",
       "https://github.com/streetlampsalad/calories-counter/issues/811",
     );
+  });
+
+  it("lists each set under its Round with its category, in order sent (US2.1, FR-004)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={request({
+          stage: "submitted",
+          firstReadyAt: tried,
+          rounds: [
+            {
+              id: "x1",
+              feedback: "The glass button does nothing",
+              sets: [
+                { category: "bug", text: "The glass button does nothing" },
+                { category: "enhancement", text: "Let me add half a glass" },
+                { category: "enhancement", text: "Show water in the totals" },
+              ],
+              featureIssue: 811,
+              createdAt: "2026-11-08T00:00:00Z",
+            },
+          ],
+        })}
+        display="submitted"
+        toggle={testing}
+      />,
+    );
+
+    const items = within(
+      screen.getByRole("list", { name: "Round 2 feedback" }),
+    ).getAllByRole("listitem");
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent("Bug");
+    expect(items[0]).toHaveTextContent("The glass button does nothing");
+    expect(items[1]).toHaveTextContent("Enhancement");
+    expect(items[1]).toHaveTextContent("Let me add half a glass");
+    expect(items[2]).toHaveTextContent("Enhancement");
+    expect(items[2]).toHaveTextContent("Show water in the totals");
+    expect(
+      screen.getByRole("link", { name: "Round 2 on GitHub" }),
+    ).toBeInTheDocument();
+  });
+
+  it("lists a Round sent before sets as one note, with no category (US2.2, FR-004)", () => {
+    useFeatureRequestsAhead.mockReturnValue({ data: undefined });
+    render(
+      <RequestCard
+        request={request({
+          stage: "submitted",
+          firstReadyAt: tried,
+          rounds: [
+            {
+              id: "x1",
+              feedback: "Let me add half a glass",
+              sets: null,
+              featureIssue: 811,
+              createdAt: "2026-11-08T00:00:00Z",
+            },
+          ],
+        })}
+        display="submitted"
+        toggle={testing}
+      />,
+    );
+
+    expect(screen.getByText("Let me add half a glass")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("list", { name: "Round 2 feedback" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Bug")).not.toBeInTheDocument();
+    expect(screen.queryByText("Enhancement")).not.toBeInTheDocument();
   });
 
   it("keeps the switch while a Round is built (US1.6)", () => {

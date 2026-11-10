@@ -190,7 +190,7 @@ select set_config('request.jwt.claims',
 set local role authenticated;
 select is(
   (select count(*)::integer from public.feature_request_rounds where sets is not null),
-  0, 'FR-002: another User reads none of the Requester''s sets'
+  0, 'US2.3/FR-002: another User reads none of the Requester''s sets'
 );
 reset role;
 
