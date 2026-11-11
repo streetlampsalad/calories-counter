@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { sendBugReport } from "./actions";
+import type { Device } from "./device";
 import type { BugReportInput } from "./domain";
 
 export const bugReportKeys = {
@@ -85,7 +86,7 @@ export function useSendBugReport() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: BugReportInput) => {
+    mutationFn: async (input: BugReportInput & { device?: Device }) => {
       let result: Awaited<ReturnType<typeof sendBugReport>>;
       try {
         result = await sendBugReport(input);

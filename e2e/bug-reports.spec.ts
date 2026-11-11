@@ -178,6 +178,48 @@ test.describe("a User with feature-192 on", () => {
     if (readError) throw readError;
     expect(data).toEqual([]);
   });
+
+  test("shows the device from Client Hints in the preview and still sends (US2.1, US2.4)", async ({
+    page,
+  }) => {
+    // The Pixel 7 preset overrides only the user-agent string, so Client Hints are stubbed.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "userAgentData", {
+        configurable: true,
+        value: {
+          brands: [
+            { brand: "Not.A/Brand", version: "99" },
+            { brand: "Chromium", version: "142" },
+            { brand: "Google Chrome", version: "142" },
+          ],
+          platform: "Android",
+          getHighEntropyValues: async () => ({
+            model: "Pixel 7",
+            platformVersion: "16.0.0",
+          }),
+        },
+      });
+    });
+    await page.goto("/settings/report-a-bug");
+
+    const attached = page.getByRole("region", {
+      name: "Attached to your report",
+    });
+    await expect(attached).toContainText("Model: Pixel 7");
+    await expect(attached).toContainText("Operating system: Android 16");
+    await expect(attached).toContainText("Browser: Chrome 142");
+    await expect(attached).toContainText("Opened as: Browser tab");
+
+    await page
+      .getByRole("textbox", { name: /What went wrong/ })
+      .fill("The Today total ignores the last Entry I added");
+    await page
+      .getByRole("radio", { name: "It's annoying, but I can work around it" })
+      .check();
+    await page.getByRole("button", { name: "Send report" }).click();
+
+    await expect(page.getByRole("status")).toContainText("Sent");
+  });
 });
 
 test.describe("a User with feature-192 off", () => {

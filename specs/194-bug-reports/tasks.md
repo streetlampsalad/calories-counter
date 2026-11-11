@@ -54,15 +54,15 @@ description: "Tasks for Report a bug from inside the app"
 
 ### Tests (write first, see them fail)
 
-- [ ] T017 [P] [US2] Vitest: `describeDevice` from Client Hints (Pixel 7, Chrome, major version only), from user-agent strings (iPhone Safari, Firefox desktop), installed app and browser tab, "Unknown" values; `parseDevice` drops unknown keys and non-strings and cuts at 100 characters, in `src/features/bug-reports/device.test.ts`
-- [ ] T018 [P] [US2] Vitest: `bugIssueBody` lists the device lines under `### Device` after the app version, with backticks and line breaks removed, in `issue-body.test.ts`; `sendBugReport` with no device sends the version only, in `send.test.ts`
-- [ ] T019 [P] [US2] Testing Library: Attached to your report lists the device, in `bug-report-form.test.tsx`
-- [ ] T020 [US2] Playwright (Pixel 7, with `navigator.userAgentData` stubbed by `addInitScript`, since the device preset overrides only the user-agent string): the preview shows Android and Chrome, and the report sends, in `e2e/bug-reports.spec.ts`
+- [x] T017 [P] [US2] Vitest: `describeDevice` from Client Hints (Pixel 7, Chrome, major version only), from user-agent strings (iPhone Safari, Firefox desktop), installed app and browser tab, "Unknown" values; `parseDevice` drops unknown keys and non-strings and cuts at 100 characters, in `src/features/bug-reports/device.test.ts`
+- [x] T018 [P] [US2] Vitest: `bugIssueBody` lists the device lines under `### Device` after the app version, with backticks and line breaks removed, in `issue-body.test.ts`; `sendBugReport` with no device sends the version only, in `send.test.ts`
+- [x] T019 [P] [US2] Testing Library: Attached to your report lists the device, in `bug-report-form.test.tsx`
+- [x] T020 [US2] Playwright (Pixel 7, with `navigator.userAgentData` stubbed by `addInitScript`, since the device preset overrides only the user-agent string): the preview shows Android and Chrome, and the report sends, in `e2e/bug-reports.spec.ts`
 
 ### Implementation
 
-- [ ] T021 [US2] `describeDevice` and `parseDevice` in `src/features/bug-reports/device.ts`
-- [ ] T022 [US2] Pass the device from `bug-report-form.tsx` through `sendBugReport` into `bugIssueBody`
+- [x] T021 [US2] `describeDevice` and `parseDevice` in `src/features/bug-reports/device.ts`
+- [x] T022 [US2] Pass the device from `bug-report-form.tsx` through `sendBugReport` into `bugIssueBody`
 
 **Checkpoint**: `pnpm validate` passes, and User Stories 1 and 2 both work.
 

@@ -1,5 +1,6 @@
 import { REPOSITORY } from "@/features/feature-requests/domain";
 import type { FeatureIssues } from "@/features/feature-requests/feature-issues";
+import { parseDevice } from "./device";
 import { parseBugReport } from "./domain";
 import {
   BUG_LABELS,
@@ -68,6 +69,12 @@ export async function sendBugReport(
         report: parsed.value,
         toggles,
         version: deps.version,
+        // Never trusted, and never a reason to refuse the report (spec 194 US2.5, US2.6).
+        device: parseDevice(
+          typeof input === "object" && input !== null
+            ? (input as { device?: unknown }).device
+            : undefined,
+        ),
       }),
       labels: BUG_LABELS,
     }));

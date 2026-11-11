@@ -25,6 +25,22 @@ vi.mock("@/features/toggles/queries", () => ({
 }));
 
 import { BugReportForm } from "./bug-report-form";
+import type { Device } from "./device";
+
+const DEVICE: Device = {
+  model: "Pixel 7",
+  os: "Android 16",
+  browser: "Chrome 142",
+  openedAs: "Installed app",
+  screen: "412 × 915 at 2.63×",
+  appearance: "System",
+  timeZone: "Australia/Sydney",
+};
+let describe_: () => Promise<Device>;
+vi.mock("./device", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./device")>()),
+  describeDevice: () => describe_(),
+}));
 
 const toggle = (overrides: Partial<Toggle>): Toggle => ({
   key: "feature-1",
@@ -48,6 +64,7 @@ describe("BugReportForm", () => {
     toggles = { data: [], isPending: false, isError: false };
     canReceivePush.mockReset().mockReturnValue(false);
     subscribeThisDevice.mockReset();
+    describe_ = async () => DEVICE;
   });
 
   it("says the report is posted publicly, and points feature feedback to Give feedback (US1.4)", () => {
@@ -96,14 +113,70 @@ describe("BugReportForm", () => {
     expect(within(attached()).queryByText(/Off one/)).not.toBeInTheDocument();
   });
 
+  it("lists the device after the app version, as the Issue will (US2.1, US2.4, FR-007)", async () => {
+    render(<BugReportForm version="abc1234" />);
+
+    expect(await within(attached()).findByText("Model: Pixel 7")).toBeVisible();
+    const lines = within(attached())
+      .getAllByText(/^[A-Z][A-Za-z ]+: /)
+      .map((line) => line.textContent);
+    expect(lines).toEqual([
+      "App version: abc1234",
+      "Model: Pixel 7",
+      "Operating system: Android 16",
+      "Browser: Chrome 142",
+      "Opened as: Installed app",
+      "Screen: 412 × 915 at 2.63×",
+      "Appearance: System",
+      "Time zone: Australia/Sydney",
+    ]);
+  });
+
+  it("says Checking… for the device while it is described, and still sends without it", async () => {
+    describe_ = () => new Promise<Device>(() => {});
+    render(<BugReportForm version="abc1234" />);
+
+    expect(within(attached()).getAllByText("Checking…")).toHaveLength(1);
+    await userEvent.type(wentWrong(), "The Today total is wrong");
+    await userEvent.click(
+      screen.getByRole("radio", { name: "I can't finish what I was doing" }),
+    );
+    await userEvent.click(send());
+
+    expect(mutate).toHaveBeenCalledWith(
+      expect.not.objectContaining({ device: expect.anything() }),
+      expect.any(Object),
+    );
+  });
+
+  it("says Couldn't be read for the device when it can't be described, and sends without it", async () => {
+    describe_ = () => Promise.reject(new Error("no"));
+    render(<BugReportForm version="abc1234" />);
+
+    expect(
+      await within(attached()).findByText("Device: Couldn't be read"),
+    ).toBeInTheDocument();
+    await userEvent.type(wentWrong(), "The Today total is wrong");
+    await userEvent.click(
+      screen.getByRole("radio", { name: "I can't finish what I was doing" }),
+    );
+    await userEvent.click(send());
+
+    expect(mutate).toHaveBeenCalledWith(
+      expect.not.objectContaining({ device: expect.anything() }),
+      expect.any(Object),
+    );
+  });
+
   it("says No Toggles on when none are (US1.5)", () => {
     render(<BugReportForm version="abc1234" />);
     expect(within(attached()).getByText("No Toggles on")).toBeInTheDocument();
   });
 
-  it("says Checking… while the Toggles load, and Couldn't be read on an error", () => {
+  it("says Checking… while the Toggles load, and Couldn't be read on an error", async () => {
     toggles = { isPending: true, isError: false };
     const { rerender } = render(<BugReportForm version="abc1234" />);
+    await screen.findByText("Model: Pixel 7");
     expect(within(attached()).getByText("Checking…")).toBeInTheDocument();
 
     toggles = { isPending: false, isError: true };
@@ -141,6 +214,7 @@ describe("BugReportForm", () => {
         howItHappened: "",
         screen: "today",
         severity: "annoying",
+        device: DEVICE,
       },
       expect.any(Object),
     );
