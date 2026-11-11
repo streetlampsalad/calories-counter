@@ -2,16 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useId, useState, useSyncExternalStore } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  canReceivePush,
-  subscribeThisDevice,
-  vapidPublicKey,
-} from "@/features/reminders/push";
+import { NotifyOffer } from "@/features/reminders/notify-offer";
 import {
   countOpen,
   type FeatureRequestInput,
@@ -106,7 +102,11 @@ export function RequestForm() {
         </p>
       ) : null}
 
-      <NotifyOffer />
+      <NotifyOffer
+        label="Notify me when it's ready"
+        hint="We'll send a notification when your feature is ready to try."
+        granted="You'll get a notification when it's ready to try."
+      />
 
       <Button type="submit" size="lg" disabled={submit.isPending}>
         {submit.isPending ? "Sending…" : "Send request"}
@@ -158,56 +158,4 @@ function TextField({
       </p>
     </div>
   );
-}
-
-const never = () => () => {};
-const permissionNow = (): NotificationPermission | "unsupported" =>
-  canReceivePush() && vapidPublicKey()
-    ? Notification.permission
-    : "unsupported";
-
-// Offered while the User hasn't decided, so they hear when their feature is ready to try. Declining
-// changes nothing about sending the request.
-function NotifyOffer() {
-  const initial = useSyncExternalStore(
-    never,
-    permissionNow,
-    () => "unsupported" as const,
-  );
-  const [answer, setAnswer] = useState<NotificationPermission | null>(null);
-  const permission = answer ?? initial;
-
-  async function ask() {
-    const key = vapidPublicKey();
-    const result = await Notification.requestPermission();
-    setAnswer(result);
-    if (result === "granted" && key) {
-      try {
-        await subscribeThisDevice(key);
-      } catch {
-        toast.error("Couldn't turn on notifications on this phone.");
-      }
-    }
-  }
-
-  if (permission === "default") {
-    return (
-      <div className="flex flex-col gap-2">
-        <Button type="button" variant="outline" size="lg" onClick={ask}>
-          Notify me when it's ready
-        </Button>
-        <p className="text-muted-foreground text-sm">
-          We'll send a notification when your feature is ready to try.
-        </p>
-      </div>
-    );
-  }
-  if (answer === "granted") {
-    return (
-      <p className="text-muted-foreground text-sm">
-        You'll get a notification when it's ready to try.
-      </p>
-    );
-  }
-  return null;
 }
