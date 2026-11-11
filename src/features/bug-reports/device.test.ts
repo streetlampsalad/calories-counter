@@ -190,7 +190,51 @@ describe("describeDevice", () => {
   });
 });
 
+describe("describeDevice, odd browsers", () => {
+  it("never names a GREASE brand, with a space or underscore, as the browser", async () => {
+    for (const grease of ["Not_A Brand", "Not A(Brand", "Not)A;Brand"]) {
+      const device = await describeDevice(
+        {
+          userAgent: "",
+          userAgentData: {
+            ...PIXEL_HINTS,
+            brands: [
+              { brand: grease, version: "8" },
+              { brand: "Chromium", version: "130" },
+              { brand: "Samsung Internet", version: "28" },
+            ],
+          },
+        },
+        win(),
+      );
+      expect(device.browser).toBe("Samsung Internet 28");
+    }
+  });
+
+  it("reads Unknown, not Mobile or Tablet, for Firefox on Android", async () => {
+    for (const kind of ["Mobile", "Tablet"]) {
+      const device = await describeDevice(
+        {
+          userAgent: `Mozilla/5.0 (Android 14; ${kind}; rv:132.0) Gecko/132.0 Firefox/132.0`,
+        },
+        win(),
+      );
+      expect(device).toMatchObject({
+        model: "Unknown",
+        os: "Android 14",
+        browser: "Firefox 132",
+      });
+    }
+  });
+});
+
 describe("parseDevice", () => {
+  it("cuts at 100 characters without splitting an emoji", () => {
+    const model = `${"x".repeat(99)}📱`;
+    expect(parseDevice({ model }).model).toBe(model);
+    expect(parseDevice({ model: `${model}y` }).model).toBe(model);
+  });
+
   it("keeps the seven fields, trimmed (US2.5)", () => {
     const device = {
       model: " Pixel 7 ",

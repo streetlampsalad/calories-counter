@@ -73,8 +73,12 @@ function browserFromBrands(brands: Hints["brands"]): string {
     const found = brands?.find((b) => pattern.test(b.brand));
     if (found) return withVersion(name, found.version);
   }
+  // GREASE brands ("Not_A Brand", "Not)A;Brand"…) are noise Chromium adds on purpose.
   const plain = brands?.find(
-    (b) => b.brand !== "Chromium" && /^[\w ]+$/.test(b.brand.trim()),
+    (b) =>
+      b.brand !== "Chromium" &&
+      !/not.?a.?brand/i.test(b.brand) &&
+      /^[\w ]+$/.test(b.brand.trim()),
   );
   if (plain) return withVersion(plain.brand.trim(), plain.version);
   const chromium = brands?.find((b) => b.brand === "Chromium");
@@ -109,7 +113,9 @@ function fromUserAgent(ua: string): Pick<Device, "model" | "os" | "browser"> {
   } else if (android) {
     os = `Android ${android[1]}`;
     const name = android[2]?.replace(/\s*Build\/.*$/, "").trim();
-    if (name && name.length > 1) model = name;
+    // Firefox puts Mobile or Tablet where Chrome puts the model; the reduced user-agent says K.
+    if (name && name.length > 1 && !/^(Mobile|Tablet)$|rv:/.test(name))
+      model = name;
   } else if (/Windows/.test(ua)) os = "Windows";
   else if (/Mac OS X|Macintosh/.test(ua)) os = "macOS";
   else if (/Linux|X11/.test(ua)) os = "Linux";
@@ -175,7 +181,8 @@ export function parseDevice(value: unknown): Partial<Device> {
   for (const { key } of DEVICE_LINES) {
     const text = record[key];
     if (typeof text !== "string") continue;
-    const cut = text.trim().slice(0, MAX_LENGTH).trim();
+    // By code point, so an emoji is never split in half.
+    const cut = Array.from(text.trim()).slice(0, MAX_LENGTH).join("").trim();
     if (cut) device[key] = cut;
   }
   return device;

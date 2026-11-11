@@ -40,8 +40,9 @@ export function BugReportForm({ version }: { version: string }) {
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [sent, setSent] = useState<{ issue: number; url: string } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  // Described after mount, since the server can't know it. Undefined while pending.
-  const [device, setDevice] = useState<Device>();
+  // Described after mount, since the server can't know it. Undefined while pending, null when it
+  // couldn't be described (the report is then sent without it).
+  const [device, setDevice] = useState<Device | null>();
 
   useEffect(() => {
     let current = true;
@@ -49,7 +50,9 @@ export function BugReportForm({ version }: { version: string }) {
       .then((described) => {
         if (current) setDevice(described);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (current) setDevice(null);
+      });
     return () => {
       current = false;
     };
@@ -290,7 +293,7 @@ function Attached({
   device,
 }: {
   version: string;
-  device: Device | undefined;
+  device: Device | null | undefined;
 }) {
   const { data, isPending, isError } = useToggles();
   const on = [
@@ -317,6 +320,8 @@ function Attached({
             {label}: {device[key]}
           </p>
         ))
+      ) : device === null ? (
+        <p className="text-sm">Device: Couldn't be read</p>
       ) : (
         <p className="text-sm">Checking…</p>
       )}

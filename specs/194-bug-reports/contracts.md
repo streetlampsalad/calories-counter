@@ -58,13 +58,13 @@ Where in the app: Today  ← "Not given" when no screen was chosen; "Somewhere e
 ### Device
 
 - App version: abc1234
-- Model: Pixel 7              ← Slice 2 lines from here
-- Operating system: Android 16
-- Browser: Chrome 142
-- Opened as: Installed app
-- Screen: 412 × 915 at 2.63×
-- Appearance: System
-- Time zone: Australia/Sydney
+- Model: `Pixel 7`            ← Slice 2 lines from here, each value quoted as code
+- Operating system: `Android 16`
+- Browser: `Chrome 142`
+- Opened as: `Installed app`
+- Screen: `412 × 915 at 2.63×`
+- Appearance: `System`
+- Time zone: `Australia/Sydney`
 
 ### Toggles
 
@@ -85,7 +85,7 @@ A User cannot finish a main task (P1)      ← blocked; annoying gives "Annoying
 - [ ] … every option of the template's checklist, unticked
 ```
 
-User-written text is quoted with `> ` on every line and has `@` and `#<digit>` broken with a zero-width space (`quote` in `src/lib/issue-text.ts`). Device values are neutralised and have backticks and line breaks removed.
+User-written text is quoted with `> ` on every line and has `@` and `#<digit>` broken with a zero-width space (`quote` in `src/lib/issue-text.ts`). Device values are quoted as inline code (FR-008): neutralised, with backticks, line breaks and control or invisible characters removed, so a value cannot close the code, add a line or hide text. A field missing from what the browser sent is left out.
 
 ## Device (Slice 2, `src/features/bug-reports/device.ts`)
 

@@ -138,6 +138,25 @@ describe("BugReportForm", () => {
     );
   });
 
+  it("says Couldn't be read for the device when it can't be described, and sends without it", async () => {
+    describe_ = () => Promise.reject(new Error("no"));
+    render(<BugReportForm version="abc1234" />);
+
+    expect(
+      await within(attached()).findByText("Device: Couldn't be read"),
+    ).toBeInTheDocument();
+    await userEvent.type(wentWrong(), "The Today total is wrong");
+    await userEvent.click(
+      screen.getByRole("radio", { name: "I can't finish what I was doing" }),
+    );
+    await userEvent.click(send());
+
+    expect(mutate).toHaveBeenCalledWith(
+      expect.not.objectContaining({ device: expect.anything() }),
+      expect.any(Object),
+    );
+  });
+
   it("says No Toggles on when none are (US1.5)", () => {
     render(<BugReportForm version="abc1234" />);
     expect(within(attached()).getByText("No Toggles on")).toBeInTheDocument();

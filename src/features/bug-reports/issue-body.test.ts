@@ -142,13 +142,13 @@ describe("bugIssueBody", () => {
         "### Device",
         "",
         "- App version: abc1234",
-        "- Model: Pixel 7",
-        "- Operating system: Android 16",
-        "- Browser: Chrome 142",
-        "- Opened as: Installed app",
-        "- Screen: 412 × 915 at 2.63×",
-        "- Appearance: System",
-        "- Time zone: Australia/Sydney",
+        "- Model: `Pixel 7`",
+        "- Operating system: `Android 16`",
+        "- Browser: `Chrome 142`",
+        "- Opened as: `Installed app`",
+        "- Screen: `412 × 915 at 2.63×`",
+        "- Appearance: `System`",
+        "- Time zone: `Australia/Sydney`",
         "",
         "### Toggles",
       ].join("\n"),
@@ -157,21 +157,27 @@ describe("bugIssueBody", () => {
 
   it("omits device lines that are missing, and has the version only without a device (US2.6)", () => {
     expect(bugIssueBody({ ...base, device: { os: "Android 16" } })).toContain(
-      "### Device\n\n- App version: abc1234\n- Operating system: Android 16\n\n### Toggles",
+      "### Device\n\n- App version: abc1234\n- Operating system: `Android 16`\n\n### Toggles",
     );
     expect(bugIssueBody(base)).toContain(
       "### Device\n\n- App version: abc1234\n\n### Toggles",
     );
   });
 
-  it("removes backticks and line breaks from device values and neutralises mentions (US2.4)", () => {
+  it("quotes device values as code, without backticks, line breaks or control characters (US2.4, FR-008)", () => {
     const body = bugIssueBody({
       ...base,
-      device: { model: "Pixel`7`\n### Toggles\r@owner #5\u2028x" },
+      device: {
+        model: "Pixel`7`\n### Toggles\r@owner #5\u2028x",
+        os: "<h3>Toggles</h3>\u202eAndroid\u200b",
+      },
     });
     const headings = body.split("\n").filter((line) => line.startsWith("### "));
     expect(headings).toHaveLength(8);
-    expect(body).toContain("- Model: Pixel7### Toggles@\u200bowner #\u200b5x");
+    expect(body).toContain(
+      "- Model: `Pixel7### Toggles@\u200bowner #\u200b5x`",
+    );
+    expect(body).toContain("- Operating system: `<h3>Toggles</h3>Android`");
     expect(body).not.toContain("`7`");
   });
 

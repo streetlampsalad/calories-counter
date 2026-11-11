@@ -44,16 +44,17 @@ function togglesSection(toggles: readonly IssueToggle[] | null): string {
     .join("\n");
 }
 
-// A device value on one line, without backticks, so it can't open code or add lines (FR-008).
+// A device value quoted as code on one line (FR-008): without backticks, so it can't close the
+// code, and without line breaks, control or invisible characters, so it can't add a line.
 const deviceValue = (text: string) =>
-  neutralise(text.replace(/[`\r\n\u0085\u2028\u2029\v\f]/g, "").trim());
+  neutralise(text.replace(/[`\p{Cc}\p{Cf}\u2028\u2029]/gu, "").trim());
 
 function deviceSection(version: string, device: Partial<Device>): string {
   return [
     `- ${APP_VERSION_LABEL}: ${neutralise(version)}`,
     ...DEVICE_LINES.flatMap(({ key, label }) => {
       const value = device[key] && deviceValue(device[key]);
-      return value ? [`- ${label}: ${value}`] : [];
+      return value ? [`- ${label}: \`${value}\``] : [];
     }),
   ].join("\n");
 }

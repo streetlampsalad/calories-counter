@@ -73,8 +73,8 @@ describe("sendBugReport", () => {
 
     expect(result.ok).toBe(true);
     const body = vi.mocked(issues.create).mock.calls[0][0].body;
-    expect(body).toContain("- App version: abc1234\n- Model: Pixel 7\n");
-    expect(body).toContain(`- Browser: ${"c".repeat(100)}\n`);
+    expect(body).toContain("- App version: abc1234\n- Model: `Pixel 7`\n");
+    expect(body).toContain(`- Browser: \`${"c".repeat(100)}\`\n`);
     expect(body).not.toContain("Operating system");
     expect(body).not.toContain("dropped");
   });
