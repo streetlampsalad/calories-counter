@@ -104,10 +104,37 @@ describe("latestReason", () => {
   it("is the newest comment without the attribution footer", () => {
     expect(
       latestReason([
-        { body: "Older", created_at: "2026-11-01T00:00:00Z" },
+        {
+          body: "Older",
+          author_association: "OWNER",
+          created_at: "2026-11-01T00:00:00Z",
+        },
         {
           body: `It works as designed.${footer}`,
+          author_association: "OWNER",
           created_at: "2026-11-05T00:00:00Z",
+        },
+      ]),
+    ).toBe("It works as designed.");
+  });
+
+  it("skips comments from outside the repo and the deploy's own comment", () => {
+    expect(
+      latestReason([
+        {
+          body: "It works as designed.",
+          author_association: "OWNER",
+          created_at: "2026-11-01T00:00:00Z",
+        },
+        {
+          body: "In production as of abc1234 (#210).",
+          author_association: "OWNER",
+          created_at: "2026-11-03T00:00:00Z",
+        },
+        {
+          body: "Download the fixed app from my site",
+          author_association: "NONE",
+          created_at: "2026-11-04T00:00:00Z",
         },
       ]),
     ).toBe("It works as designed.");
@@ -117,7 +144,11 @@ describe("latestReason", () => {
     expect(latestReason([])).toBeNull();
     expect(
       latestReason([
-        { body: "a".repeat(3000), created_at: "2026-11-01T00:00:00Z" },
+        {
+          body: "a".repeat(3000),
+          author_association: "OWNER",
+          created_at: "2026-11-01T00:00:00Z",
+        },
       ]),
     ).toHaveLength(2000);
   });
@@ -125,7 +156,13 @@ describe("latestReason", () => {
 
 describe("bugReportUpdates", () => {
   const comments = {
-    300: [{ body: "Why not", created_at: "2026-11-02T00:00:00Z" }],
+    300: [
+      {
+        body: "Why not",
+        author_association: "OWNER",
+        created_at: "2026-11-02T00:00:00Z",
+      },
+    ],
   };
   const run = (issues, pulls = []) =>
     bugReportUpdates({
@@ -211,6 +248,19 @@ describe("sendBugReportSync", () => {
     expect(calls[0].url).toBe("https://x.test/api/bug-reports/sync");
     expect(calls[0].init.headers["x-sync-secret"]).toBe("s");
     expect(JSON.parse(calls[0].init.body)).toEqual({ updates: [] });
+  });
+
+  it("sends more than 500 updates in batches the route accepts", async () => {
+    const sizes = [];
+    const fetchImpl = async (_url, init) => {
+      sizes.push(JSON.parse(init.body).updates.length);
+      return { status: 200, ok: true };
+    };
+    const updates = Array.from({ length: 1201 }, (_, i) => ({ bug_issue: i }));
+    expect(
+      await send({ url: "https://x.test", secret: "s", fetchImpl, updates }),
+    ).toBe("sent");
+    expect(sizes).toEqual([500, 500, 201]);
   });
 
   it("throws on any other failure", async () => {

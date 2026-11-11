@@ -156,4 +156,5 @@ _Avoid_: ticket, comment, note
 
 **Bug report**:
 What a User tells the Owner is broken, sent from inside the app. It becomes a public Bug Issue with the Toggles on for them and their device attached, and never their name or email.
+Its outcome follows its Bug Issue: **Sent**, **Being fixed**, **Waiting for the owner**, **Fixed** or **Not going ahead** (with the reason triage gave).
 _Avoid_: ticket, feedback (that is a Feedback set in a Round), issue (that is GitHub's)
