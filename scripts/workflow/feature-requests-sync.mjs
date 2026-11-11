@@ -4,7 +4,7 @@
 // Needs GH_TOKEN, and FEATURE_REQUESTS_SYNC_SECRET and PRODUCTION_URL to send; without them it warns
 // and exits 0. The pure rules are in feature-requests.mjs.
 import { existsSync, readFileSync } from "node:fs";
-import { parseRefs } from "./board.mjs";
+import { pullRefs } from "./board.mjs";
 import {
   latestComment,
   readyNote,
@@ -53,9 +53,7 @@ const requests = features.map((issue) => {
     ...slices.map((s) => s.number),
   ]);
   const openPullLabels = openPulls
-    .filter((pull) =>
-      parseRefs(pull.body).some((number) => tracked.has(number)),
-    )
+    .filter((pull) => pullRefs(pull).some((number) => tracked.has(number)))
     .map((pull) => names(pull.labels));
 
   const comments = [

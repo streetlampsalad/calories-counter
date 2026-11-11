@@ -5,6 +5,7 @@ import {
   issuesToClose,
   parentIsFinished,
   parseRefs,
+  pullRefs,
   STATUS,
   statusFor,
 } from "./board.mjs";
@@ -33,6 +34,36 @@ describe("parseRefs", () => {
 
   it("handles an empty body", () => {
     expect(parseRefs(null)).toEqual([]);
+  });
+});
+
+describe("pullRefs", () => {
+  it("reads Refs in a pull request's title as well as its body (#197)", () => {
+    expect(
+      pullRefs({
+        title: "Fix the meal heading (Refs #184)",
+        body: "Fixes #12",
+      }),
+    ).toEqual([12, 184]);
+  });
+
+  it("counts a number in both the title and the body once", () => {
+    expect(pullRefs({ title: "Thing (Refs #184)", body: "Refs #184" })).toEqual(
+      [184],
+    );
+  });
+
+  it("ignores the title GitHub's Revert button copies from the original pull request", () => {
+    expect(
+      pullRefs({
+        title: 'Revert "Smaller meal headings (Refs #184)"',
+        body: "Reverts streetlampsalad/calories-counter#185",
+      }),
+    ).toEqual([]);
+  });
+
+  it("handles a pull request with no title or body", () => {
+    expect(pullRefs({ title: null, body: null })).toEqual([]);
   });
 });
 
@@ -216,6 +247,38 @@ describe("issuesToClose", () => {
     expect(issuesToClose(pulls, lookup({ 158: open() }), () => true)).toEqual([
       { issue: 158, pull: 165 },
     ]);
+  });
+
+  it("closes the Issue named only in a pull request's title (#197)", () => {
+    expect(
+      issuesToClose(
+        [
+          {
+            number: 185,
+            title: "Smaller meal headings (Refs #184)",
+            body: "Smaller meal headings",
+          },
+        ],
+        lookup({ 184: open() }),
+        () => true,
+      ),
+    ).toEqual([{ issue: 184, pull: 185 }]);
+  });
+
+  it("closes an Issue in both the title and the body once", () => {
+    expect(
+      issuesToClose(
+        [
+          {
+            number: 185,
+            title: "Smaller meal headings (Refs #184)",
+            body: "Refs #184",
+          },
+        ],
+        lookup({ 184: open() }),
+        () => true,
+      ),
+    ).toEqual([{ issue: 184, pull: 185 }]);
   });
 
   it("does not close a reopened Issue again for a pull request that already delivered it", () => {

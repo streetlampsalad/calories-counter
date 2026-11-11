@@ -24,6 +24,16 @@ export function parseRefs(body) {
 }
 
 /**
+ * Issue numbers a pull request points at in its title or its body, each once. A pull request
+ * opened from GitHub's page may carry "Refs #n" only in its title (#197). A revert's title copies
+ * the original's, so it is ignored: a revert must not deliver (or close) the original's Issue.
+ */
+export function pullRefs({ title, body }) {
+  const fromTitle = title?.startsWith('Revert "') ? [] : parseRefs(title);
+  return [...new Set([...fromTitle, ...parseRefs(body)])].sort((a, b) => a - b);
+}
+
+/**
  * @typedef {{ state: "OPEN" | "CLOSED", merged: boolean, isDraft: boolean }} LinkedPull
  * @typedef {{
  *   state: "OPEN" | "CLOSED",
@@ -110,13 +120,13 @@ export function deliveredBy(comments) {
 export function issuesToClose(pulls, issueOf, isDeployed) {
   const newest = new Map();
   for (const pull of pulls) {
-    for (const number of parseRefs(pull.body))
+    for (const number of pullRefs(pull))
       if (!newest.has(number)) newest.set(number, pull);
   }
 
   const closing = [];
   for (const pull of pulls) {
-    const open = parseRefs(pull.body).filter((number) => {
+    const open = pullRefs(pull).filter((number) => {
       if (newest.get(number) !== pull) return false;
       const issue = issueOf(number);
       return (
