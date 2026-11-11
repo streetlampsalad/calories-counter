@@ -51,7 +51,7 @@ export type SyncDeps = {
 
 const TITLE_GOAL_MAX = 60;
 
-function shortGoal(goal: string): string {
+export function shortGoal(goal: string): string {
   const line = (goal.trim().split(/\r?\n/)[0] ?? "").replace(/\s+/g, " ");
   if (line.length <= TITLE_GOAL_MAX) return line;
   const cut = line.slice(0, TITLE_GOAL_MAX - 1);
@@ -85,11 +85,14 @@ export function reminderFor(request: DueReminder) {
   };
 }
 
-type Notice = { requesterId: string; payload: string };
+export type Notice = { requesterId: string; payload: string };
 
 // Tells each Requester due a notification, on every device they subscribed. A failure here never
 // undoes the stages already recorded; it is logged and the count says how many were reached.
-async function notify(due: Notice[], deps: SyncDeps): Promise<number> {
+export async function notify(
+  due: Notice[],
+  deps: Pick<SyncDeps, "devices" | "send" | "deleteSubscriptions">,
+): Promise<number> {
   if (due.length === 0) return 0;
   let reached = 0;
   try {

@@ -117,8 +117,10 @@ for each Issue labelled bug, open or closed in the last 30 days:
       whose body says Refs #<it>                          → waiting_for_owner
     labelled needs-triage                                 → sent
     otherwise                                             → being_fixed
-  latest_comment = the newest comment's body, without the attribution footer, cut to 2,000 characters
-POST { updates: [...] } to $PRODUCTION_URL/api/bug-reports/sync
+  latest_comment = the newest comment's body from the Owner's side (author OWNER, MEMBER or COLLABORATOR,
+    since anyone can comment on the public repo), skipping claim comments and deploy.yml's "In production as of …",
+    without the attribution footer, cut to 2,000 characters
+POST { updates: [...] } to $PRODUCTION_URL/api/bug-reports/sync, in batches of at most 500 (the route's cap)
   with header x-sync-secret: $FEATURE_REQUESTS_SYNC_SECRET (as spec 124's sync; checked with sameSecret)
   a 404 (the route not deployed yet) skips with a warning, as spec 124's sender does
 ```

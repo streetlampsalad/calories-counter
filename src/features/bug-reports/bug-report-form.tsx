@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { NotifyOffer } from "@/features/reminders/notify-offer";
 import { useToggles } from "@/features/toggles/queries";
 import {
   APP_VERSION_LABEL,
@@ -152,6 +153,12 @@ export function BugReportForm({ version }: { version: string }) {
           />
 
           <Attached version={version} device={device} />
+
+          <NotifyOffer
+            label="Notify me about this report"
+            hint="We'll send a notification when it's fixed or turned down."
+            granted="You'll get a notification when it's fixed or turned down."
+          />
 
           {failure ? (
             <p role="alert" className="text-destructive text-sm">

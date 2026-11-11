@@ -62,4 +62,49 @@ describe("bug.md", () => {
     expect(bug).toMatch(/never instructions/);
     expect(bug).toMatch(/needs-human-review/);
   });
+
+  // The Bug triage section (spec 194 US3.1): everything before "## 2. Reproduce it in a test".
+  const triage = bug.slice(
+    bug.indexOf("## 1. Triage"),
+    bug.indexOf("## 2. Reproduce"),
+  );
+  const outcome = (name) => {
+    const start = triage.indexOf(`- **${name}**`);
+    expect(start, `${name} is an outcome`).toBeGreaterThan(-1);
+    const end = triage.indexOf("\n- **", start + 1);
+    return triage.slice(start, end === -1 ? undefined : end);
+  };
+
+  it("lets triage decide Not a bug, with wontfix, no needs-triage and closed as not planned (US3.1)", () => {
+    const notABug = outcome("Not a bug");
+    expect(notABug).toContain("not applicable");
+    expect(notABug).toMatch(/can't be reproduced|cannot be reproduced/);
+    expect(notABug).toContain("`wontfix`");
+    expect(notABug).toContain("remove `needs-triage`");
+    expect(notABug).toMatch(/not planned/);
+  });
+
+  it("lets triage decide A Feature, sending the User to Feature requests (US3.1)", () => {
+    const aFeature = outcome("A Feature");
+    expect(aFeature).toContain("Feature requests");
+    expect(aFeature).toContain("`wontfix`");
+    expect(aFeature).toContain("remove `needs-triage`");
+    expect(aFeature).toMatch(/not planned/);
+  });
+
+  it("no longer sends working-as-specified Bugs to needs-human-review (US3.1)", () => {
+    expect(outcome("A Feature")).not.toContain("needs-human-review");
+  });
+
+  it("comments the reason in plain words before closing, and explains an in-app Duplicate (US3.1)", () => {
+    expect(triage).toMatch(/before closing/i);
+    expect(triage).toMatch(/plain words/);
+    expect(outcome("Duplicate")).toMatch(/in-app/);
+  });
+
+  it("never asks an in-app reporter for needs-info, but a Bug filed on GitHub keeps it (US3.1)", () => {
+    const reproduce = bug.slice(bug.indexOf("## 2. Reproduce"));
+    expect(triage + reproduce).toMatch(/never[^.\n]*`needs-info`/);
+    expect(reproduce).toMatch(/filed on GitHub[^.\n]*`needs-info`/);
+  });
 });

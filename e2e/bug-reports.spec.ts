@@ -70,6 +70,115 @@ test.describe("a User with feature-192 on", () => {
     expect(data?.bug_issue).toBeGreaterThan(90000);
   });
 
+  // The board's sync (Slice 3). The route is machine to machine: it takes the shared secret, not a
+  // session. The Feature Request sync's secret is the one the e2e server is given.
+  const SECRET = "e2e-feature-requests-sync-secret";
+  const ISSUE = 99_301;
+
+  async function addReport() {
+    const { data, error } = await adminClient()
+      .from("bug_reports")
+      .insert({ user_id: TEST_USERS.liv.id, bug_issue: ISSUE })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id;
+  }
+
+  test("a sync marking a report Not going ahead shows the reason and the Feature requests link (US3.5, US3.6)", async ({
+    page,
+    request,
+  }) => {
+    const id = await addReport();
+
+    await page.goto("/settings/report-a-bug");
+    const row = page
+      .getByRole("list", { name: "Your bug reports" })
+      .getByRole("listitem");
+    await expect(row).toContainText(`Bug #${ISSUE}`);
+    await expect(row).toContainText("Sent");
+
+    const sync = await request.post("/api/bug-reports/sync", {
+      headers: { "x-sync-secret": SECRET },
+      data: {
+        updates: [
+          {
+            id,
+            bug_issue: ISSUE,
+            outcome: "not_going_ahead",
+            issue_title: "Bug: the Today total is wrong",
+            latest_comment:
+              "The app works as specified, so this is a new feature.",
+          },
+        ],
+      },
+    });
+    expect(sync.status()).toBe(200);
+    expect(await sync.json()).toEqual({ applied: 1, notified: 0 });
+
+    await page.goto("/settings/report-a-bug");
+    await expect(row).toContainText("Bug: the Today total is wrong");
+    await expect(row).toContainText("Not going ahead");
+    await expect(row).toContainText(
+      "The app works as specified, so this is a new feature.",
+    );
+    await row
+      .getByRole("link", {
+        name: "Is it something new? Ask for it as a feature.",
+      })
+      .click();
+    await expect(page).toHaveURL(/\/settings\/feature-requests$/);
+  });
+
+  test("refuses a sync with the wrong secret, and changes nothing (US3.4)", async ({
+    request,
+  }) => {
+    const id = await addReport();
+
+    const sync = await request.post("/api/bug-reports/sync", {
+      headers: { "x-sync-secret": "not-the-secret" },
+      data: {
+        updates: [
+          {
+            id,
+            bug_issue: ISSUE,
+            outcome: "fixed",
+            issue_title: "Bug: x",
+            latest_comment: null,
+          },
+        ],
+      },
+    });
+
+    expect(sync.status()).toBe(401);
+    const { data } = await adminClient()
+      .from("bug_reports")
+      .select("outcome")
+      .eq("id", id)
+      .single();
+    expect(data?.outcome).toBeNull();
+  });
+
+  test("another User reads none of this User's outcomes or reasons (US3.9)", async () => {
+    const id = await addReport();
+    const { error } = await adminClient()
+      .from("bug_reports")
+      .update({
+        outcome: "not_going_ahead",
+        latest_comment: "A private reason",
+      })
+      .eq("id", id);
+    if (error) throw error;
+
+    const cleo = await userClient("cleo");
+    const { data, error: readError } = await cleo
+      .from("bug_reports")
+      .select("id, outcome, latest_comment")
+      .eq("id", id);
+    if (readError) throw readError;
+    expect(data).toEqual([]);
+  });
+
   test("shows the device from Client Hints in the preview and still sends (US2.1, US2.4)", async ({
     page,
   }) => {

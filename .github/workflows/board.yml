@@ -63,3 +63,16 @@ jobs:
             exit 0
           fi
           node scripts/workflow/feature-requests-sync.mjs
+
+      # Tells the app each in-app Bug report's outcome (specs/194-bug-reports/). Skips with a warning
+      # until scripts/setup-feature-requests.sh has set the secret.
+      - name: Sync Bug reports
+        env:
+          FEATURE_REQUESTS_SYNC_SECRET: ${{ secrets.FEATURE_REQUESTS_SYNC_SECRET }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::AUTOMATION_TOKEN is not set, so Bug reports were not synced. Run scripts/setup-workflow.sh."
+            exit 0
+          fi
+          node scripts/workflow/bug-reports-sync.mjs

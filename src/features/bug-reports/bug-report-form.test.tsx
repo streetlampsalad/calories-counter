@@ -10,6 +10,15 @@ vi.mock("./queries", () => ({
   useSendBugReport: () => ({ mutate, isPending: false }),
 }));
 
+const canReceivePush = vi.fn();
+const subscribeThisDevice = vi.fn();
+vi.mock("@/features/reminders/push", () => ({
+  canReceivePush: () => canReceivePush(),
+  vapidPublicKey: () => "public-key",
+  subscribeThisDevice: (key: string) => subscribeThisDevice(key),
+}));
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
+
 let toggles: { data?: Toggle[]; isPending: boolean; isError: boolean };
 vi.mock("@/features/toggles/queries", () => ({
   useToggles: () => toggles,
@@ -53,6 +62,8 @@ describe("BugReportForm", () => {
     mutate.mockReset();
     sentToday = { data: 0 };
     toggles = { data: [], isPending: false, isError: false };
+    canReceivePush.mockReset().mockReturnValue(false);
+    subscribeThisDevice.mockReset();
     describe_ = async () => DEVICE;
   });
 
@@ -253,5 +264,59 @@ describe("BugReportForm", () => {
     expect(
       screen.queryByRole("button", { name: "Send report" }),
     ).not.toBeInTheDocument();
+  });
+
+  describe("notifications (US3.8)", () => {
+    const notify = () =>
+      screen.queryByRole("button", { name: "Notify me about this report" });
+
+    function stubNotification(permission: NotificationPermission) {
+      const requestPermission = vi.fn(async () => "granted" as const);
+      vi.stubGlobal("Notification", { permission, requestPermission });
+      return requestPermission;
+    }
+
+    it("offers notifications while permission is undecided, and subscribes this phone", async () => {
+      canReceivePush.mockReturnValue(true);
+      const requestPermission = stubNotification("default");
+      render(<BugReportForm version="abc1234" />);
+
+      await userEvent.click(notify() as HTMLElement);
+
+      expect(requestPermission).toHaveBeenCalled();
+      expect(subscribeThisDevice).toHaveBeenCalledWith("public-key");
+      expect(
+        await screen.findByText(/You'll get a notification/),
+      ).toBeInTheDocument();
+    });
+
+    it("still sends when notifications are declined", async () => {
+      canReceivePush.mockReturnValue(true);
+      stubNotification("default").mockResolvedValue("denied" as never);
+      render(<BugReportForm version="abc1234" />);
+
+      await userEvent.click(notify() as HTMLElement);
+      await userEvent.type(wentWrong(), "The total is wrong after I edit");
+      await userEvent.click(
+        screen.getByRole("radio", { name: /It's annoying/ }),
+      );
+      await userEvent.click(send());
+
+      expect(subscribeThisDevice).not.toHaveBeenCalled();
+      expect(mutate).toHaveBeenCalled();
+    });
+
+    it("doesn't offer them once decided, or where push isn't supported", () => {
+      canReceivePush.mockReturnValue(true);
+      stubNotification("granted");
+      const { unmount } = render(<BugReportForm version="abc1234" />);
+      expect(notify()).not.toBeInTheDocument();
+      unmount();
+
+      canReceivePush.mockReturnValue(false);
+      stubNotification("default");
+      render(<BugReportForm version="abc1234" />);
+      expect(notify()).not.toBeInTheDocument();
+    });
   });
 });

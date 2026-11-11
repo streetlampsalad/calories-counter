@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { BugReportForm } from "@/features/bug-reports/bug-report-form";
 import { TOGGLE_KEY } from "@/features/bug-reports/domain";
+import { ReportList } from "@/features/bug-reports/report-list";
 import { formatVersion } from "@/features/settings/version";
 import { isToggleOn } from "@/features/toggles/server";
 
@@ -15,6 +16,7 @@ async function Page() {
     <main className="flex flex-1 flex-col gap-6">
       <h1 className="font-semibold text-2xl tracking-tight">Report a bug</h1>
       <BugReportForm version={formatVersion(process.env.COMMIT_SHA)} />
+      <ReportList />
     </main>
   );
 }
