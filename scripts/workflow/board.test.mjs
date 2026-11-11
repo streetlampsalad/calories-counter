@@ -53,6 +53,15 @@ describe("pullRefs", () => {
     );
   });
 
+  it("ignores the title GitHub's Revert button copies from the original pull request", () => {
+    expect(
+      pullRefs({
+        title: 'Revert "Smaller meal headings (Refs #184)"',
+        body: "Reverts streetlampsalad/calories-counter#185",
+      }),
+    ).toEqual([]);
+  });
+
   it("handles a pull request with no title or body", () => {
     expect(pullRefs({ title: null, body: null })).toEqual([]);
   });

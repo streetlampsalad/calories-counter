@@ -25,12 +25,12 @@ export function parseRefs(body) {
 
 /**
  * Issue numbers a pull request points at in its title or its body, each once. A pull request
- * opened from GitHub's page may carry "Refs #n" only in its title (#197).
+ * opened from GitHub's page may carry "Refs #n" only in its title (#197). A revert's title copies
+ * the original's, so it is ignored: a revert must not deliver (or close) the original's Issue.
  */
 export function pullRefs({ title, body }) {
-  return [...new Set([...parseRefs(title), ...parseRefs(body)])].sort(
-    (a, b) => a - b,
-  );
+  const fromTitle = title?.startsWith('Revert "') ? [] : parseRefs(title);
+  return [...new Set([...fromTitle, ...parseRefs(body)])].sort((a, b) => a - b);
 }
 
 /**
