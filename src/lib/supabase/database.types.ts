@@ -35,14 +35,14 @@ export type Database = {
                   ]
                 },"bug_reports": {
                   Row: {
-                    "bug_issue": number | null,"created_at": string,"id": string,"user_id": string
+                    "bug_issue": number | null,"created_at": string,"id": string,"issue_title": string | null,"latest_comment": string | null,"outcome": string | null,"outcome_changed_at": string | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "bug_issue"?: number | null,"created_at"?: string,"id"?: string,"user_id": string
+                    "bug_issue"?: number | null,"created_at"?: string,"id"?: string,"issue_title"?: string | null,"latest_comment"?: string | null,"outcome"?: string | null,"outcome_changed_at"?: string | null,"user_id": string
                   }
                   Update: {
-                    "bug_issue"?: number | null,"created_at"?: string,"id"?: string,"user_id"?: string
+                    "bug_issue"?: number | null,"created_at"?: string,"id"?: string,"issue_title"?: string | null,"latest_comment"?: string | null,"outcome"?: string | null,"outcome_changed_at"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -211,7 +211,12 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "apply_feature_request_sync":
+            "apply_bug_report_sync":
+{ Args: { "updates": Json }; Returns: {
+              "id": string,"issue_title": string,"latest_comment": string,"new_outcome": string,"user_id": string
+            }[]
+                           },
+"apply_feature_request_sync":
 { Args: { "updates": Json }; Returns: {
               "comment": string,"goal_text": string,"new_stage": string,"notify": boolean,"request_id": string,"requester_id": string
             }[]
