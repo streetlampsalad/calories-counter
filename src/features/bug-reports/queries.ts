@@ -8,7 +8,51 @@ import type { BugReportInput } from "./domain";
 export const bugReportKeys = {
   all: ["bug-reports"] as const,
   sentToday: () => [...bugReportKeys.all, "sent-today"] as const,
+  mine: () => [...bugReportKeys.all, "mine"] as const,
 };
+
+export type BugReport = {
+  id: string;
+  bugIssue: number;
+  // Null until the board's first sync; reads as Sent.
+  outcome: string | null;
+  // The Issue's title and latest comment, null until the first sync.
+  issueTitle: string | null;
+  latestComment: string | null;
+  createdAt: string;
+};
+
+// The signed-in User's own Bug reports, newest first (RLS limits the rows to theirs). A report
+// whose Issue isn't created yet has no number and is left out.
+export function useBugReports() {
+  return useQuery({
+    queryKey: bugReportKeys.mine(),
+    queryFn: async (): Promise<BugReport[]> => {
+      const { data, error } = await createClient()
+        .from("bug_reports")
+        .select(
+          "id, bug_issue, outcome, issue_title, latest_comment, created_at",
+        )
+        .not("bug_issue", "is", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data.flatMap((row) =>
+        row.bug_issue === null
+          ? []
+          : [
+              {
+                id: row.id,
+                bugIssue: row.bug_issue,
+                outcome: row.outcome,
+                issueTitle: row.issue_title,
+                latestComment: row.latest_comment,
+                createdAt: row.created_at,
+              },
+            ],
+      );
+    },
+  });
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
