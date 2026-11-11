@@ -62,7 +62,7 @@ Where in the app: Today  ← "Not given" when no screen was chosen; "Somewhere e
 - Operating system: Android 16
 - Browser: Chrome 142
 - Opened as: Installed app
-- Screen: 412 × 915 at 2.6×
+- Screen: 412 × 915 at 2.63×
 - Appearance: System
 - Time zone: Australia/Sydney
 
@@ -90,7 +90,7 @@ User-written text is quoted with `> ` on every line and has `@` and `#<digit>` b
 ## Device (Slice 2, `src/features/bug-reports/device.ts`)
 
 - `describeDevice(nav, win)` (browser), browser version major only (spec D1): reads `navigator.userAgentData.getHighEntropyValues(["model", "platformVersion"])` and the brands' major versions where present, else parses `navigator.userAgent`; `matchMedia("(display-mode: standalone)")`; `screen.width`, `screen.height`, `devicePixelRatio`; the stored Appearance; `Intl.DateTimeFormat().resolvedOptions().timeZone`. Returns `{ model, os, browser, openedAs, screen, appearance, timeZone }`, each a string, "Unknown" where it can't tell.
-- `parseDevice(value)` (server): keeps only those seven keys, string values only, each trimmed and cut to 100 characters; anything else is dropped. Returns `{}` for a non-object.
+- `parseDevice(value)` (server): keeps only those seven keys, string values only, each trimmed and cut to 100 characters; anything else, or a value empty after trimming, is dropped. Returns `{}` for a non-object.
 
 ## Query keys
 
