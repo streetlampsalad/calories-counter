@@ -55,6 +55,42 @@ describe("sendBugReport", () => {
     expect(deps.remove).not.toHaveBeenCalled();
   });
 
+  it("puts the device in the Issue, keeping only known text fields cut to 100 characters (US2.4, US2.5)", async () => {
+    const { deps, issues } = setup();
+
+    const result = await sendBugReport(
+      {
+        ...VALID,
+        device: {
+          model: "Pixel 7",
+          os: 16,
+          unknown: "dropped",
+          browser: "c".repeat(150),
+        },
+      },
+      deps,
+    );
+
+    expect(result.ok).toBe(true);
+    const body = vi.mocked(issues.create).mock.calls[0][0].body;
+    expect(body).toContain("- App version: abc1234\n- Model: `Pixel 7`\n");
+    expect(body).toContain(`- Browser: \`${"c".repeat(100)}\`\n`);
+    expect(body).not.toContain("Operating system");
+    expect(body).not.toContain("dropped");
+  });
+
+  it("sends the app version only when there is no device, or it is the wrong type (US2.6, US2.5)", async () => {
+    for (const device of [undefined, "Pixel 7", ["model"], null]) {
+      const { deps, issues } = setup();
+      expect(await sendBugReport({ ...VALID, device }, deps)).toMatchObject({
+        ok: true,
+      });
+      expect(vi.mocked(issues.create).mock.calls[0][0].body).toContain(
+        "### Device\n\n- App version: abc1234\n\n### Toggles",
+      );
+    }
+  });
+
   it("answers not_found with nobody signed in, before anything else (US1.2)", async () => {
     const { deps } = setup({ userId: vi.fn(async () => null) });
 

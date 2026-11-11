@@ -1,10 +1,16 @@
 "use client";
 
-import { type FormEvent, useId, useState } from "react";
+import { type FormEvent, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToggles } from "@/features/toggles/queries";
+import {
+  APP_VERSION_LABEL,
+  DEVICE_LINES,
+  type Device,
+  describeDevice,
+} from "./device";
 import {
   type BugReportInput,
   DAILY_LIMIT,
@@ -34,6 +40,23 @@ export function BugReportForm({ version }: { version: string }) {
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [sent, setSent] = useState<{ issue: number; url: string } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  // Described after mount, since the server can't know it. Undefined while pending, null when it
+  // couldn't be described (the report is then sent without it).
+  const [device, setDevice] = useState<Device | null>();
+
+  useEffect(() => {
+    let current = true;
+    describeDevice(navigator, window)
+      .then((described) => {
+        if (current) setDevice(described);
+      })
+      .catch(() => {
+        if (current) setDevice(null);
+      });
+    return () => {
+      current = false;
+    };
+  }, []);
 
   function change(field: Field, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -49,14 +72,17 @@ export function BugReportForm({ version }: { version: string }) {
       return;
     }
     setFailure(null);
-    send.mutate(values as BugReportInput, {
-      onSuccess: (result) => {
-        setSent(result);
-        setValues(EMPTY);
-        setErrors({});
+    send.mutate(
+      { ...(values as BugReportInput), ...(device ? { device } : {}) },
+      {
+        onSuccess: (result) => {
+          setSent(result);
+          setValues(EMPTY);
+          setErrors({});
+        },
+        onError: (error) => setFailure(error.message),
       },
-      onError: (error) => setFailure(error.message),
-    });
+    );
   }
 
   const limited = sentToday !== undefined && sentToday >= DAILY_LIMIT;
@@ -125,7 +151,7 @@ export function BugReportForm({ version }: { version: string }) {
             onChange={(value) => change("severity", value)}
           />
 
-          <Attached version={version} />
+          <Attached version={version} device={device} />
 
           {failure ? (
             <p role="alert" className="text-destructive text-sm">
@@ -262,7 +288,13 @@ function SeverityField({
 }
 
 // Exactly what the app adds to the Issue besides the User's words (spec 194 FR-007).
-function Attached({ version }: { version: string }) {
+function Attached({
+  version,
+  device,
+}: {
+  version: string;
+  device: Device | null | undefined;
+}) {
   const { data, isPending, isError } = useToggles();
   const on = [
     ...(data ?? []).filter(
@@ -279,7 +311,20 @@ function Attached({ version }: { version: string }) {
       <h2 id="attached-heading" className="font-medium text-base">
         Attached to your report
       </h2>
-      <p className="text-sm">App version: {version}</p>
+      <p className="text-sm">
+        {APP_VERSION_LABEL}: {version}
+      </p>
+      {device ? (
+        DEVICE_LINES.map(({ key, label }) => (
+          <p key={key} className="text-sm">
+            {label}: {device[key]}
+          </p>
+        ))
+      ) : device === null ? (
+        <p className="text-sm">Device: Couldn't be read</p>
+      ) : (
+        <p className="text-sm">Checking…</p>
+      )}
       <div className="flex flex-col gap-1">
         <h3 className="text-muted-foreground text-sm">Toggles</h3>
         {isPending ? (

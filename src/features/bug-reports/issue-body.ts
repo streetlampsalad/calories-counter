@@ -1,4 +1,5 @@
 import { cutTitle, neutralise, quote } from "@/lib/issue-text";
+import { APP_VERSION_LABEL, DEVICE_LINES, type Device } from "./device";
 import { type BugReportInput, SCREEN_LABELS, SEVERITY_OPTIONS } from "./domain";
 
 // The Bug Issue a Bug report becomes (spec 194). Its headings are the Bug issue template's
@@ -43,12 +44,29 @@ function togglesSection(toggles: readonly IssueToggle[] | null): string {
     .join("\n");
 }
 
+// A device value quoted as code on one line (FR-008): without backticks, so it can't close the
+// code, and without line breaks, control or invisible characters, so it can't add a line.
+const deviceValue = (text: string) =>
+  neutralise(text.replace(/[`\p{Cc}\p{Cf}\u2028\u2029]/gu, "").trim());
+
+function deviceSection(version: string, device: Partial<Device>): string {
+  return [
+    `- ${APP_VERSION_LABEL}: ${neutralise(version)}`,
+    ...DEVICE_LINES.flatMap(({ key, label }) => {
+      const value = device[key] && deviceValue(device[key]);
+      return value ? [`- ${label}: \`${value}\``] : [];
+    }),
+  ].join("\n");
+}
+
 export function bugIssueBody(bug: {
   id: string;
   report: BugReportInput;
   // null when the Toggles could not be read.
   toggles: readonly IssueToggle[] | null;
   version: string;
+  // Parsed by parseDevice; missing when the browser sent none.
+  device?: Partial<Device>;
 }): string {
   const { report } = bug;
   return [
@@ -68,7 +86,7 @@ export function bugIssueBody(bug: {
     "",
     "### Device",
     "",
-    `- App version: ${neutralise(bug.version)}`,
+    deviceSection(bug.version, bug.device ?? {}),
     "",
     "### Toggles",
     "",
