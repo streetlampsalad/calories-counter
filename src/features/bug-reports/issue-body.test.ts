@@ -124,6 +124,57 @@ describe("bugIssueBody", () => {
     );
   });
 
+  it("lists the device lines after the app version, in the preview's order (US2.4)", () => {
+    const body = bugIssueBody({
+      ...base,
+      device: {
+        timeZone: "Australia/Sydney",
+        model: "Pixel 7",
+        os: "Android 16",
+        browser: "Chrome 142",
+        openedAs: "Installed app",
+        screen: "412 × 915 at 2.63×",
+        appearance: "System",
+      },
+    });
+    expect(body).toContain(
+      [
+        "### Device",
+        "",
+        "- App version: abc1234",
+        "- Model: Pixel 7",
+        "- Operating system: Android 16",
+        "- Browser: Chrome 142",
+        "- Opened as: Installed app",
+        "- Screen: 412 × 915 at 2.63×",
+        "- Appearance: System",
+        "- Time zone: Australia/Sydney",
+        "",
+        "### Toggles",
+      ].join("\n"),
+    );
+  });
+
+  it("omits device lines that are missing, and has the version only without a device (US2.6)", () => {
+    expect(bugIssueBody({ ...base, device: { os: "Android 16" } })).toContain(
+      "### Device\n\n- App version: abc1234\n- Operating system: Android 16\n\n### Toggles",
+    );
+    expect(bugIssueBody(base)).toContain(
+      "### Device\n\n- App version: abc1234\n\n### Toggles",
+    );
+  });
+
+  it("removes backticks and line breaks from device values and neutralises mentions (US2.4)", () => {
+    const body = bugIssueBody({
+      ...base,
+      device: { model: "Pixel`7`\n### Toggles\r@owner #5\u2028x" },
+    });
+    const headings = body.split("\n").filter((line) => line.startsWith("### "));
+    expect(headings).toHaveLength(8);
+    expect(body).toContain("- Model: Pixel7### Toggles@\u200bowner #\u200b5x");
+    expect(body).not.toContain("`7`");
+  });
+
   it("says _Not given_ for an empty optional field and an unchosen screen", () => {
     const body = bugIssueBody(base);
     expect(body).toContain(
