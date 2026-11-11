@@ -7,7 +7,7 @@ import {
   fieldsFromLabels,
   isParent,
   parentIsFinished,
-  parseRefs,
+  pullRefs,
   statusFor,
 } from "./board.mjs";
 import { graphql, readEvent, repo, rest, restAll } from "./github.mjs";
@@ -37,7 +37,7 @@ query($owner: String!, $name: String!, $number: Int!) {
       subIssues(first: 100) { nodes { number state assignees(first: 1) { totalCount } } }
       timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT]) {
         nodes { ... on CrossReferencedEvent { source { ... on PullRequest {
-          number state merged isDraft body repository { nameWithOwner }
+          number state merged isDraft title body repository { nameWithOwner }
         } } } }
       }
       projectItems(first: 20) { nodes { id project { id } } }
@@ -91,7 +91,7 @@ function facts(issue) {
       (pull) =>
         pull?.number &&
         pull.repository.nameWithOwner === repo &&
-        parseRefs(pull.body).includes(issue.number),
+        pullRefs(pull).includes(issue.number),
     );
   return {
     state: issue.state,
@@ -184,8 +184,12 @@ function syncIssue(project, number, seen = new Set()) {
 function issuesFromEvent({ name: eventName, payload }) {
   if (eventName === "issues") return [payload.issue.number];
   if (eventName === "pull_request" || eventName === "pull_request_target") {
-    const bodies = [payload.pull_request.body, payload.changes?.body?.from];
-    return [...new Set(bodies.flatMap(parseRefs))];
+    const { pull_request: pull, changes } = payload;
+    const versions = [
+      pull,
+      { title: changes?.title?.from, body: changes?.body?.from },
+    ];
+    return [...new Set(versions.flatMap(pullRefs))];
   }
   return null; // schedule or workflow_dispatch: everything.
 }
