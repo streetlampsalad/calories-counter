@@ -57,6 +57,7 @@ export default defineConfig({
     env: {
       NOTES_READER: "fake",
       CALORIE_GUESSER: "fake",
+      NUTRITION_TIPS: "fake",
       OFF_SOURCE: "fixture",
       // Feature Requests create no real GitHub Issues in tests (spec 124).
       FEATURE_ISSUES: "fake",

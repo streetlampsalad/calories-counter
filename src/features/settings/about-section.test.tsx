@@ -59,6 +59,17 @@ describe("AboutSection", () => {
     expect(note).toHaveTextContent(/improve Google's products/i);
   });
 
+  it("says Nutrition tips send last week's Food names and Quantities, only while they are on (US1.10)", () => {
+    const { rerender } = render(<AboutSection version="dev" />);
+    expect(screen.queryByText(/Nutrition tips/)).not.toBeInTheDocument();
+
+    rerender(<AboutSection version="dev" tipsOn />);
+    const note = screen.getByText(/Nutrition tips/);
+    expect(note).toHaveTextContent("last week's Food names and Quantities");
+    expect(note).toHaveTextContent("Gemini");
+    expect(note).toHaveTextContent("free tier");
+  });
+
   it("has a heading, so it can be found by headings", () => {
     render(<AboutSection version="dev" />);
 

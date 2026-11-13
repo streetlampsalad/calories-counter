@@ -1,6 +1,13 @@
 import { FoodDataAttribution } from "@/features/search/attribution";
 
-export function AboutSection({ version }: { version: string }) {
+export function AboutSection({
+  version,
+  tipsOn = false,
+}: {
+  version: string;
+  /** Whether the Nutrition tips Toggle (feature-218) is on for this User. */
+  tipsOn?: boolean;
+}) {
   return (
     <section aria-labelledby="about-heading" className="flex flex-col gap-3">
       <h2 id="about-heading" className="font-medium text-lg">
@@ -21,6 +28,12 @@ export function AboutSection({ version }: { version: string }) {
           content sent on the free tier to improve Google's products, so only
           scan notes you are happy to share.
         </p>
+        {tipsOn ? (
+          <p className="text-muted-foreground text-sm">
+            Getting Nutrition tips sends last week's Food names and Quantities
+            to Google's Gemini API on its free tier.
+          </p>
+        ) : null}
       </div>
     </section>
   );
