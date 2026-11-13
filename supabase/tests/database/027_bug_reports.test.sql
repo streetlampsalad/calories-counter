@@ -10,8 +10,8 @@ values
 
 select is(
   (select state from public.toggles where key = 'feature-192'),
-  'testing',
-  'the Toggle feature-192 is in Testing'
+  'live',
+  'the Toggle feature-192 is Live for everyone'
 );
 select is(
   (select title from public.toggles where key = 'feature-192'),
