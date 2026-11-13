@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   today: "2026-11-13" as string | null,
   entries: undefined as Entry[] | undefined,
   goal: null as number | null,
+  settingsPending: false,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -17,7 +18,10 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("./use-today", () => ({ useToday: () => state.today }));
 vi.mock("@/features/settings/queries", () => ({
-  useSettings: () => ({ data: { dailyGoal: state.goal } }),
+  useSettings: () =>
+    state.settingsPending
+      ? { data: undefined, isPending: true }
+      : { data: { dailyGoal: state.goal }, isPending: false },
 }));
 vi.mock("@/features/toggles/queries", () => ({ useToggle: () => false }));
 vi.mock("@/features/burned/burned-row", () => ({ BurnedRow: () => null }));
@@ -60,6 +64,7 @@ describe("Today while the Day loads", () => {
     state.today = "2026-11-13";
     state.entries = undefined;
     state.goal = null;
+    state.settingsPending = false;
   });
 
   it.each([
@@ -84,6 +89,24 @@ describe("Today while the Day loads", () => {
       loading.className.replace(" animate-pulse *:invisible", ""),
     );
     expect([...total().children].map((row) => row.className)).toEqual(rows);
+  });
+
+  it("keeps the placeholder until Settings are in, so the Goal's row never arrives late", () => {
+    state.settingsPending = true;
+    state.entries = [toast];
+    const { container, rerender } = render(<TodayScreen />);
+
+    expect(placeholder(container)).not.toBeNull();
+    expect(
+      screen.queryByRole("region", { name: "Daily total" }),
+    ).not.toBeInTheDocument();
+
+    state.settingsPending = false;
+    state.goal = 2200;
+    rerender(<TodayScreen />);
+
+    expect(placeholder(container)).toBeNull();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
   });
 
   it("holds the Day header's height before today is known", () => {

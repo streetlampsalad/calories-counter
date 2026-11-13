@@ -50,7 +50,10 @@ export function DailyTotal({
         placeholder && "animate-pulse *:invisible",
       )}
     >
-      <h2 id="daily-total-heading" className="sr-only">
+      <h2
+        id={placeholder ? undefined : "daily-total-heading"}
+        className="sr-only"
+      >
         {planned ? "Planned total" : "Daily total"}
       </h2>
       {/* In the card's top padding rather than the flow, so a planned Day's total sits exactly where
@@ -64,7 +67,7 @@ export function DailyTotal({
         </p>
       ) : null}
       {/* Screen readers hear only where the number ends up, once, never the count to it. */}
-      <p className="sr-only" aria-live="polite">
+      <p className="sr-only" aria-live={placeholder ? undefined : "polite"}>
         {goal !== null
           ? `${finalText} of ${kcal(goal)} kcal`
           : `${finalText} kcal`}

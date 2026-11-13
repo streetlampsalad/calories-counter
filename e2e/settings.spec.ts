@@ -136,9 +136,10 @@ test("the Daily Total does not move or change size when the Day loads", async ({
   page,
 }) => {
   const eve = await startFresh();
-  await eve
+  const { error } = await eve
     .from("user_settings")
     .upsert({ daily_goal_calories: 2200 }, { onConflict: "user_id" });
+  if (error) throw error;
   await logDay("2001-08-09", 100, 3);
   let release = () => {};
   const held = new Promise<void>((resolve) => {

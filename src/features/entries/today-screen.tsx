@@ -55,7 +55,10 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
   const [day, setDay] = useState(urlDay);
   useEffect(() => setDay(urlDay), [urlDay]);
   const { data: entries, isPending, isError, refetch } = useDayEntries(day);
-  const { data: settings } = useSettings();
+  const { data: settings, isPending: settingsPending } = useSettings();
+  // The Daily Total waits for Settings too: drawn before the Goal is known, it would grow when the
+  // Goal arrived and push everything below it down (bug #211).
+  const loading = isPending || settingsPending;
 
   // Each Day is a history entry, so the back button returns to the Day before. Today is just "/".
   const goToDay = (next: string) => {
@@ -247,7 +250,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
             "motion-safe:fade-in motion-safe:slide-in-from-left-8 motion-safe:animate-in motion-safe:duration-200",
         )}
       >
-        {isPending ? <DaySkeleton goal={settings?.dailyGoal ?? null} /> : null}
+        {loading ? <DaySkeleton goal={settings?.dailyGoal ?? null} /> : null}
 
         {isError ? (
           <div
@@ -261,7 +264,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
           </div>
         ) : null}
 
-        {entries ? (
+        {entries && !settingsPending ? (
           <>
             <DailyTotal
               entries={entries}
