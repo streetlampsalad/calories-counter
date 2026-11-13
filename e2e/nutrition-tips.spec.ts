@@ -84,15 +84,12 @@ test("get tips for last week with 3 Logged Days (US1.1, US1.4)", async ({
 test("reopening Summary shows the kept tips with Ask again, and Ask again replaces them (US2.1, US2.2)", async ({
   page,
 }) => {
+  // Serial: reopens Summary on the set the test above got and kept, so a run spends only 2 of
+  // liv's 3 tries a day.
   await setToggle(true);
-  await arrange(3);
 
   await page.goto("/summary");
   const card = page.getByRole("region", { name: "Nutrition tips" });
-  await card.getByRole("button", { name: "Get tips" }).click();
-  await expect(card.getByRole("listitem")).toHaveCount(2);
-
-  await page.reload();
   await expect(card.getByRole("listitem")).toHaveCount(2);
   await expect(card.locator("strong").first()).toHaveText("Omega-3");
   const askAgain = card.getByRole("button", { name: "Ask again" });
