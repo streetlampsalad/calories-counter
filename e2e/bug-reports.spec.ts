@@ -27,7 +27,7 @@ test.describe("a signed-in User", () => {
     await expect(page.getByText(/posted publicly on GitHub/)).toBeVisible();
     await expect(
       page.getByRole("region", { name: "Attached to your report" }),
-    ).toBeVisible();
+    ).toContainText("Report a bug (feature-192): Live");
 
     await page
       .getByRole("textbox", { name: /What went wrong/ })
