@@ -7,8 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const NOTIFICATION_TTL_SECONDS = 3 * 24 * 60 * 60;
 
 // Called by the board workflow after every Issue and pull request event (spec 194). Refuses anyone
-// without the shared secret before it touches the database or the VAPID keys. Machine to machine, so
-// it is not behind feature-192: the list it fills sits on the Toggle's page.
+// without the shared secret before it touches the database or the VAPID keys. Machine to machine.
 export async function POST(request: Request) {
   await connection();
 

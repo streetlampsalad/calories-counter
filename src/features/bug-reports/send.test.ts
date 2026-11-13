@@ -21,7 +21,6 @@ function setup(overrides: Partial<SendDeps> = {}) {
   };
   const deps: SendDeps = {
     userId: vi.fn(async () => USER),
-    toggleOn: vi.fn(async () => true),
     insert: vi.fn(async () => ({ id: ID })),
     setIssue: vi.fn(async () => {}),
     remove: vi.fn(async () => {}),
@@ -99,17 +98,6 @@ describe("sendBugReport", () => {
       code: "not_found",
     });
     expect(deps.insert).not.toHaveBeenCalled();
-  });
-
-  it("answers not_found while the Toggle is off (US1.2, FR-001)", async () => {
-    const { deps, issues } = setup({ toggleOn: vi.fn(async () => false) });
-
-    expect(await sendBugReport(VALID, deps)).toEqual({
-      ok: false,
-      code: "not_found",
-    });
-    expect(deps.insert).not.toHaveBeenCalled();
-    expect(issues.create).not.toHaveBeenCalled();
   });
 
   it("refuses an invalid form without touching anything (US1.3)", async () => {

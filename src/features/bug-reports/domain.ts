@@ -108,6 +108,3 @@ export function parseBugReport(input: unknown): ParseResult {
     errors.whatWentWrong = WENT_WRONG_MESSAGE;
   return { ok: false, errors };
 }
-
-// The Toggle everything in this Feature sits behind (ADR 0008).
-export const TOGGLE_KEY = "feature-192";

@@ -2,13 +2,11 @@
 
 import { createFeatureIssues } from "@/features/feature-requests/feature-issues";
 import { formatVersion } from "@/features/settings/version";
-import { isToggleOn } from "@/features/toggles/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { TOGGLE_KEY } from "./domain";
 import { type SendResult, sendBugReport as send } from "./send";
 
-// Reachable by a direct POST, so it checks the Toggle and the session itself (spec 194 FR-001).
+// Reachable by a direct POST, so it checks the session itself (spec 194 FR-001).
 // Rows are written with the service role because Users may only read their Bug reports.
 export async function sendBugReport(input: unknown): Promise<SendResult> {
   const supabase = await createClient();
@@ -19,7 +17,6 @@ export async function sendBugReport(input: unknown): Promise<SendResult> {
       const { data } = await supabase.auth.getClaims();
       return data?.claims.sub ?? null;
     },
-    toggleOn: () => isToggleOn(TOGGLE_KEY),
     insert: async (row) => {
       const { data, error } = await admin
         .from("bug_reports")

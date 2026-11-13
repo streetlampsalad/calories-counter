@@ -1,15 +1,8 @@
-"use client";
-
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { TOGGLE_KEY } from "@/features/bug-reports/domain";
-import { useToggle } from "@/features/toggles/queries";
 
-// The way into Report a bug (spec 194), there only while its Toggle is on for the User.
+// The way into Report a bug (spec 194).
 export function ReportABugRow() {
-  const on = useToggle(TOGGLE_KEY);
-  if (!on) return null;
-
   return (
     <section className="flex flex-col gap-2">
       <Link
