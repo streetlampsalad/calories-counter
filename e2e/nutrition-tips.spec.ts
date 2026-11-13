@@ -39,6 +39,8 @@ async function setToggle(on: boolean) {
 async function arrange(days: number) {
   const liv = await userClient("liv");
   const week = lastWeekDays();
+  // No set kept from an earlier run.
+  await liv.from("nutrition_tips").delete().eq("week_start", week[0]);
   const { error } = await liv
     .from("user_settings")
     .upsert({ week_starts_on: 1 }, { onConflict: "user_id" });
@@ -54,6 +56,7 @@ test.afterAll(async () => {
   const liv = await userClient("liv");
   const week = lastWeekDays();
   await liv.from("entries").delete().gte("day", week[0]).lte("day", week[6]);
+  await liv.from("nutrition_tips").delete().eq("week_start", week[0]);
 });
 
 test("get tips for last week with 3 Logged Days (US1.1, US1.4)", async ({
@@ -76,6 +79,38 @@ test("get tips for last week with 3 Logged Days (US1.1, US1.4)", async ({
       "AI guesses from your food names, not medical or dietary advice.",
     ),
   ).toBeVisible();
+});
+
+test("reopening Summary shows the kept tips with Ask again, and Ask again replaces them (US2.1, US2.2)", async ({
+  page,
+}) => {
+  await setToggle(true);
+  await arrange(3);
+
+  await page.goto("/summary");
+  const card = page.getByRole("region", { name: "Nutrition tips" });
+  await card.getByRole("button", { name: "Get tips" }).click();
+  await expect(card.getByRole("listitem")).toHaveCount(2);
+
+  await page.reload();
+  await expect(card.getByRole("listitem")).toHaveCount(2);
+  await expect(card.locator("strong").first()).toHaveText("Omega-3");
+  const askAgain = card.getByRole("button", { name: "Ask again" });
+  await expect(askAgain).toBeVisible();
+  expect((await askAgain.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await expect(card.getByRole("button", { name: "Get tips" })).toHaveCount(0);
+
+  await askAgain.click();
+  await expect(askAgain).toBeEnabled();
+  await expect(card.getByRole("listitem")).toHaveCount(2);
+
+  // One set per User per week, however many times they asked.
+  const liv = await userClient("liv");
+  const { data } = await liv
+    .from("nutrition_tips")
+    .select("week_start")
+    .eq("week_start", lastWeekDays()[0]);
+  expect(data).toHaveLength(1);
 });
 
 test("fewer than 3 Logged Days shows no button (US1.3)", async ({ page }) => {

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { WeekStart } from "@/features/settings/domain";
 import { formatRange } from "@/features/summary/period";
 import { useDailyTotals } from "@/features/summary/queries";
-import { TipsError, useGetTips } from "./queries";
+import { TipsError, useGetTips, useKeptTips } from "./queries";
 import { hasEnoughDays, lastWeek } from "./week";
 
 const MESSAGES: Record<string, string> = {
@@ -24,7 +24,10 @@ export function TipsCard({
   const range = lastWeek(today, weekStartsOn);
   const daily = useDailyTotals(range);
   const totals = daily.data;
+  const kept = useKeptTips(range.from);
   const getTips = useGetTips(range.from);
+  // A successful try writes its tips into the kept query, so this is also what a reload shows.
+  const tips = kept.data ?? null;
 
   const code =
     getTips.error instanceof TipsError ? getTips.error.code : "tips_failed";
@@ -44,10 +47,10 @@ export function TipsCard({
       </h2>
       <p className="text-muted-foreground text-sm">{formatRange(range)}</p>
 
-      {getTips.data ? (
+      {kept.isLoading ? null : tips ? (
         <>
           <ul className="flex flex-col gap-2">
-            {getTips.data.map((tip, i) => (
+            {tips.map((tip, i) => (
               <li key={`${i}-${tip.nutrient}`}>
                 <strong>{tip.nutrient}</strong>: {tip.tip}
               </li>
@@ -56,6 +59,18 @@ export function TipsCard({
           <p className="text-muted-foreground text-sm">
             AI guesses from your food names, not medical or dietary advice.
           </p>
+          {message ? <p role="alert">{message}</p> : null}
+          {limited ? null : (
+            <Button
+              className="min-h-11 self-start"
+              variant="outline"
+              disabled={getTips.isPending}
+              aria-busy={getTips.isPending}
+              onClick={() => getTips.mutate()}
+            >
+              {getTips.isPending ? "Getting tips…" : "Ask again"}
+            </Button>
+          )}
         </>
       ) : totals && !hasEnoughDays(totals) ? (
         <p>Log food on at least 3 days in a week to get tips.</p>
