@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { authFile } from "./support/auth";
-import { userClient } from "./support/db";
+import { adminClient, userClient } from "./support/db";
 import { seedEntry, seedFood } from "./support/seed";
 
 // Nutrition tips (spec 219), behind Toggle feature-218. The server asks the fake tips writer
@@ -52,6 +52,20 @@ async function arrange(days: number) {
   }
 }
 
+// A User cannot reset their own allowance, so the admin client clears liv's tries before each run
+// (and each CI retry), which spend 2 of the 3 a day.
+test.beforeAll(async () => {
+  const liv = await userClient("liv");
+  const { data } = await liv.auth.getUser();
+  if (!data.user) throw new Error("liv is not signed in");
+  const { error } = await adminClient()
+    .from("ai_usage")
+    .delete()
+    .eq("user_id", data.user.id)
+    .eq("kind", "tips");
+  if (error) throw error;
+});
+
 test.afterAll(async () => {
   const liv = await userClient("liv");
   const week = lastWeekDays();
@@ -84,8 +98,7 @@ test("get tips for last week with 3 Logged Days (US1.1, US1.4)", async ({
 test("reopening Summary shows the kept tips with Ask again, and Ask again replaces them (US2.1, US2.2)", async ({
   page,
 }) => {
-  // Serial: reopens Summary on the set the test above got and kept, so a run spends only 2 of
-  // liv's 3 tries a day.
+  // Serial: reopens Summary on the set the test above got and kept.
   await setToggle(true);
 
   await page.goto("/summary");
@@ -97,7 +110,9 @@ test("reopening Summary shows the kept tips with Ask again, and Ask again replac
   expect((await askAgain.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await expect(card.getByRole("button", { name: "Get tips" })).toHaveCount(0);
 
+  const asked = page.waitForResponse("**/api/nutrition-tips");
   await askAgain.click();
+  expect((await asked).status()).toBe(200);
   await expect(askAgain).toBeEnabled();
   await expect(card.getByRole("listitem")).toHaveCount(2);
 
