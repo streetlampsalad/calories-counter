@@ -108,6 +108,10 @@ _Avoid_: net calories, balance, remaining
 A named range of Days that a summary covers, such as week to date, month to date, last week, or last month.
 _Avoid_: range, window, timeframe
 
+**Nutrition tip**:
+A short AI-written suggestion naming a nutrient a User may be short of and a food or two that would add it, drawn from the Foods in their Entries last week. A best guess from Food names, never advice; it only ever suggests adding foods.
+_Avoid_: recommendation, advice, guide, insight
+
 **Appearance**:
 A User's choice of Light, Dark or System for how the app looks, kept on one phone and not with the User. System follows the phone's own light or dark setting.
 _Avoid_: theme, colour scheme, skin
