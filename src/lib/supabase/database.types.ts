@@ -131,14 +131,14 @@ isOneToOne: false
                   ]
                 },"nutrition_tips": {
                   Row: {
-                    "created_at": string,"tips": Json,"user_id": string,"week_start": string
+                    "created_at": string,"tips": NonNullable<Json>,"user_id": string,"week_start": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"tips": Json,"user_id"?: string,"week_start": string
+                    "created_at"?: string,"tips": NonNullable<Json>,"user_id"?: string,"week_start": string
                   }
                   Update: {
-                    "created_at"?: string,"tips"?: Json,"user_id"?: string,"week_start"?: string
+                    "created_at"?: string,"tips"?: NonNullable<Json>,"user_id"?: string,"week_start"?: string
                   }
                   Relationships: [
                     
