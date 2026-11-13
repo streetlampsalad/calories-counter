@@ -13,7 +13,7 @@ Responses (all `Cache-Control: no-store`):
 | Status | Body | When |
 |---|---|---|
 | 200 | `{ tips: { nutrient: string; tip: string }[] }` (1–3) | tips written (and, from Slice 2, kept) |
-| 400 | `{ code: "bad_request" \| "bad_week" }` | not JSON; not a date, or `weekStart + 6` is after today in Sydney plus one Day |
+| 400 | `{ code: "bad_request" \| "bad_week" }` | not JSON; not a date, not on the day the User's week starts on (`settings`), `weekStart + 6` after today in Sydney, or `weekStart` more than 14 Days before today in Sydney |
 | 401 | `{ code: "unauthorized" }` | no session |
 | 404 | `{ code: "not_found" }` | Toggle `feature-218` is off for the User |
 | 422 | `{ code: "not_enough_days" }` | fewer than 3 Logged Days in the week |
@@ -26,11 +26,13 @@ Steps, in order (pseudocode):
 ```text
 if no user: 401
 if not isToggleOn("feature-218"): 404
-parse weekStart; if bad: 400 bad_week
+parse weekStart; if not a date, not on the User's week start day, ending after Sydney today,
+  or starting more than 14 Days ago: 400 bad_week
 rows = entries joined to foods, day between weekStart and weekStart+6, with the User's client (RLS)
 if distinct days < 3: 422 not_enough_days          -- before spending the allowance
-if not increment_ai_usage("tips", 3): 429
-summary = per Food: name, portion, calories, sum(quantity); top 80 by calories; loggedDays
+if not increment_ai_usage("tips", 3): 429         -- counted even if Gemini then fails (spec D5)
+summary = per Food: name, portion, calories, sum(quantity); the 80 with the most Calories over the week
+          (sum of quantity × calories); loggedDays
 answer = writer.write(summary)                      -- Gemini, or the fake
 tips = tidy(answer); if none: 500 tips_failed
 (Slice 2) upsert nutrition_tips (user, weekStart, tips); a failed save is logged, tips still returned
@@ -54,4 +56,4 @@ interface TipsWriter { write(week: WeekSummary): Promise<NutritionTip[]> }
 
 ## Kept tips read (Slice 2)
 
-The card reads its own row with the browser Supabase client: `from("nutrition_tips").select("tips, created_at").eq("week_start", weekStart).maybeSingle()`, under `nutritionTipKeys.week(weekStart)`. A successful POST sets that query's data.
+The card reads its own row with the browser Supabase client: `from("nutrition_tips").select("tips, created_at").eq("week_start", weekStart).maybeSingle()`, under `nutritionTipKeys.week(weekStart)`. Each row is parsed with the tips zod schema; one that does not parse is treated as no tips. A successful POST sets that query's data.

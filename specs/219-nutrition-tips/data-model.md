@@ -4,7 +4,7 @@ Additive only (ADR 0003): the deployed app keeps working before and after each m
 
 ## Toggle (Slice 1)
 
-`insert into public.toggles (key, title) values ('feature-218', 'Nutrition tips for last week.') on conflict do nothing;` (Testing by default).
+`insert into public.toggles (key, title) values ('feature-218', 'Nutrition tips') on conflict do nothing;` (Testing by default).
 
 ## Allowance (Slice 1)
 
@@ -27,7 +27,7 @@ Primary key `(user_id, week_start)`: one set per User per week; Ask again upsert
 - `revoke all on public.nutrition_tips from anon, authenticated; grant select, insert, update, delete on public.nutrition_tips to authenticated;`
 - Policies, each `to authenticated`, all on `user_id = (select auth.uid())`: "Users read their own Nutrition tips" (select), "Users add their own Nutrition tips" (insert, `with check`), "Users replace their own Nutrition tips" (update, `using` and `with check`), "Users remove their own Nutrition tips" (delete).
 
-The route writes with the User's own client, after the allowance and Gemini succeed. A User could write their own row directly; that only changes what they see themselves.
+The route writes with the User's own client, after the allowance and Gemini succeed. A User could write their own row directly; that only changes what they see themselves, and the card parses each kept row with the tips schema, treating one that does not parse as no tips.
 
 ## pgTAP (`nutrition_tips.test.sql`)
 

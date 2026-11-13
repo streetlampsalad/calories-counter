@@ -4,7 +4,7 @@
 
 ## Summary
 
-Where Toggle `feature-218` is on, Summary ends with a **Nutrition tips** card for last week. **Get tips** posts the week's first Day to `POST /api/nutrition-tips`, which checks the Toggle, the week and the daily allowance, sums the week's Entries per Food with the User's own client, and asks Gemini (light model, JSON schema) for up to three tips. Slice 2 keeps each week's set in a new RLS table so reopening is free and **Ask again** replaces it.
+Where Toggle `feature-218` is on, Summary ends with a **Nutrition tips** card for last week. **Get tips** posts the week's first Day to `POST /api/nutrition-tips`, which checks the Toggle, the week (against the User's settings) and the daily allowance, sums the week's Entries per Food with the User's own client, and asks Gemini (light model, JSON schema) for up to three tips. Slice 2 keeps each week's set in a new RLS table so reopening is free and **Ask again** replaces it.
 
 ## Technical Context
 
@@ -13,7 +13,7 @@ Where Toggle `feature-218` is on, Summary ends with a **Nutrition tips** card fo
 - **Data**: Slice 1: a migration adding Toggle `feature-218` (Testing). Slice 2: table `public.nutrition_tips` with RLS ([data-model.md](./data-model.md))
 - **Server boundaries**: route handler `src/app/api/nutrition-tips/route.ts` (POST), with the logic in `src/features/nutrition-tips/tips-handler.ts` behind injected deps, as `guess-handler.ts` does. `GEMINI_API_KEY` stays server-side ([contracts.md](./contracts.md))
 - **New environment variables**: `NUTRITION_TIPS=fake`, test-only, in `playwright.config.ts`'s web server env. No production variable
-- **Query keys**: `nutritionTipKeys` in `src/features/nutrition-tips/queries.ts`: `all`, `week(from)` (Slice 2 reads the kept set). The card reuses `useDailyTotals` for the Logged Days check
+- **Query keys**: `nutritionTipKeys` in `src/features/nutrition-tips/queries.ts`: `all`, `week(from)` (Slice 2 reads the kept set and parses it with the same zod schema as the model's answer; a row that does not parse counts as no tips). The card reuses `useDailyTotals` for the Logged Days check
 - **Screens and states**: the card on `summary-screen.tsx`: not enough Days; ready (**Get tips**); working; tips (with **Ask again** in Slice 2); limit reached; unavailable; failed or offline (**Try again**). Toggle off, loading or failed: no card
 
 ## Constitution Check
@@ -49,7 +49,7 @@ Where Toggle `feature-218` is on, Summary ends with a **Nutrition tips** card fo
 
 ## Migration Plan
 
-1. **Slice 1, `toggle_nutrition_tips`**: `insert into public.toggles (key, title) values ('feature-218', 'Nutrition tips for last week.') on conflict do nothing;`. Testing by default; the deployed app ignores unknown Toggles.
+1. **Slice 1, `toggle_nutrition_tips`**: `insert into public.toggles (key, title) values ('feature-218', 'Nutrition tips') on conflict do nothing;`. Testing by default; the deployed app ignores unknown Toggles.
 2. **Slice 2, `nutrition_tips`**: creates `public.nutrition_tips` with RLS and owner-only policies. A new table the deployed app never reads.
 
 ## Project Structure
@@ -64,7 +64,8 @@ src/features/nutrition-tips/gemini-tips-writer.ts# system prompt and answer sche
 src/features/nutrition-tips/tips-card.tsx        # the card and its states
 src/features/nutrition-tips/queries.ts           # nutritionTipKeys, useKeptTips (Slice 2), useGetTips mutation
 src/features/summary/summary-screen.tsx          # renders the card behind useToggle("feature-218")
-src/features/settings/about-section.tsx          # Nutrition tips sentence while the Toggle is on
+src/features/settings/about-section.tsx          # Nutrition tips sentence, from a prop
+src/app/(app)/settings/page.tsx                  # About() passes isToggleOn("feature-218") to AboutSection (a Server Component)
 playwright.config.ts                             # NUTRITION_TIPS: "fake"
 supabase/migrations/<ts>_toggle_nutrition_tips.sql, <ts>_nutrition_tips.sql
 supabase/tests/database/nutrition_tips.test.sql

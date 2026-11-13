@@ -10,7 +10,7 @@
 
 **Depends on**: `docs/specs/010-summaries.md` (the Summary screen and Periods), `docs/specs/007-add-food-search.md` (the Gemini best guess and the daily AI allowance), `docs/specs/006-add-food-photo-import.md` (`ai_usage` and `increment_ai_usage`), `specs/116-toggles/` (Toggles)
 
-**ADRs**: [0001](../../docs/adr/0001-entries-reference-foods-live.md) (Entries reference Foods live), [0003](../../docs/adr/0003-trunk-based-with-gated-deploys.md) (migrations ship first), [0008](../../docs/adr/0008-every-new-feature-ships-behind-a-toggle.md) (every new Feature ships behind a Toggle)
+**ADRs**: [0001](../../docs/adr/0001-entries-reference-foods-live.md) (Entries reference Foods live), [0003](../../docs/adr/0003-trunk-based-with-gated-deploys.md) (migrations ship first), [0004](../../docs/adr/0004-planned-entries-by-date-alone.md) (what counts as eaten stops at today), [0008](../../docs/adr/0008-every-new-feature-ships-behind-a-toggle.md) (every new Feature ships behind a Toggle)
 
 **Input**: Feature description: Feature #218, a Feature Request. "I'd like to see an AI nutritional guide/recommendation based on what I've eaten each week. As an example maybe after looking through all of my food for a week then after analysing the nutritional properties of all the food, the AI suggestion should say something like, 'you haven't had much omega 3 this week, maybe look at adding some salmon on the menu for next week'. It doesn't need to be exactly that, it's just an example. I don't want a full detailed nutritional breakdown, just some simple recommendations. I know AI isn't always accurate so it's just a recommendation." Additional details: "Use the existing Gemini integration and try and keep it free as far as usage. The nutritional data can be a best guess from the AI for the food consumption, it doesn't need to be accurate."
 
@@ -20,7 +20,7 @@
 
 ### User Story 1 - Get Nutrition tips for last week (Priority: P1)
 
-With the Toggle on, the Summary screen ends with a **Nutrition tips** card about last week (the last full week, starting on the User's Week start). The User taps **Get tips**. The server gathers the Foods they logged that week (name, Portion, Calories per Portion and total Quantity) and asks Gemini for up to three short tips, each naming a nutrient they seem to be short of and one or two everyday foods that would add it, for example "**Omega-3**: Not much oily fish last week. Salmon or sardines once or twice next week would help." The card shows the tips under a line saying they are AI guesses from Food names, not medical or dietary advice.
+With the Toggle on, the Summary screen ends with a **Nutrition tips** card about last week (the last full week, starting on the day their week starts on in Settings). The User taps **Get tips**. The server gathers the Foods they logged that week (name, Portion, Calories per Portion and total Quantity) and asks Gemini for up to three short tips, each naming a nutrient they seem to be short of and one or two everyday foods that would add it, for example "**Omega-3**: Not much oily fish last week. Salmon or sardines once or twice next week would help." The card shows the tips under a line saying they are AI guesses from Food names, not medical or dietary advice.
 
 **Why this priority**: it is the whole request.
 
@@ -35,8 +35,8 @@ With the Toggle on, the Summary screen ends with a **Nutrition tips** card about
 5. **Given** the model's answer, **When** the server reads it, **Then** it keeps at most three tips, trims each, drops any with an empty nutrient or tip, cuts a nutrient to 40 and a tip to 200 characters, and answers `tips_failed` when none is left.
 6. **Given** the system prompt, **Then** it asks for tips that add foods (never eat less, skip meals, a calorie number, weight, supplements or a medical condition), in Australian English with foods sold in Australia, and says the nutrition is a best guess from Food names.
 7. **Given** the User has asked for tips 3 times today (a Day in Sydney), **When** they tap **Get tips** again, **Then** the card says "You can get tips 3 times a day. Try again tomorrow." and Gemini is not called.
-8. **Given** Gemini is out of quota, down or too slow, **When** the User taps **Get tips**, **Then** the card says "Tips aren't available right now. Try again later." and keeps the button; any other failure, or no connection, says "Couldn't get tips." with **Try again**.
-9. **Given** the request's week start is not a date, or the week's last Day is after today in Sydney plus one Day (for time zones), **When** the route reads it, **Then** it answers 400 `bad_week` and calls nothing.
+8. **Given** Gemini is out of quota, down or too slow, **When** the User taps **Get tips**, **Then** the card says "Tips aren't available right now. Try again later." and keeps the button (the try still counts towards the 3 a day, D5); any other failure, or no connection, says "Couldn't get tips." with **Try again**.
+9. **Given** the request's week start is not a date, is not on the day the User's week starts on, ends after today in Sydney, or starts more than 14 Days ago, **When** the route reads it, **Then** it answers 400 `bad_week` and calls nothing.
 10. **Given** the Toggle is on, **When** the User opens Settings → About, **Then** "Photos and best guesses" also says that getting Nutrition tips sends last week's Food names and Quantities to Gemini on its free tier.
 
 ---
@@ -62,7 +62,7 @@ Tips are kept, one set per User per week, so opening Summary again shows them st
 
 - **Archived Foods** eaten last week are included; they were eaten.
 - **Entries changed after getting tips** do not change kept tips; **Ask again** uses the Entries as they are now.
-- **Week start changed** in Settings: last week is computed with the new Week start, so the card may show a different week with no tips yet.
+- **The day the week starts on changed** in Settings: last week is computed with the new setting, so the card may show a different week with no tips yet.
 - **Many Foods**: only the 80 Foods with the most Calories that week are sent, to keep the request small.
 - **Food names in other languages or nonsense**: sent as written; the model is told it is a best guess and never to refuse.
 - **Offline**: the card shows kept tips (from the query cache) and **Get tips** fails with "Couldn't get tips."
@@ -73,7 +73,7 @@ Tips are kept, one set per User per week, so opening Summary again shows them st
 ### Functional Requirements
 
 - **FR-001**: Everything in this spec MUST be off unless Toggle `feature-218` is on for the User; the route answers 404 and the card is absent while off, loading or failed.
-- **FR-002**: Tips MUST cover last week only: the 7 Days before the start of this week, by the User's Week start.
+- **FR-002**: Tips MUST cover last week only: the 7 Days before the start of this week, by the day the User's week starts on. The route checks this against the User's settings, not only the browser.
 - **FR-003**: The server MUST send Gemini only Food names, Portions, Calories per Portion, total Quantities and the Logged Days count; nothing identifying the User.
 - **FR-004**: Gemini MUST be called only when the User taps **Get tips** or **Ask again**, at most 3 times per User per Day, counted with `increment_ai_usage` under its own kind.
 - **FR-005**: A User MUST see one to three tips, each with a nutrient and a short suggestion that adds foods, under a line saying they are AI guesses, not advice.
@@ -90,7 +90,7 @@ Tips are kept, one set per User per week, so opening Summary again shows them st
 
 ### Measurable Outcomes
 
-- **SC-001**: A User with at least 3 Logged Days last week sees tips within 10 seconds of tapping **Get tips** on a normal connection.
+- **SC-001**: A User with at least 3 Logged Days last week usually sees tips within 10 seconds of tapping **Get tips**; when Gemini is slow the card says so within about a minute (the transport's 25-second timeout and one retry).
 - **SC-002**: Reopening Summary in the same week shows kept tips with no Gemini call.
 - **SC-003**: Deploying this spec changes nothing any User sees until the Toggle is on for them.
 - **SC-004**: No User can make more than 3 Gemini calls a day through this feature.
@@ -111,7 +111,7 @@ Guesses made: tips cover last full week (not this week so far), you need food lo
 
 ## Assumptions
 
-- "Each week" means the last full week, by the User's Week start (`last-week` Period), because the request talks about planning "next week".
+- "Each week" means the last full week, by the day the User's week starts on (`last-week` Period), because the request talks about planning "next week".
 - Three tips are "simple recommendations"; one nutrient each.
 - 3 Logged Days is enough data for a useful guess; fewer gives tips about too little.
 - 3 requests a day per User keeps a few friends well inside the Gemini free tier.
@@ -123,17 +123,17 @@ Guesses made: tips cover last full week (not this week so far), you need food lo
 | # | Question | Decision | Alternatives rejected | Confidence |
 |---|---|---|---|---|
 | D1 | Name for the concept? | **Nutrition tip**, added to `CONTEXT.md` | "Recommendation" or "advice" (sounds authoritative, and the app gives no advice); "Insight" (the Insights screen is about Calories) | high |
-| D2 | Which week? | The last full week by Week start, the same Days as the `last-week` Period | This week so far (partial, changes daily); the last 7 Days (shifts every day, so kept tips never settle) | medium |
+| D2 | Which week? | The last full week by the day the User's week starts on, the same Days as the `last-week` Period | This week so far (partial, changes daily); the last 7 Days (shifts every day, so kept tips never settle) | medium |
 | D3 | Where does it show? | A card at the bottom of Summary, always about last week whatever Period chip is chosen | Insights (deeper, less seen); its own screen (more navigation for three lines) | medium |
 | D4 | When is Gemini called? | Only when the User taps **Get tips** or **Ask again** | On opening Summary (spends quota for Users who don't look); on a weekly schedule (needs a cron and a push, and spends quota for everyone) | high |
-| D5 | How is cost held to the free tier? | `increment_ai_usage('tips', 3)` per User per Day, plus kept tips so reopening is free (Slice 2) | No limit (one User could exhaust the shared free quota); a weekly limit (no new counter function exists; a day limit reuses one) | high |
-| D6 | What does the server send? | Per Food: name, Portion, Calories per Portion, total Quantity; plus Logged Days. Top 80 Foods by Calories. No ids, no email, no name | Each Entry with its Day (more data, no better tips); Reference Food nutrients (the dataset has only energy loaded) | high |
+| D5 | How is cost held to the free tier? | `increment_ai_usage('tips', 3)` per User per Day, counted before Gemini is called (as best guesses are), so a try that fails still counts; plus kept tips so reopening is free (Slice 2) | No limit (one User could exhaust the shared free quota); a weekly limit (no counter exists; a day limit reuses one); refunding failed tries (needs a new database function, and repeated failures usually mean the quota is gone for the day anyway) | medium |
+| D6 | What does the server send? | Per Food: name, Portion, Calories per Portion, total Quantity; plus Logged Days. The 80 Foods with the most Calories over the week. No ids, no email, no name | Each Entry with its Day (more data, no better tips); Reference Food nutrients (the dataset has only energy loaded); the existing `food_totals` function (it has no Quantity) | high |
 | D7 | Where do nutrients come from? | Gemini's best guess from Food names, as the Feature says; nothing stored | Loading AFCD nutrients (big data change, and most Foods are not Reference Foods) | high |
 | D8 | Could tips harm a User (for example someone restricting food)? | The prompt allows only adding foods; never eat less, skip, calories, weight, supplements or conditions (US1.6); the card says it is not advice | Free-form advice (risky); no disclaimer | medium |
 | D9 | Model? | `GEMINI_LIGHT_MODEL`, low thinking, JSON schema answer, through the existing `geminiTransport` (one retry on 503) | `GEMINI_MODEL` (slower, 503s seen in production) | medium |
 | D10 | Answer shape? | `{ tips: [{ nutrient, tip }] }`, parsed with zod, then tidied by the server (US1.5) | Free text (unparseable, unbounded) | high |
 | D11 | Minimum data? | At least 3 Logged Days in the week, checked by the card (from daily totals) and again by the route | Any Entry (tips from one meal mislead); 5 Days (too strict for casual loggers) | medium |
-| D12 | Who works out "last week"? | The browser sends the week's first Day (it knows the User's today); the route checks the range is 7 Days and ends on or before today in Sydney plus one Day | The server computes it (it has no reliable "today" for the User; ADR 0001 Days are as the User experiences them) | medium |
+| D12 | Who works out "last week"? | The browser sends the week's first Day (it knows the User's today); the route checks it falls on the day the User's week starts on (from their settings), that its 7 Days end on or before today in Sydney (ADR 0004: Planned Entries never count as eaten), and that it starts no more than 14 Days ago | The server computes it alone (it has no reliable "today" for the User: a Day is as the User experiences it, `CONTEXT.md`); trusting the browser (a crafted request could ask about any week) | medium |
 | D13 | Are tips stored? | Yes, in Slice 2: one row per User per week in `nutrition_tips`, RLS to the owner, replaced by Ask again | Not stored (every reopen spends quota); stored forever per request (history nobody asked for) | medium |
 | D14 | How does the route read Entries? | With the User's own Supabase client (RLS applies), summing Quantity per Food for the week | Service role (needless privilege) | high |
 | D15 | How do tests avoid Gemini? | A `FakeTipsWriter`, chosen by `NUTRITION_TIPS=fake` in Playwright's web server env, or by having no key outside production, as `CALORIE_GUESSER` does | Mocking HTTP (brittle) | high |
@@ -146,7 +146,7 @@ Guesses made: tips cover last full week (not this week so far), you need food lo
 |---|---|---|---|
 | Adds a third-party integration, secret, environment variable or dashboard step | Yes | A new use of the existing Gemini integration: Users' Food names and Quantities go to Google's free tier. No new secret; one test-only variable, `NUTRITION_TIPS=fake`, in Playwright's web server env | 1 |
 | Irreversible: drops or renames a column or table, or rewrites or deletes User data | No | Additive migrations only: a Toggle row and a new table | |
-| Cannot be proved in CI (real device, real external API, Gemini or Google Health) | Yes | Whether real Gemini tips are sensible and stay within the prompt's rules can only be seen by trying it | 1 |
+| Cannot be proved in CI (real device, real external API, Gemini or Google Health) | Yes | Whether real Gemini tips are sensible and stay within the prompt's rules (add foods only; no calories, weight, supplements or conditions) can only be seen by trying it: the Owner turns the Toggle on in production and gets tips for a real week before the Requester tries it | 1 |
 | Touches sign-in, RLS policies or what one User can see of another | Yes | New table `nutrition_tips` with RLS policies | 2 |
 | Changes the guardrails (CI, deploy, hooks, rulesets, AGENTS.md, constitution, workflow) | No | | |
 | Contradicts an ADR or needs a new one | No | Follows ADR 0001, 0003 and 0008 | |
