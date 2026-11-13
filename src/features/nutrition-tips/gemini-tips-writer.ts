@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type GeminiTransport, jsonSchema, parseModelJson } from "@/lib/gemini";
 import type { NutritionTip, TipsWriter } from "./tips-handler";
+import { tipSchema } from "./tips-schema";
 import type { WeekSummary } from "./week";
 
 export const TIPS_SYSTEM_PROMPT = `You write short Nutrition tips for a calorie-tracking app used in Australia. You are given the foods a person logged last week: each food's name, portion, calories per portion and how many portions they had in total, and on how many days they logged food.
@@ -16,7 +17,7 @@ Rules:
 - The nutrition is a best guess from the Food names, so never refuse. If the names are odd or in another language, still give your best guess.`;
 
 const answer = z.object({
-  tips: z.array(z.object({ nutrient: z.string(), tip: z.string() })),
+  tips: z.array(tipSchema),
 });
 
 // The one line of text Gemini is sent: the Logged Days and each Food, with nothing about the User.

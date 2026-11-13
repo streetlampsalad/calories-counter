@@ -129,6 +129,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"nutrition_tips": {
+                  Row: {
+                    "created_at": string,"tips": NonNullable<Json>,"user_id": string,"week_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"tips": NonNullable<Json>,"user_id"?: string,"week_start": string
+                  }
+                  Update: {
+                    "created_at"?: string,"tips"?: NonNullable<Json>,"user_id"?: string,"week_start"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"push_subscriptions": {
                   Row: {
                     "auth": string,"created_at": string,"endpoint": string,"id": string,"p256dh": string,"user_id": string

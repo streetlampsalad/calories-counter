@@ -50,16 +50,16 @@ description: "Tasks for Nutrition tips for last week"
 
 ### Tests (write first, see them fail)
 
-- [ ] T013 [P] [US2] pgTAP: RLS and policies, one User cannot read, add, change or remove another's rows, the `tips` checks and the primary key, in `supabase/tests/database/nutrition_tips.test.sql`
-- [ ] T014 [P] [US2] Vitest: the handler saves the set after a successful write, still answers 200 when the save fails, and saves nothing on any refusal, in `tips-handler.test.ts`
-- [ ] T015 [P] [US2] Testing Library: kept tips shown with Ask again, a kept row that does not parse shown as no tips, Ask again replaces them, a failed Ask again keeps them with the error, a new week shows Get tips, and no read while the Toggle is off, in `tips-card.test.tsx`
-- [ ] T016 [US2] Playwright: get tips, reload Summary, see the same tips with Ask again, in `e2e/nutrition-tips.spec.ts`
+- [x] T013 [P] [US2] pgTAP: RLS and policies, one User cannot read, add, change or remove another's rows, the `tips` checks and the primary key, in `supabase/tests/database/029_nutrition_tips.test.sql`
+- [x] T014 [P] [US2] Vitest: the handler saves the set after a successful write, still answers 200 when the save fails, and saves nothing on any refusal, in `tips-handler.test.ts`
+- [x] T015 [P] [US2] Testing Library: kept tips shown with Ask again, a kept row that does not parse shown as no tips, Ask again replaces them, a failed Ask again keeps them with the error, a new week shows Get tips, and no read while the Toggle is off, in `tips-card.test.tsx`
+- [x] T016 [US2] Playwright: get tips, reload Summary, see the same tips with Ask again, in `e2e/nutrition-tips.spec.ts`
 
 ### Implementation
 
-- [ ] T017 [US2] Migration `pnpm db:new nutrition_tips`, then `pnpm db:reset && pnpm db:types`
-- [ ] T018 [US2] Upsert in the route after the write; `useKeptTips(weekStart)` in `queries.ts`, enabled only with the Toggle on; the mutation sets that query's data
-- [ ] T019 [US2] Kept tips and Ask again in `tips-card.tsx`
+- [x] T017 [US2] Migration `pnpm db:new nutrition_tips`, then `pnpm db:reset && pnpm db:types`
+- [x] T018 [US2] Upsert in the route after the write; `useKeptTips(weekStart)` in `queries.ts`, enabled only with the Toggle on; the mutation sets that query's data
+- [x] T019 [US2] Kept tips and Ask again in `tips-card.tsx`
 
 **Checkpoint**: `pnpm validate` passes.
 

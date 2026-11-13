@@ -43,8 +43,8 @@ Where Toggle `feature-218` is on, Summary ends with a **Nutrition tips** card fo
 | US2.1 | Testing Library, Playwright | `tips-card.test.tsx`, `e2e/nutrition-tips.spec.ts` |
 | US2.2 | Vitest, Testing Library | `tips-handler.test.ts`, `tips-card.test.tsx` |
 | US2.3 | Testing Library | `tips-card.test.tsx` |
-| US2.4 | pgTAP | `supabase/tests/database/nutrition_tips.test.sql` |
-| US2.5 | pgTAP | `supabase/tests/database/nutrition_tips.test.sql` |
+| US2.4 | pgTAP | `supabase/tests/database/029_nutrition_tips.test.sql` |
+| US2.5 | pgTAP | `supabase/tests/database/029_nutrition_tips.test.sql` |
 | US2.6 | Testing Library | `tips-card.test.tsx` |
 
 ## Migration Plan

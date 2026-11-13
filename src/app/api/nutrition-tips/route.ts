@@ -57,6 +57,15 @@ export async function POST(request: Request) {
       if (error) throw error;
       return data;
     },
+    keepTips: async (weekStart, tips) => {
+      const { error } = await supabase
+        .from("nutrition_tips")
+        .upsert(
+          { week_start: weekStart, tips, created_at: new Date().toISOString() },
+          { onConflict: "user_id,week_start" },
+        );
+      if (error) throw error;
+    },
     writer: getTipsWriter(),
   });
 }
