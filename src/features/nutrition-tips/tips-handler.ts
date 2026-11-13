@@ -70,6 +70,8 @@ type Deps = {
   entries: (from: string, to: string) => Promise<WeekRow[]>;
   /** Counts a use of this kind against the User's day and says whether they may still make one. */
   allowUse: (kind: string) => Promise<boolean>;
+  /** Keeps the set for the week, replacing any kept before (the User's own client, so RLS applies). */
+  keepTips: (weekStart: string, tips: NutritionTip[]) => Promise<void>;
   writer: TipsWriter;
   now?: () => Date;
 };
@@ -112,7 +114,16 @@ function tidy(raw: unknown): NutritionTip[] {
 // asks the writer. Nothing about the User goes to it, only what they ate.
 export async function handleTips(
   request: Request,
-  { userId, toggleOn, weekStartsOn, entries, allowUse, writer, now }: Deps,
+  {
+    userId,
+    toggleOn,
+    weekStartsOn,
+    entries,
+    allowUse,
+    keepTips,
+    writer,
+    now,
+  }: Deps,
 ): Promise<Response> {
   if ((await userId()) === null) return reply(401, { code: "unauthorized" });
   if (!(await toggleOn())) return reply(404, { code: "not_found" });
@@ -151,6 +162,14 @@ export async function handleTips(
     if (tips.length === 0) {
       console.error("Tips were not usable");
       return reply(500, { code: "tips_failed" });
+    }
+    // A set that cannot be kept still reaches the User; they just ask again after a reload.
+    try {
+      await keepTips(weekStart, tips);
+    } catch (error) {
+      console.error(
+        `Tips were not kept: ${error instanceof Error ? error.name : "unknown error"}`,
+      );
     }
     return reply(200, { tips });
   } catch (error) {

@@ -51,7 +51,7 @@ description: "Tasks for Nutrition tips for last week"
 ### Tests (write first, see them fail)
 
 - [x] T013 [P] [US2] pgTAP: RLS and policies, one User cannot read, add, change or remove another's rows, the `tips` checks and the primary key, in `supabase/tests/database/nutrition_tips.test.sql`
-- [ ] T014 [P] [US2] Vitest: the handler saves the set after a successful write, still answers 200 when the save fails, and saves nothing on any refusal, in `tips-handler.test.ts`
+- [x] T014 [P] [US2] Vitest: the handler saves the set after a successful write, still answers 200 when the save fails, and saves nothing on any refusal, in `tips-handler.test.ts`
 - [ ] T015 [P] [US2] Testing Library: kept tips shown with Ask again, a kept row that does not parse shown as no tips, Ask again replaces them, a failed Ask again keeps them with the error, a new week shows Get tips, and no read while the Toggle is off, in `tips-card.test.tsx`
 - [ ] T016 [US2] Playwright: get tips, reload Summary, see the same tips with Ask again, in `e2e/nutrition-tips.spec.ts`
 

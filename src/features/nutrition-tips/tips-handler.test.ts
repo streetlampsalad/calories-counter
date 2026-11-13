@@ -4,6 +4,7 @@ import {
   FakeTipsWriter,
   getTipsWriter,
   handleTips,
+  type NutritionTip,
   TIPS_DAILY_LIMIT,
   type TipsWriter,
 } from "./tips-handler";
@@ -23,6 +24,8 @@ const write = vi.fn<TipsWriter["write"]>();
 const allowUse = vi.fn<(kind: string) => Promise<boolean>>();
 const entries = vi.fn<(from: string, to: string) => Promise<WeekRow[]>>();
 const toggleOn = vi.fn<() => Promise<boolean>>();
+const keepTips =
+  vi.fn<(weekStart: string, tips: NutritionTip[]) => Promise<void>>();
 
 const row = (day: string): WeekRow => ({
   foodId: "f1",
@@ -49,6 +52,7 @@ const call = (
     weekStartsOn: async () => options.weekStartsOn ?? 1,
     entries,
     allowUse,
+    keepTips,
     writer: { write },
     now: () => NOW,
   });
@@ -60,6 +64,7 @@ beforeEach(() => {
   allowUse.mockReset().mockResolvedValue(true);
   entries.mockReset().mockResolvedValue(threeDays);
   toggleOn.mockReset().mockResolvedValue(true);
+  keepTips.mockReset().mockResolvedValue(undefined);
 });
 
 describe("handleTips checks", () => {
@@ -120,6 +125,7 @@ describe("handleTips checks", () => {
       weekStartsOn: async () => 1,
       entries,
       allowUse,
+      keepTips,
       writer: { write },
       now: () => new Date("2026-11-08T23:00:00Z"),
     });
@@ -179,6 +185,54 @@ describe("handleTips answers", () => {
   it("answers 500 tips_failed when the entries cannot be read", async () => {
     entries.mockRejectedValue(new Error("db"));
     expect((await call(post({ weekStart: WEEK }))).status).toBe(500);
+  });
+});
+
+describe("handleTips keeps the set (US2.2, FR-007)", () => {
+  it("saves the tidied set for the week after a successful write", async () => {
+    write.mockResolvedValue([{ nutrient: " Iron ", tip: "Add lentils." }]);
+    const response = await call(post({ weekStart: WEEK }));
+    expect(response.status).toBe(200);
+    expect(keepTips).toHaveBeenCalledTimes(1);
+    expect(keepTips).toHaveBeenCalledWith(WEEK, [
+      { nutrient: "Iron", tip: "Add lentils." },
+    ]);
+  });
+
+  it("still answers 200 with the tips when the save fails, and logs it", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    keepTips.mockRejectedValue(new Error("db"));
+    const response = await call(post({ weekStart: WEEK }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      tips: [{ nutrient: "Omega-3", tip: "Salmon." }],
+    });
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it.each([
+    ["401", { userId: null }, () => {}],
+    ["404", {}, () => toggleOn.mockResolvedValue(false)],
+    ["422", {}, () => entries.mockResolvedValue([])],
+    ["429", {}, () => allowUse.mockResolvedValue(false)],
+    ["503", {}, () => write.mockRejectedValue(new AiUnavailable("quota"))],
+    ["500", {}, () => write.mockRejectedValue(new Error("boom"))],
+    [
+      "500 with none usable",
+      {},
+      () => write.mockResolvedValue([{ nutrient: "", tip: "" }]),
+    ],
+  ])("saves nothing on a %s", async (_name, options, arrange) => {
+    arrange();
+    await call(post({ weekStart: WEEK }), options);
+    expect(keepTips).not.toHaveBeenCalled();
+  });
+
+  it("saves nothing on a 400", async () => {
+    await call(post({ weekStart: "2026-11-03" }));
+    await call(post({}));
+    expect(keepTips).not.toHaveBeenCalled();
   });
 });
 
