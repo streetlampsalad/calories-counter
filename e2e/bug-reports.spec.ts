@@ -203,3 +203,31 @@ test.describe("a signed-in User", () => {
     await expect(page.getByRole("status")).toContainText("Sent");
   });
 });
+
+// The board workflow calls the sync with only the shared secret: no session, like production.
+test.describe("the board workflow, signed out", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("reaches the sync with the secret alone (Bug #216)", async ({
+    request,
+  }) => {
+    const sync = await request.post("/api/bug-reports/sync", {
+      headers: { "x-sync-secret": "e2e-feature-requests-sync-secret" },
+      data: { updates: [] },
+    });
+
+    expect(sync.status()).toBe(200);
+    expect(await sync.json()).toEqual({ applied: 0, notified: 0 });
+  });
+
+  test("is still refused with the wrong secret (Bug #216)", async ({
+    request,
+  }) => {
+    const sync = await request.post("/api/bug-reports/sync", {
+      headers: { "x-sync-secret": "not-the-secret" },
+      data: { updates: [] },
+    });
+
+    expect(sync.status()).toBe(401);
+  });
+});

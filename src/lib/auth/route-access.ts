@@ -9,6 +9,8 @@ const PUBLIC_PATHS = [
   "/api/reminders/send",
   // Called by the board workflow, which has no session either; it sends a shared secret (spec 124).
   "/api/feature-requests/sync",
+  // Called by the board workflow too, with the same shared secret (spec 194, Bug #216).
+  "/api/bug-reports/sync",
   "/manifest.webmanifest",
   "/sw.js",
   "/offline",
