@@ -22,7 +22,8 @@ export function TipsCard({
   weekStartsOn: WeekStart;
 }) {
   const range = lastWeek(today, weekStartsOn);
-  const { data: totals } = useDailyTotals(range);
+  const daily = useDailyTotals(range);
+  const totals = daily.data;
   const getTips = useGetTips(range.from);
 
   const code =
@@ -46,8 +47,8 @@ export function TipsCard({
       {getTips.data ? (
         <>
           <ul className="flex flex-col gap-2">
-            {getTips.data.map((tip) => (
-              <li key={tip.nutrient}>
+            {getTips.data.map((tip, i) => (
+              <li key={`${i}-${tip.nutrient}`}>
                 <strong>{tip.nutrient}</strong>: {tip.tip}
               </li>
             ))}
@@ -75,6 +76,17 @@ export function TipsCard({
                   : "Get tips"}
             </Button>
           )}
+        </>
+      ) : daily.isError ? (
+        <>
+          <p role="alert">Couldn't load last week.</p>
+          <Button
+            className="min-h-11 self-start"
+            variant="outline"
+            onClick={() => daily.refetch()}
+          >
+            Try again
+          </Button>
         </>
       ) : null}
     </section>

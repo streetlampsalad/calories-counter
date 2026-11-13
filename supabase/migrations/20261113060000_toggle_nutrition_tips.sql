@@ -3,5 +3,5 @@
 -- 'tips' kind needs no change there.
 
 insert into public.toggles (key, title)
-values ('feature-218', 'Get Nutrition tips from what I''ve eaten each week.')
+values ('feature-218', 'Nutrition tips')
 on conflict do nothing;

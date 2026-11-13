@@ -14,11 +14,15 @@ const fetchMock = vi.fn();
 const day = (d: string) => ({ day: d, calories: 100, entryCount: 1 });
 const enough = [day("2026-11-02"), day("2026-11-03"), day("2026-11-04")];
 
+const refetch = vi.fn();
+
 function setup(totals: unknown = enough) {
   useDailyTotals.mockReturnValue(
     totals === "pending"
-      ? { data: undefined, isPending: true, isError: false }
-      : { data: totals, isPending: false, isError: false },
+      ? { data: undefined, isPending: true, isError: false, refetch }
+      : totals === "error"
+        ? { data: undefined, isPending: false, isError: true, refetch }
+        : { data: totals, isPending: false, isError: false, refetch },
   );
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
@@ -53,6 +57,17 @@ describe("TipsCard", () => {
     expect(useDailyTotals).toHaveBeenCalledWith(
       expect.objectContaining({ from: "2026-11-02", to: "2026-11-08" }),
     );
+  });
+
+  it("offers Try again when last week's Days could not be loaded", async () => {
+    setup("error");
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't load last week.",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(refetch).toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("says to log more, with no button, when fewer than 3 Days are logged (US1.3)", () => {
