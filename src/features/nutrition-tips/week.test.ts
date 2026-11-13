@@ -66,7 +66,9 @@ describe("summariseWeek", () => {
   });
 
   it("sends no ids", () => {
-    const summary = summariseWeek([row("secret-id", "2026-11-02", 1)]);
+    const summary = summariseWeek([
+      row("secret-id", "2026-11-02", 1, "Salmon"),
+    ]);
     expect(JSON.stringify(summary)).not.toContain("secret-id");
   });
 
