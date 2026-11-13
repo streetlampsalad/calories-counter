@@ -130,6 +130,45 @@ test("a Day over the Goal says by how much", async ({ page }) => {
   await expect(total(page)).toContainText("100 over");
 });
 
+// Bug #211: the Daily Total lands where its loading placeholder sat, the same size, so nothing on
+// Today shifts when the Day's Entries arrive.
+test("the Daily Total does not move or change size when the Day loads", async ({
+  page,
+}) => {
+  const eve = await startFresh();
+  await eve
+    .from("user_settings")
+    .upsert({ daily_goal_calories: 2200 }, { onConflict: "user_id" });
+  await logDay("2001-08-09", 100, 3);
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/rest/v1/entries*", async (route) => {
+    if (route.request().method() === "GET") await held;
+    await route.continue();
+  });
+  const settingsRead = page.waitForResponse(
+    (response) =>
+      response.request().method() === "GET" &&
+      response.url().includes("/rest/v1/user_settings"),
+  );
+
+  await page.goto("/?day=2001-08-09");
+  await settingsRead;
+  const placeholder = page.locator('[data-slot="daily-total-placeholder"]');
+  // The placeholder has the Goal's row once Settings are in.
+  await expect(placeholder.locator('[role="progressbar"]')).toHaveCount(1);
+  const before = await placeholder.boundingBox();
+  release();
+  await expect(total(page)).toContainText("300 / 2,200");
+  const after = await total(page).boundingBox();
+
+  if (!before || !after) throw new Error("Daily Total not on screen");
+  expect(after.y).toBeCloseTo(before.y, 0);
+  expect(after.height).toBeCloseTo(before.height, 0);
+});
+
 test("clearing the Goal takes the comparison away everywhere", async ({
   page,
 }) => {
