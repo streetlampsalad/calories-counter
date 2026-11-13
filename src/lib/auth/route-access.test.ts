@@ -26,6 +26,7 @@ describe("decideAccess", () => {
     "/api/health",
     "/api/reminders/send",
     "/api/feature-requests/sync",
+    "/api/bug-reports/sync",
     "/manifest.webmanifest",
     "/sw.js",
     "/offline",
