@@ -33,13 +33,18 @@ import type { Entry } from "./types";
 import { useDaySwipe } from "./use-day-swipe";
 import { useToday } from "./use-today";
 
-function Skeleton() {
+// While a Day loads, its Daily Total is drawn as its own card with the content hidden, and with
+// the Goal's row when the User has one, so the real total lands exactly where this sat (bug #211).
+// It sits where the real total will, as the first child of the same column, not in a wrapper.
+function DaySkeleton({ goal }: { goal: number | null }) {
   return (
-    <div aria-hidden="true" className="flex flex-col gap-4">
-      <div className="h-8 w-40 animate-pulse rounded-lg bg-muted" />
-      <div className="h-28 animate-pulse rounded-2xl bg-muted" />
-      <div className="h-14 animate-pulse rounded-lg bg-muted" />
-    </div>
+    <>
+      <DailyTotal entries={[]} goal={goal} placeholder />
+      <div
+        aria-hidden="true"
+        className="h-14 animate-pulse rounded-lg bg-muted"
+      />
+    </>
   );
 }
 
@@ -50,7 +55,10 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
   const [day, setDay] = useState(urlDay);
   useEffect(() => setDay(urlDay), [urlDay]);
   const { data: entries, isPending, isError, refetch } = useDayEntries(day);
-  const { data: settings } = useSettings();
+  const { data: settings, isPending: settingsPending } = useSettings();
+  // The Daily Total waits for Settings too: drawn before the Goal is known, it would grow when the
+  // Goal arrived and push everything below it down (bug #211).
+  const loading = isPending || settingsPending;
 
   // Each Day is a history entry, so the back button returns to the Day before. Today is just "/".
   const goToDay = (next: string) => {
@@ -242,7 +250,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
             "motion-safe:fade-in motion-safe:slide-in-from-left-8 motion-safe:animate-in motion-safe:duration-200",
         )}
       >
-        {isPending ? <Skeleton /> : null}
+        {loading ? <DaySkeleton goal={settings?.dailyGoal ?? null} /> : null}
 
         {isError ? (
           <div
@@ -256,7 +264,7 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
           </div>
         ) : null}
 
-        {entries ? (
+        {entries && !settingsPending ? (
           <>
             <DailyTotal
               entries={entries}
@@ -316,11 +324,14 @@ function DayView({ urlDay, today }: { urlDay: string; today: string }) {
 export function TodayScreen() {
   const today = useToday();
   const params = useSearchParams();
+  const { data: settings } = useSettings();
 
   if (!today) {
     return (
-      <main className="flex flex-1 flex-col">
-        <Skeleton />
+      <main className="flex flex-1 flex-col gap-4">
+        {/* As tall as the Day header, which is not drawn until today is known. */}
+        <div aria-hidden="true" className="h-11" />
+        <DaySkeleton goal={settings?.dailyGoal ?? null} />
       </main>
     );
   }

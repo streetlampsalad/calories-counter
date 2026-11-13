@@ -22,6 +22,7 @@ export function DailyTotal({
   goal = null,
   planned = false,
   dayKey = "",
+  placeholder = false,
 }: {
   entries: readonly Entry[];
   /** The User's daily Goal in kcal, or none. */
@@ -30,6 +31,9 @@ export function DailyTotal({
   planned?: boolean;
   /** Which Day this is: changing it shows the new total at once instead of counting to it. */
   dayKey?: string;
+  /** The Day is still loading: the same card, its content hidden, so nothing moves when the real
+      total arrives (bug #211). Hidden from assistive technology. */
+  placeholder?: boolean;
 }) {
   const total = dailyTotal(entries);
   const progress = goalProgress(total, goal);
@@ -38,10 +42,18 @@ export function DailyTotal({
 
   return (
     <section
-      aria-labelledby="daily-total-heading"
-      className="relative flex flex-col items-center gap-3 rounded-2xl bg-muted px-4 py-6"
+      aria-labelledby={placeholder ? undefined : "daily-total-heading"}
+      aria-hidden={placeholder ? true : undefined}
+      data-slot={placeholder ? "daily-total-placeholder" : undefined}
+      className={cn(
+        "relative flex flex-col items-center gap-3 rounded-2xl bg-muted px-4 py-6",
+        placeholder && "animate-pulse *:invisible",
+      )}
     >
-      <h2 id="daily-total-heading" className="sr-only">
+      <h2
+        id={placeholder ? undefined : "daily-total-heading"}
+        className="sr-only"
+      >
         {planned ? "Planned total" : "Daily total"}
       </h2>
       {/* In the card's top padding rather than the flow, so a planned Day's total sits exactly where
@@ -55,7 +67,7 @@ export function DailyTotal({
         </p>
       ) : null}
       {/* Screen readers hear only where the number ends up, once, never the count to it. */}
-      <p className="sr-only" aria-live="polite">
+      <p className="sr-only" aria-live={placeholder ? undefined : "polite"}>
         {goal !== null
           ? `${finalText} of ${kcal(goal)} kcal`
           : `${finalText} kcal`}

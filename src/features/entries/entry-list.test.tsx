@@ -633,3 +633,49 @@ describe("EntryList rows coming and going (spec 019 AC-7, AC-8)", () => {
     );
   });
 });
+
+// Bug #211: while a Day loads, its placeholder must take up exactly the room the Daily Total will,
+// so the screen does not shift when the total arrives.
+describe("DailyTotal placeholder", () => {
+  const placeholderOf = (goal: number | null) =>
+    render(<DailyTotal entries={[]} goal={goal} placeholder />).container
+      .firstElementChild as HTMLElement;
+  const realOf = (goal: number | null) =>
+    render(<DailyTotal entries={[entry("Feast", 1, 1840)]} goal={goal} />)
+      .container.firstElementChild as HTMLElement;
+  const layout = (el: HTMLElement) =>
+    [...el.classList].filter(
+      (c) => c !== "animate-pulse" && c !== "*:invisible",
+    );
+  const rows = (el: HTMLElement) =>
+    [...el.children].map((child) => child.tagName + child.className);
+
+  it.each([
+    ["without a Goal", null],
+    ["with a Goal", 2200],
+  ])("is laid out as the Daily Total's own card, %s", (_, goal) => {
+    const placeholder = placeholderOf(goal);
+    const real = realOf(goal);
+
+    expect(placeholder.tagName).toBe(real.tagName);
+    expect(layout(placeholder)).toEqual(layout(real));
+    expect(rows(placeholder)).toEqual(rows(real));
+  });
+
+  it("keeps a row for the Goal's progress when the User has a Goal", () => {
+    const placeholder = placeholderOf(2200);
+
+    expect(placeholder.querySelector('[role="progressbar"]')).not.toBeNull();
+  });
+
+  it("is hidden from assistive technology, and its content is not drawn", () => {
+    const placeholder = placeholderOf(2200);
+
+    expect(placeholder).toHaveAttribute("aria-hidden", "true");
+    expect(placeholder).toHaveClass("animate-pulse", "*:invisible");
+    expect(
+      screen.queryByRole("region", { name: "Daily total" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+});
