@@ -7,7 +7,6 @@ import { useToggles } from "@/features/toggles/queries";
 import { AppearanceSection } from "./appearance-section";
 import { BurnedSection } from "./burned-section";
 import {
-  categoryDescription,
   SETTINGS_CATEGORIES,
   type SettingsCategory,
   type SettingsCategoryId,
@@ -71,7 +70,7 @@ export function SettingsHome({
                 <span className="flex flex-col">
                   <span className="font-medium text-lg">{category.title}</span>
                   <span className="text-muted-foreground text-sm">
-                    {categoryDescription(category, toggles)}
+                    {category.description}
                   </span>
                 </span>
                 <ChevronRight

@@ -15,8 +15,6 @@ export type SendResult =
 
 export type SendDeps = {
   userId: () => Promise<string | null>;
-  // Whether feature-192 is on for the caller (the action is reachable by a direct POST).
-  toggleOn: () => Promise<boolean>;
   insert: (row: { user_id: string }) => Promise<{ id: string } | "limit">;
   setIssue: (id: string, number: number) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -36,8 +34,7 @@ export async function sendBugReport(
   deps: SendDeps,
 ): Promise<SendResult> {
   const userId = await deps.userId();
-  if (!userId || !(await deps.toggleOn()))
-    return { ok: false, code: "not_found" };
+  if (!userId) return { ok: false, code: "not_found" };
 
   const parsed = parseBugReport(input);
   if (!parsed.ok) return { ok: false, code: "invalid" };

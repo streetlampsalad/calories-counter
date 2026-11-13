@@ -60,27 +60,7 @@ describe("SettingsHome", () => {
     expect(screen.queryByText("goal-section")).not.toBeInTheDocument();
   });
 
-  it("describes Features as before while feature-192 is off (US1.2)", () => {
-    render(<SettingsHome>About and Account</SettingsHome>);
-
-    expect(
-      screen.getByText("Try new features and request your own"),
-    ).toBeInTheDocument();
-  });
-
-  it("adds reporting bugs to the Features description once feature-192 is on (T014)", () => {
-    query = {
-      data: [
-        {
-          key: "feature-192",
-          title: "Report a bug",
-          state: "testing",
-          isOn: true,
-          canSwitch: true,
-        },
-      ],
-      isPending: false,
-    };
+  it("describes Features with reporting bugs (T014)", () => {
     render(<SettingsHome>About and Account</SettingsHome>);
 
     expect(
