@@ -54,16 +54,13 @@ describe("AboutSection", () => {
   it("is upfront that photos and best guesses go to Google's free Gemini tier", () => {
     render(<AboutSection version="dev" />);
 
-    const note = screen.getByText(/Gemini/);
+    const note = screen.getByText(/Google.s Gemini API.*improve/);
     expect(note).toHaveTextContent("free tier");
     expect(note).toHaveTextContent(/improve Google's products/i);
   });
 
-  it("says Nutrition tips send last week's Food names and Quantities, only while they are on (US1.10)", () => {
-    const { rerender } = render(<AboutSection version="dev" />);
-    expect(screen.queryByText(/Nutrition tips/)).not.toBeInTheDocument();
-
-    rerender(<AboutSection version="dev" tipsOn />);
+  it("says Nutrition tips send last week's Food names and Quantities (US1.10)", () => {
+    render(<AboutSection version="dev" />);
     const note = screen.getByText(/Nutrition tips/);
     expect(note).toHaveTextContent("last week's Food names and Quantities");
     expect(note).toHaveTextContent("Gemini");

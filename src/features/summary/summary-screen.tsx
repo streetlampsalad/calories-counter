@@ -9,7 +9,6 @@ import { useToday } from "@/features/entries/use-today";
 import { TipsCard } from "@/features/nutrition-tips/tips-card";
 import { DEFAULT_SETTINGS } from "@/features/settings/domain";
 import { useSettings } from "@/features/settings/queries";
-import { useToggle } from "@/features/toggles/queries";
 import { DailyChart } from "./daily-chart";
 import {
   formatRange,
@@ -99,7 +98,6 @@ export function SummaryScreen() {
   const params = useSearchParams();
   const { data: settings, isPending: settingsPending } = useSettings();
   const period = parsePeriod(params.get("period") ?? undefined);
-  const tipsOn = useToggle("feature-218");
   const label = PERIODS.find((p) => p.id === period)?.label;
 
   // The Period's Days depend on the week start, so wait for it rather than show one range then another.
@@ -131,9 +129,7 @@ export function SummaryScreen() {
         <Skeleton />
       )}
 
-      {ready && tipsOn ? (
-        <TipsCard today={today} weekStartsOn={weekStartsOn} />
-      ) : null}
+      {ready ? <TipsCard today={today} weekStartsOn={weekStartsOn} /> : null}
     </main>
   );
 }

@@ -12,8 +12,7 @@ const MESSAGES: Record<string, string> = {
   tips_unavailable: "Tips aren't available right now. Try again later.",
 };
 
-// Nutrition tips for last week (spec 219), whichever Period is chosen. Only rendered while the
-// Toggle feature-218 is on.
+// Nutrition tips for last week (spec 219), whichever Period is chosen.
 export function TipsCard({
   today,
   weekStartsOn,
