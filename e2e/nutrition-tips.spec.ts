@@ -3,8 +3,8 @@ import { authFile } from "./support/auth";
 import { adminClient, userClient } from "./support/db";
 import { seedEntry, seedFood } from "./support/seed";
 
-// Nutrition tips (spec 219), The server asks the fake tips writer
-// (NUTRITION_TIPS=fake), never Gemini. liv is the seeded Owner. The route reads today from the server's clock, so last week is the real one.
+// Nutrition tips (spec 219). The server asks the fake tips writer (NUTRITION_TIPS=fake), never
+// Gemini. The route reads today from the server's clock, so last week is the real one.
 test.describe.configure({ mode: "serial" });
 test.use({ storageState: authFile("liv"), timezoneId: "Australia/Sydney" });
 
