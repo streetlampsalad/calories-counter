@@ -10,7 +10,6 @@ vi.mock("@/features/summary/queries", () => ({
 
 // The kept set is read with the browser client: a row per week, or none.
 const kept = vi.fn<(weekStart: string) => Promise<unknown>>();
-const toggle = { on: true };
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: (table: string) => {
@@ -27,9 +26,6 @@ vi.mock("@/lib/supabase/client", () => ({
       };
     },
   }),
-}));
-vi.mock("@/features/toggles/queries", () => ({
-  useToggle: (key: string) => key === "feature-218" && toggle.on,
 }));
 
 import { TipsCard } from "./tips-card";
@@ -57,8 +53,8 @@ async function setup(totals: unknown = enough, today = "2026-11-13") {
       <TipsCard today={today} weekStartsOn={1} />
     </QueryClientProvider>,
   );
-  // Wait for the kept set to be read (or skipped, with the Toggle off) before looking at the card.
-  if (toggle.on) await waitFor(() => expect(kept).toHaveBeenCalled());
+  // Wait for the kept set to be read before looking at the card.
+  await waitFor(() => expect(kept).toHaveBeenCalled());
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
@@ -71,7 +67,6 @@ const getTips = () => screen.getByRole("button", { name: "Get tips" });
 beforeEach(() => {
   useDailyTotals.mockReset();
   kept.mockReset().mockResolvedValue(null);
-  toggle.on = true;
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -313,16 +308,6 @@ describe("TipsCard", () => {
         await screen.findByRole("button", { name: "Get tips" }),
       ).toBeEnabled();
       expect(kept).toHaveBeenCalledWith("2026-11-09");
-      expect(screen.queryByText(/Add lentils\./)).not.toBeInTheDocument();
-    });
-
-    it("reads no kept tips while the Toggle is off (US2.6)", async () => {
-      toggle.on = false;
-      kept.mockResolvedValue(keptRow);
-      await setup();
-
-      await screen.findByRole("region", { name: "Nutrition tips" });
-      expect(kept).not.toHaveBeenCalled();
       expect(screen.queryByText(/Add lentils\./)).not.toBeInTheDocument();
     });
   });

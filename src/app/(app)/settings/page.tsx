@@ -4,20 +4,13 @@ import { AboutSection } from "@/features/settings/about-section";
 import { SettingsHome } from "@/features/settings/settings-categories";
 import { SignOutForm } from "@/features/settings/sign-out-form";
 import { formatVersion } from "@/features/settings/version";
-import { isToggleOn } from "@/features/toggles/server";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 
 // COMMIT_SHA is passed in by the deploy, so it can only be read per request.
 async function About() {
   await connection();
-  const tipsOn = await isToggleOn("feature-218");
-  return (
-    <AboutSection
-      version={formatVersion(process.env.COMMIT_SHA)}
-      tipsOn={tipsOn}
-    />
-  );
+  return <AboutSection version={formatVersion(process.env.COMMIT_SHA)} />;
 }
 
 async function Account() {

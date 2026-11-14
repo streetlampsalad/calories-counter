@@ -458,7 +458,9 @@ test.describe("on the Summary", () => {
       const match = /\/rest\/v1\/rpc\/(period_days|daily_totals)/.exec(
         request.url(),
       );
-      if (match) calls.push(match[1]);
+      // The Nutrition tips card reads last week (from 26 Oct) on its own; this Period is November.
+      if (match && request.postDataJSON()?.range_from >= "2026-11-01")
+        calls.push(match[1]);
     });
 
     await page.goto("/summary?period=this-month");

@@ -63,7 +63,6 @@ export function getTipsWriter(
 
 type Deps = {
   userId: () => Promise<string | null>;
-  toggleOn: () => Promise<boolean>;
   /** The day the User's week starts on, from their settings. */
   weekStartsOn: () => Promise<WeekStart>;
   /** The User's own Entries (RLS applies) from one Day to another, inclusive. */
@@ -110,23 +109,13 @@ function tidy(raw: unknown): NutritionTip[] {
   return tips.slice(0, MAX_TIPS);
 }
 
-// Nutrition tips for last week (spec 219): checks the Toggle, the week and the daily allowance, then
+// Nutrition tips for last week (spec 219): checks the week and the daily allowance, then
 // asks the writer. Nothing about the User goes to it, only what they ate.
 export async function handleTips(
   request: Request,
-  {
-    userId,
-    toggleOn,
-    weekStartsOn,
-    entries,
-    allowUse,
-    keepTips,
-    writer,
-    now,
-  }: Deps,
+  { userId, weekStartsOn, entries, allowUse, keepTips, writer, now }: Deps,
 ): Promise<Response> {
   if ((await userId()) === null) return reply(401, { code: "unauthorized" });
-  if (!(await toggleOn())) return reply(404, { code: "not_found" });
 
   let body: unknown;
   try {

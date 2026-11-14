@@ -13,6 +13,9 @@ const totals = (page: Page) =>
   page.getByRole("region", { name: "Summary totals" });
 const chip = (page: Page, name: string) =>
   page.getByRole("navigation", { name: "Period" }).getByRole("link", { name });
+// The Period's range line, not the Nutrition tips card below it, which shows last week's range too.
+const periodRange = (page: Page, text: string) =>
+  page.getByText(text, { exact: true }).and(page.locator("main > p"));
 
 // Logged Days: 2 Oct 1,000 | 26 Oct 2,000 | 27 Oct 1,800 | 29 Oct 2,200 | 2 Nov 1,500 | 3 Nov 1,000
 async function arrange(settings?: {
@@ -145,7 +148,7 @@ for (const c of PERIOD_CASES) {
 
     await expect(page).toHaveURL(new RegExp(`/summary\\?period=${c.url}$`));
     await expect(chip(page, c.chip)).toHaveAttribute("aria-current", "true");
-    await expect(page.getByText(c.range, { exact: true })).toBeVisible();
+    await expect(periodRange(page, c.range)).toBeVisible();
     await expect(totals(page)).toContainText(c.total);
     await expect(totals(page)).toContainText(
       `Average ${c.average} kcal per logged day`,
@@ -175,11 +178,11 @@ test("weeks follow the week-start setting", async ({ page }) => {
 
   await page.goto("/summary");
   // Sunday-start: this week began Sunday 1 Nov.
-  await expect(page.getByText("1 – 3 Nov")).toBeVisible();
+  await expect(periodRange(page, "1 – 3 Nov")).toBeVisible();
   await expect(totals(page)).toContainText("2 of 3 days logged");
 
   await chip(page, "Last week").click();
-  await expect(page.getByText("25 – 31 Oct")).toBeVisible();
+  await expect(periodRange(page, "25 – 31 Oct")).toBeVisible();
   await expect(totals(page)).toContainText("6,000");
   await expect(totals(page)).toContainText("3 of 7 days logged");
 });
@@ -260,7 +263,7 @@ test("changing the week start in Settings updates the Summary without a reload",
     .getByRole("link", { name: "Summary" })
     .click();
 
-  await expect(page.getByText("1 – 3 Nov")).toBeVisible();
+  await expect(periodRange(page, "1 – 3 Nov")).toBeVisible();
   await expect(totals(page)).toContainText("2 of 3 days logged");
 });
 

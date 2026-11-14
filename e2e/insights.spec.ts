@@ -40,7 +40,10 @@ test("the Summary leads to Insights for the same Period", async ({ page }) => {
     page.getByRole("heading", { name: "Insights", level: 1 }),
   ).toBeVisible();
   await expect(chip(page, "Last week")).toHaveAttribute("aria-current", "true");
-  await expect(page.getByText("26 Oct – 1 Nov")).toBeVisible();
+  // Only the shown screen: the Summary left behind (with its Nutrition tips card) is hidden, not gone.
+  await expect(
+    page.getByRole("main").getByText("26 Oct – 1 Nov"),
+  ).toBeVisible();
 });
 
 test("offers the five Periods and 3, 6 and 12 months", async ({ page }) => {

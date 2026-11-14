@@ -23,7 +23,6 @@ const WEEK = "2026-11-02";
 const write = vi.fn<TipsWriter["write"]>();
 const allowUse = vi.fn<(kind: string) => Promise<boolean>>();
 const entries = vi.fn<(from: string, to: string) => Promise<WeekRow[]>>();
-const toggleOn = vi.fn<() => Promise<boolean>>();
 const keepTips =
   vi.fn<(weekStart: string, tips: NutritionTip[]) => Promise<void>>();
 
@@ -48,7 +47,6 @@ const call = (
 ) =>
   handleTips(request, {
     userId: async () => (options.userId === undefined ? "u1" : options.userId),
-    toggleOn,
     weekStartsOn: async () => options.weekStartsOn ?? 1,
     entries,
     allowUse,
@@ -63,7 +61,6 @@ beforeEach(() => {
     .mockResolvedValue([{ nutrient: "Omega-3", tip: "Salmon." }]);
   allowUse.mockReset().mockResolvedValue(true);
   entries.mockReset().mockResolvedValue(threeDays);
-  toggleOn.mockReset().mockResolvedValue(true);
   keepTips.mockReset().mockResolvedValue(undefined);
 });
 
@@ -71,17 +68,6 @@ describe("handleTips checks", () => {
   it("answers 401 with no session (before anything else)", async () => {
     const response = await call(post({ weekStart: WEEK }), { userId: null });
     expect(response.status).toBe(401);
-    expect(toggleOn).not.toHaveBeenCalled();
-  });
-
-  it("answers 404 while the Toggle is off and calls nothing (US1.2)", async () => {
-    toggleOn.mockResolvedValue(false);
-    const response = await call(post({ weekStart: WEEK }));
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ code: "not_found" });
-    expect(entries).not.toHaveBeenCalled();
-    expect(allowUse).not.toHaveBeenCalled();
-    expect(write).not.toHaveBeenCalled();
   });
 
   it("answers 400 bad_request when the body is not JSON or has no weekStart", async () => {
@@ -121,7 +107,6 @@ describe("handleTips checks", () => {
     // 2026-11-08 23:00 UTC is already Monday 9 Nov in Sydney, so 2026-11-02 week has ended.
     const response = await handleTips(post({ weekStart: WEEK }), {
       userId: async () => "u1",
-      toggleOn,
       weekStartsOn: async () => 1,
       entries,
       allowUse,
@@ -213,7 +198,6 @@ describe("handleTips keeps the set (US2.2, FR-007)", () => {
 
   it.each([
     ["401", { userId: null }, () => {}],
-    ["404", {}, () => toggleOn.mockResolvedValue(false)],
     ["422", {}, () => entries.mockResolvedValue([])],
     ["429", {}, () => allowUse.mockResolvedValue(false)],
     ["503", {}, () => write.mockRejectedValue(new AiUnavailable("quota"))],

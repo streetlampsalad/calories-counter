@@ -4,10 +4,9 @@ import {
   TIPS_DAILY_LIMIT,
 } from "@/features/nutrition-tips/tips-handler";
 import { DEFAULT_SETTINGS } from "@/features/settings/domain";
-import { isToggleOn } from "@/features/toggles/server";
 import { createClient } from "@/lib/supabase/server";
 
-// Nutrition tips for last week (spec 219, Toggle feature-218), counted against a daily allowance
+// Nutrition tips for last week (spec 219), counted against a daily allowance
 // of its own. Entries are read with the User's own client, so RLS applies.
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -16,7 +15,6 @@ export async function POST(request: Request) {
       const { data } = await supabase.auth.getClaims();
       return data?.claims.sub ?? null;
     },
-    toggleOn: () => isToggleOn("feature-218"),
     weekStartsOn: async () => {
       const { data, error } = await supabase
         .from("user_settings")
